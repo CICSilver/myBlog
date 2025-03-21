@@ -1,0 +1,134 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #56636f;
+}
+.container {
+    width: 800px;
+    margin: 20px auto;
+    background: #dbe2e8;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.8);
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #a9bbc8;
+    padding: 25px;
+    font-size: 25px;
+    font-weight: bold;
+}
+.post {
+    background: white;
+    padding: 15px;
+    margin: 15px 0;
+    border-left: 5px solid #567;
+}
+.post_header {
+    margin: 10px 0 2px 0;
+}
+.post_content {
+    font-size: 14px;
+    color:grey;
+    white-space: pre-wrap;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
+}
+.date {
+    margin:0;
+    font-size: 12px;
+    color: #999;
+}
+.sidebar {
+    float: right;
+    width: 200px;
+    background: #cfd8dc;
+    padding: 10px;
+    margin-top: 15px;
+    text-align: left;
+}
+.sidebar-misc {
+    font-size: 13px;
+    /* margin: 0; */
+    padding-left: 25px;
+}
+.main {
+    margin-right: 220px;
+}
+.edit_container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.writing_title_label {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #333;
+}
+.writing_title_input,
+.writing_content_area {
+    width: 100%;
+    max-width: 700px;
+    padding: 5px;
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 16px;
+}
+.writing_btn {
+    display: flex;
+    border: none;
+    background: rgb(155, 208, 216);
+    border-radius: 5px;
+}
+.writing_btn:hover {
+    background: rgb(122, 202, 214);
+}
+.writing_btn:active {
+    background: rgb(54, 190, 211);
+}
+.manage_container {
+    width:auto;
+    align-items: center;
+}
+.grey_btn {
+    background-color: white;
+    -webkit-transition-duration: .5s;
+    transition-duration: .5s;
+}
+.grey_btn:hover {
+    background-color: #9d9d9d;
+    color:white
+}
+.edit_confirm_btn {
+    display: block;
+    border: none;
+    border-radius: 5px;
+    margin: 5px auto;
+    padding: 10px 20px;
+}
+.entry {
+    position: static;
+    overflow: hidden;
+    clear: both;
+    width: 100%;
+    margin-bottom: 20px;
+}
+.entry-header {
+    margin-top: 20px;
+    border-left: 5px solid #c6ccd1;
+    padding: 0 0 0 10px;
+    color: #666;
+    font-size: 25px;
+}
+.sidebar-header {
+    font-size: 15px;
+}
+.entry-content {
+    line-height: 1.5;
+}

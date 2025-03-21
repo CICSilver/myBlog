@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<head>
+    <!-- Debug -->
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
+    <!-- Release -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">My Blog</div>
+        <div class="entry">
+            <div class="entry-header">
+                {{ blog.title }}
+            </div>
+            <div class="entry-content">
+                {{ %for paragraph in blog.content.split('\n') %}}
+                <p>{{ paragraph }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>

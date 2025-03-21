@@ -1,0 +1,13 @@
+{
+    "all_blogs": {
+        "1": {
+            "year_blogs": {
+                "year": 2025,
+                "month_blogs": {
+                    "month": 3,
+                    "blogs": {}
+                }
+            }
+        }
+    }
+}
