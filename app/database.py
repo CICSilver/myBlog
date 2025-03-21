@@ -7,9 +7,10 @@ class Blog:
         self.html_title = None
         self.title = None
         self.content = None
-        self.date = None
-        self.time = None
-    
+        self.year = str(now.year)
+        self.month = str(now.month)
+        self.date = now.strftime('%Y-%m-%d')
+        self.time = now.strftime('%H:%M:%S')
 
 class BlogDB:
     def __init__(self):
@@ -33,7 +34,7 @@ class BlogDB:
         # 获取最近记录，默认为7
         return self.get_all_blogs()[-7:]
     
-    def insert_blog(self, blog):
+    def insert_blog(self, blog: Blog):
         """
         插入博客到数据库
         """
