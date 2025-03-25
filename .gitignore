@@ -1,0 +1,5 @@
+test.json
+test.py
+app/__pycache__/
+.vscode
+*.log
