@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<head>
+    <!-- Debug -->
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
+    <!-- Release -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">My Blog</div>
+        <div class="entry">
+            <div class="navigation">
+                <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
+            </div>
+            <div class="entry-header">
+                {{ blog.title }}
+            </div>
+            <div class="markdown-container">
+                <div class="entry-content markdown-body" id="markdown-preview">
+                    <div id="markdown-preview"></div>
+                </div>
+                <textarea id="markdown-content" style="display:none;">{{ blog.content | safe }}</textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 获取隐藏的 Markdown 文本
+        const markdownContent = document.getElementById('markdown-content').value;
+
+        // 使用 marked.js 渲染 Markdown 内容为 HTML
+        document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
+    </script>
+</body>

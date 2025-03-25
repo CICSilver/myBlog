@@ -4,13 +4,19 @@ body {
     padding: 0;
     background-color: #56636f;
 }
+
 .container {
     width: 800px;
     margin: 20px auto;
     background: #dbe2e8;
     padding: 20px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.8);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
 }
+
+.edit-containter {
+    width: 1000px
+}
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -20,30 +26,49 @@ body {
     font-size: 25px;
     font-weight: bold;
 }
+
+.personal-header {
+    color: white;
+    text-shadow: rgb(86, 83, 83) 3px 2px 2px;
+}
+
+.personal-title {
+    font-size: 35px;
+}
+
+.personal-intro{
+    font-size: 18px;
+    text-shadow: rgb(86, 83, 83) 2px 2px 2px;
+}
+
 .post {
     background: white;
     padding: 15px;
     margin: 15px 0;
     border-left: 5px solid #567;
 }
+
 .post_header {
     margin: 10px 0 2px 0;
 }
+
 .post_content {
     font-size: 14px;
-    color:grey;
+    color: grey;
     white-space: pre-wrap;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 6;
-    line-clamp: 6;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
     -webkit-box-orient: vertical;
 }
+
 .date {
-    margin:0;
+    margin: 0;
     font-size: 12px;
     color: #999;
 }
+
 .sidebar {
     float: right;
     width: 200px;
@@ -52,59 +77,82 @@ body {
     margin-top: 15px;
     text-align: left;
 }
+
 .sidebar-misc {
     font-size: 13px;
     /* margin: 0; */
     padding-left: 25px;
 }
+
 .main {
     margin-right: 220px;
 }
+
 .edit_container {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 }
+
 .writing_title_label {
     margin-top: 10px;
     font-size: 18px;
     color: #333;
 }
+.edit_title {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
 .writing_title_input,
 .writing_content_area {
+    height: 20px;
     width: 100%;
-    max-width: 700px;
-    padding: 5px;
+    max-width: 440px;
     box-sizing: border-box;
     padding: 10px;
     font-size: 16px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    flex:1;
 }
+
 .writing_btn {
     display: flex;
-    border: none;
-    background: rgb(155, 208, 216);
+    /* border: none; */
+    background: rgb(207, 210, 210);
     border-radius: 5px;
 }
+
 .writing_btn:hover {
     background: rgb(122, 202, 214);
 }
+
 .writing_btn:active {
     background: rgb(54, 190, 211);
 }
+
 .manage_container {
-    width:auto;
+    width: 100%;
+    max-width: 1000px;
     align-items: center;
 }
+
 .grey_btn {
     background-color: white;
     -webkit-transition-duration: .5s;
     transition-duration: .5s;
 }
+
 .grey_btn:hover {
     background-color: #9d9d9d;
-    color:white
+    color: white
 }
+
 .edit_confirm_btn {
     display: block;
     border: none;
@@ -112,23 +160,69 @@ body {
     margin: 5px auto;
     padding: 10px 20px;
 }
+
 .entry {
     position: static;
     overflow: hidden;
     clear: both;
     width: 100%;
     margin-bottom: 20px;
+    background-color: white;
+    /* border-left: 5px solid #567; */
 }
+
 .entry-header {
     margin-top: 20px;
+    margin-left: 15px;
+    margin-bottom: 20px;
     border-left: 5px solid #c6ccd1;
     padding: 0 0 0 10px;
     color: #666;
     font-size: 25px;
 }
+
 .sidebar-header {
     font-size: 15px;
 }
+.markdown-container {
+    padding: 25px;
+}
 .entry-content {
     line-height: 1.5;
+}
+
+.navigation {
+    text-align: center;
+}
+.navi-href {
+    font-size: 15px;
+    color: #436478;
+    /* 取消下划线 */
+    text-decoration: none;
+}
+.navi-href:hover {
+    color: #7cb9de;
+    /* text-decoration: underline; */
+}
+
+p {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    unicode-bidi: isolate;
+    /* text-indent: 2em; 设置段前缩进为 2 个字符宽度 */
+}
+
+td {
+    text-align: center;
+
+}
+
+.manage_table {
+    width: 100%;
+    max-width: 1000px;
+    border-collapse: collapse;
+    margin-top: 20px;
 }

@@ -7,14 +7,30 @@
 </head>
 <body>
     <div class="container manage_container">
-        <h1>日志管理</h1>
+        <div class="header">博客数据管理</div>
+        <table class="manage_table" border="1" class="manage_table">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>标题</th>
+                    <th>日期</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for blog in blogs %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ blog.title }}</td>
+                    <td>{{ blog.date ~ ' ' ~ blog.time }}</td>
+                    <td>
+                        <a href="{{ url_for('main.manage_edit_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}">编辑</a>
+                        <a href="{{ url_for('main.manage_delete_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}">删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
     </div>
-    <table>
-        <tr>
-            <th>标题</th>
-            <th>日期</th>
-            <th>操作</th>
-        </tr>
-    </table>
 </body>
