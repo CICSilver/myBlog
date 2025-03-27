@@ -1,7 +1,7 @@
 from flask import Flask
 from tinydb import TinyDB
 
-db = TinyDB('./db/blog_db.json')
+blog_db = TinyDB('./db/blog_db.json')   # 基础数据库
 
 def create_app():
     app = Flask(__name__, static_folder="../static", template_folder="../templates")

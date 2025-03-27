@@ -1,49 +1,195 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>写日志</title>
-        <!-- debug -->
-        <link rel="stylesheet" type="text/css" href="../static/css/style.css">
-        <!-- release -->
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
-        <!-- editor.md -->
-         <link rel="stylesheet" href="{{ url_for('static', filename='vendor/editor.md/css/editormd.min.css') }}" />
-         <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
-         <script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
-         <script src="{{ url_for('static', filename='vendor/editor.md/lib/prettify.min.js') }}"></script>
-         <script src="{{ url_for('static', filename='vendor/editor.md/editormd.js') }}"></script>
-    </head>
-    <body>
-        <div class="container edit-containter">
-            <div class="header">写日志</div>
-            <div class="edit_container">
-                <form method="POST" action="/edit">
-                    <div class="edit_title">
-                        <input class="writing_title_input" type="text" id="html-title" name="html-title" placeholder="HTML 标题" value="{{ blog.html_title if blog else ''}}" required autocomplete="off">
-                        <input class="writing_title_input" type="text" id="title" name="title" placeholder="博客标题" value="{{ blog.title if blog else ''}}" required autocomplete="off">
+<head>
+    <title>写日志</title>
+    <!-- debug -->
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
+    <!-- release -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- editor.md -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/editor.md/css/editormd.min.css') }}" />
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/editor.md/lib/prettify.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/editor.md/editormd.js') }}"></script>
+</head>
+
+<body>
+    <div class="container edit-containter">
+        <div class="header">写日志</div>
+        <div class="edit_container">
+            <form method="POST" action="/edit">
+                <div class="edit_title">
+                    <input class="writing_title_input" type="text" id="html-title" name="html-title"
+                        placeholder="HTML 标题" value="{{ blog.html_title if blog else ''}}" required autocomplete="off">
+                    <input class="writing_title_input" type="text" id="title" name="title" placeholder="博客标题"
+                        value="{{ blog.title if blog else ''}}" required autocomplete="off">
+                    <!-- 添加tag -->
+                    <div class="category-container">
+                        <input type="text" id="category-input" name="category"
+                            class="writing_title_input edit_category_input" placeholder="选择或输入分类" autocomplete="off">
+                        <ul id="category-dropdown" class="category-dropdown">
+                            <li class="dropdown-item">分类1</li>
+                            <li class="dropdown-item">分类2</li>
+                            <li class="dropdown-item">分类3</li>
+                            {% for category in categories %}
+                            <li class="dropdown-item">{{ category.name }}</li>
+                            {% endfor %}
+                        </ul>
                     </div>
-                     <div id="markdown-editor" class="editormd">
-                        <textarea style="display: none;" id="markdown-content" name="content"></textarea>
-                     </div>
-                    <input class="edit_confirm_btn grey_btn" type="submit" value="提交">
-                </form>
+                </div>
+                <div id="markdown-editor" class="editormd">
+                    <textarea style="display: none;" id="markdown-content" name="content"></textarea>
+                </div>
+                <input class="edit_confirm_btn grey_btn" type="submit" value="提交">
+            </form>
+        </div>
+        <!-- Modal -->
+        <div class="modal-overlay" id="myModalOverlay">
+            <div class="modal" id="myModal">
+                <div class="modal-header" id="modal-header">
+                    <h2>模态窗口</h2>
+                </div>
+                <div id="modal-body-content" class="modal-body">
+                    <p>这是一条重要通知。</p>
+                </div>
+                <div style="display: none;" id="modal-hidden-content"></div>
+                <div id="modal-footer" class="modal-footer">
+                </div>
             </div>
+        </div>
         <!-- Debug -->
         <script src="../static/js/scripts.js"></script>
         <!-- Release -->
         <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
         <script type="text/javascript">
+            var modal = new Modal();
             var editor = editormd("markdown-editor", {
                 // 这里的尺寸必须在这里设置，设置样式会被 editormd 自动覆盖
                 width: "900px",
                 // 设置高度
                 height: "500px",
                 // 编辑器中初始内容
-                markdown: {{ blog_content | tojson if blog_content else '""' | safe }},
-                // 指定插件路径
-                path: "{{ url_for('static', filename='vendor/editor.md/lib/') }}",
+                markdown: {{ blog_content | safe if blog_content else '""' | safe}},
+            // 指定插件路径
+            path: "{{ url_for('static', filename='vendor/editor.md/lib/') }}",
+            });
+
+            function handleBlogSubmit(action) {
+                const formData = new FormData(document.querySelector("form"));
+                formData.append("action", action);
+
+                fetch("/edit", {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.status === "duplicate") {
+                            modal.clearButtons();
+                            modal.addButton("覆盖", () => handleBlogSubmit('update'));
+                            modal.addButton("新增", () => handleBlogSubmit('insert_new'));
+                            modal.addButton("取消", () => modal.close());
+                            modal.show(data.message);
+                        }
+                        else if (data.status === "success") {
+                            window.location.href = "/";
+                        }
+                        else if (data.status === "default_failed") {
+                            alert("后台数据处理失败");
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                    });
+            }
+
+            document.querySelector("form").addEventListener("submit", function (e) {
+                e.preventDefault(); // 阻止表单的默认提交行为
+                handleBlogSubmit('insert');
+            });
+
+            // 分类输入框js
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const input = document.getElementById("category-input");
+                const dropdown = document.getElementById("category-dropdown");
+                const items = dropdown.querySelectorAll(".dropdown-item");
+
+                // 显示下拉菜单
+                input.addEventListener("focus", function () {
+                    dropdown.style.display = "block";
+                });
+
+                // 输入时过滤下拉菜单
+                input.addEventListener("input", function () {
+                    const filter = input.value.toLowerCase();
+                    items.forEach(item => {
+                        if (item.textContent.toLowerCase().includes(filter)) {
+                            item.style.display = "block";
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+                });
+
+                // 点击下拉菜单的选项时，将值填入输入框
+                items.forEach(item => {
+                    item.addEventListener("pointerdown", function (e) {
+                        e.preventDefault(); // 阻止默认行为，避免触发输入框的 `blur` 事件
+                        input.value = item.textContent;
+                        dropdown.style.display = "none"; // 隐藏下拉菜单
+                        input.blur();
+                    });
+                });
+
+                // 点击其他地方时隐藏下拉菜单
+                document.addEventListener("pointerdown", function (e) {
+                    // 如果点击的不是输入框或下拉菜单，隐藏下拉菜单
+                    if (e.target !== input && !dropdown.contains(e.target)) {
+                        dropdown.style.display = "none";
+                    }
+                });
+            });
+
+            // 监听html_title输入
+            document.addEventListener("DOMContentLoaded", function () {
+                const htmlTitleInput = document.getElementById("html-title");
+                // 创建气泡提示元素
+                const tooltip = document.createElement("div");
+                tooltip.className = "tooltip";
+                tooltip.style.position = "absolute";
+                tooltip.style.background = "#f44336";
+                tooltip.style.color = "#fff";
+                tooltip.style.padding = "5px 10px";
+                tooltip.style.borderRadius = "5px";
+                tooltip.style.fontSize = "12px";
+                tooltip.style.display = "none";
+                tooltip.textContent = "HTML 标题不能包含中文字符！";
+                document.body.appendChild(tooltip);
+
+                // 监听输入框的输入事件
+                htmlTitleInput.addEventListener("input", function () {
+                    // 替换空格为下划线
+                    this.value = this.value.replace(/\s+/g, "_");
+
+                    // 检测是否包含中文字符
+                    if (/[\u4e00-\u9fa5]/.test(this.value)) {
+                        // 显示气泡提示
+                        const rect = this.getBoundingClientRect();
+                        tooltip.style.left = `${rect.left + window.scrollX}px`;
+                        tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                        tooltip.style.display = "block";
+                    } else {
+                        // 隐藏气泡提示
+                        tooltip.style.display = "none";
+                    }
+                });
+
             });
         </script>
-    </body>
+</body>
+
 </html>

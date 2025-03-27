@@ -78,7 +78,7 @@ body {
     text-align: left;
 }
 
-.sidebar-misc {
+.sidebar-list {
     font-size: 13px;
     /* margin: 0; */
     padding-left: 25px;
@@ -112,27 +112,44 @@ body {
     height: 20px;
     width: 100%;
     max-width: 440px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
     box-sizing: border-box;
     padding: 10px;
     font-size: 16px;
     margin-top: 5px;
     margin-bottom: 5px;
     text-align: center;
-    flex:1;
+}
+.writing_title_input:focus {
+    outline: #567 solid 1px;
+}
+.writing_title_input:nth-child(1) {
+    flex: 4;
+}
+.writing_title_input:nth-child(2) {
+    flex: 4;
+}
+.writing_title_input:nth-child(3) {
+    flex: 2;
 }
 
-.writing_btn {
+.header-btn-grp{
     display: flex;
-    /* border: none; */
+    flex-direction: column;
+    gap: 10px;
+}
+
+.index-btn {
     background: rgb(207, 210, 210);
     border-radius: 5px;
 }
 
-.writing_btn:hover {
+.index-btn:hover {
     background: rgb(122, 202, 214);
 }
 
-.writing_btn:active {
+.index-btn:active {
     background: rgb(54, 190, 211);
 }
 
@@ -143,6 +160,11 @@ body {
 }
 
 .grey_btn {
+    display: block;
+    border: none;
+    border-radius: 5px;
+    margin: 5px auto;
+    padding: 10px 20px;
     background-color: white;
     -webkit-transition-duration: .5s;
     transition-duration: .5s;
@@ -175,7 +197,7 @@ body {
     margin-top: 20px;
     margin-left: 15px;
     margin-bottom: 20px;
-    border-left: 5px solid #c6ccd1;
+    border-left: 5px solid #36414d;
     padding: 0 0 0 10px;
     color: #666;
     font-size: 25px;
@@ -183,6 +205,10 @@ body {
 
 .sidebar-header {
     font-size: 15px;
+    background: #a3b8cc;
+    margin: 5px;
+    padding: 5px;
+    color: #fff;
 }
 .markdown-container {
     padding: 25px;
@@ -225,4 +251,174 @@ td {
     max-width: 1000px;
     border-collapse: collapse;
     margin-top: 20px;
+}
+
+/* 模态窗口 */
+.modal-overlay {
+    content: "";
+    display: none;
+    background: rgba(0, 0, 0, 0.6);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+}
+
+.modal {
+    border: #333 solid 1px;
+    border-radius: 5px;
+    margin-left: -200px;
+    position: fixed;
+    width: 360px;
+    top: -100%;
+    left: 65%;
+    transform: translate(-50%, -50%);
+    background: #dbe2e8;
+    padding: 5px;
+    z-index: 1001;
+    transition: top 0.3s ease-out, opacity 0.3s ease-out;
+
+
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-header,
+.modal-footer {
+  padding: 10px 20px;
+}
+
+.modal-footer {
+    display: flex;
+    flex-direction: row;
+}
+
+.modal-header {
+    border-bottom: #bcb1b1 solid 2px;
+  }
+  .modal-header h2 {
+    font-size: 20px;
+  }
+  .modal-footer {
+    border-top: #bcb1b1 solid 2px;
+    text-align: right;
+  }
+
+/* .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+} */
+
+.modal-overlay {
+    animation: fadeIn 0.5s;
+
+}
+
+.modal-overlay.fade-out {
+    animation: fadeOut 0.5s;
+    animation-fill-mode: forwards; /* 保持最后一帧的状态 */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.modal-btn {
+    display: block;
+    /* 按钮分布在窗口两侧 */
+    margin: 0 auto;
+}
+
+/* 分类输入框CSS */
+.category-container {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+}
+
+.edit_category_input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.edit_category_input:focus {
+    outline: #567 solid 1px;
+}
+
+.category-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: none; /* 默认隐藏 */
+    z-index: 1000;
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0;
+}
+
+.dropdown-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f0f0f0;
+}
+
+.tooltip {
+    position: absolute;
+    background: #f44336;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.manage-href:link, .manage-href:visited {
+    background-color: #5cb6e3;
+    color: white;
+    padding: 5px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 20px;
+}
+
+.manage-href:hover {
+    background-color: #4286a8;
+}
+
+.manage-opera-col {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    border: none;
 }
