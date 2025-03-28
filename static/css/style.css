@@ -422,3 +422,7 @@ td {
     align-items: center;
     border: none;
 }
+
+.category-href {
+    font-size: 13px;
+}

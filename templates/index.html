@@ -30,7 +30,11 @@
         </ul>
         <h3 class="entry-header sidebar-header">CATEGORIES</h3>
         <ul class="sidebar-list">
-          
+          {% for category in categories %}
+            <li>
+              <a class="navi-href category-href" href="{{ url_for('main.categorized_blogs')}}">{{ category.name }}({{ category.num }})</a>
+            </li>
+          {% endfor %}
         </ul>
       </div>
       <div class="main">

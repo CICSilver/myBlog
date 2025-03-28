@@ -2,27 +2,47 @@ from app import blog_db
 from tinydb import Query
 from tinydb.table import Document
 from datetime import datetime
+from pypinyin import lazy_pinyin
 
 class Category:
-    def __init__(self):
-        self.name = None
-        self.reference = None
+    def __init__(self, html_title=None, name=None, num=0, init_dict=[]):
+        if isinstance(init_dict, dict) and len(init_dict) > 0:
+            self.html_title = init_dict.get('html_title')
+            self.name = init_dict.get('name')
+            self.num = init_dict.get('num')
+        else:
+            self.html_title = html_title
+            self.name = name
+            self.num = num
+
     def to_dict(self):
         return {
+            'html_title': self.html_title,
             'name': self.name,
-            'reference': self.reference
+            'num': self.num
         }
     def from_dict(self, data):
+        self.html_title = data.get('html_title')
         self.name = data.get('name')
-        self.reference = data.get('reference')
+        self.num = data.get('num')
+    
+    def generate_html_title(self):
+        """
+        根据分类名称生成html标题，无返回值，直接修改自身属性
+        """
+        if not self.name:
+            raise ValueError("分类名称不能为空")
+        # 中文名称转为拼音
+        self.html_title = "_".join(lazy_pinyin(self.name))
+
 
 class Blog:
-    def __init__(self):
+    def __init__(self, html_title=None, title=None, content=None, category=None):
         now = datetime.now()
-        self.html_title = None
-        self.title = None
-        self.content = None
-        self.category = None
+        self.html_title = html_title
+        self.title = title
+        self.content = content
+        self.category = category
         self.year = str(now.year)   # 默认当前年份
         self.month = str(now.month)
         self.date = now.strftime('%Y-%m-%d')
@@ -105,21 +125,53 @@ class DatabaseHelper:
         categories = self.category_table.all()
         return categories
     
-    def __insert_category(self, category: str):
+    def clear_empty_categories(self):
+        """
+        清空无用分类
+        """
+        categories = self.category_table.all()
+        for category in categories:
+            if category['num'] == 0:
+                self.category_table.remove(Query().name == category['name'])
+
+    def __insert_category(self, categoryName: str):
         """
         插入分类到数据库
         若分类已经存在则不插入
         """
-        if category is None:
+        if categoryName is None:
             raise ValueError("Category cannot be None")
         
         # 检查是否已存在
-        existing_category = self.category_table.search(Query().category == category)
-        if existing_category is not None:
-            return {"status": "duplicate", "message": "分类已存在，请选择其他分类。"}
+        existing_category = self.category_table.search(Query().name == categoryName)
+        if len(existing_category) > 0:
+            category_data = existing_category[0]
+            category_data['num'] += 1
+            # 更新分类数量
+            self.category_table.update(category_data, Query().name == categoryName)
+            return {"status": "duplicate", "message": "分类已存在，增加分类所属博客数量。"}
         
-        self.category_table.insert({"name": category})
+        category = Category()
+        category.name = categoryName
+        category.num = 1
+        category.generate_html_title()
+        self.category_table.insert(category.to_dict())
         return {"status": "success", "message": "分类插入成功。"}
+    
+    def __update_category(self, category: Category):
+        """
+        更新分类到数据库
+        无返回
+        """
+        if category is None:
+            raise ValueError("Category cannot be None")
+        
+        if category.num <= 0:
+            # 删除分类
+            self.category_table.remove(Query().name == category.name)
+        else:
+            self.category_table.update(category.to_dict(), Query().name == category.name)
+
 
     def __insert_date(self, blog: Blog):
         """
@@ -161,13 +213,13 @@ class DatabaseHelper:
             raise TypeError("Expected a Blog instance")
         
 
-        self.__insert_category(blog.category)  # 确保分类存在
         
         # 检查html_title重复情况，若存在则编号增加
         blog_in_db = self.get_specify_blog(blog.year, blog.month, blog.html_title)
         if blog_in_db:
             return {"status": "duplicate", "message": "html标题重复，请选择处理方式。"}
         
+        self.__insert_category(blog.category)  # 确保分类存在
         # 更新月份数据
         self.__insert_date(blog) 
         # 插入博客数据
@@ -186,14 +238,9 @@ class DatabaseHelper:
         if not isinstance(blog, Blog):
             raise TypeError("Expected a Blog instance")
 
-        res = self.get_specify_blog(blog.year, blog.month, blog.html_title)
-
-        if res is None:
-            return {"status": "error", "message": "指定的博客不存在。"}
-        else:
-            # 更新博客数据
-            operation(blog)
-            return {"status": "success", "message": "博客数据更新成功。"}
+        # 更新博客数据
+        operation(blog)
+        return {"status": "success", "message": "博客数据更新成功。"}
 
     def update_blog(self, blog: Blog):
         """
@@ -201,6 +248,26 @@ class DatabaseHelper:
         """
         def update_opera(blog):
             self.blog_table.update(blog.to_dict(), (Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
+        
+        # 更新分类信息
+        old_blog_data = self.get_specify_blog_o(blog)
+        if old_blog_data is None:
+            return {"status": "error", "message": "指定的博客不存在。"}
+        if old_blog_data.category != blog.category:
+            # 分类发生变化，更新分类数量
+            res = self.category_table.search(Query().name == old_blog_data.category)
+            old_category_data = res[0]
+            old_category_data['num'] -= 1
+            self.__update_category(Category(init_dict=old_category_data))
+            # 更新新分类数量
+            res = self.category_table.search(Query().name == blog.category)
+            if len(res) == 0:
+                self.__insert_category(blog.category)
+            else:
+                new_category_data = res[0]
+                new_category_data['num'] += 1
+                self.__update_category(Category(init_dict=new_category_data))
+
         return self.__process_blog(blog, update_opera)
 
 
@@ -216,6 +283,17 @@ class DatabaseHelper:
         """
         def del_opear(blog):
             self.blog_table.remove((Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
+        # 更新分类信息
+        res = self.category_table.search(Query().name == blog.category)
+        if len(res) == 0:
+            raise ValueError("分类不存在")
+        category_data = res[0]
+        category_data['num'] -= 1
+        if category_data['num'] <= 0:
+            self.category_table.remove(Query().name == blog.category)
+        else:
+            self.category_table.update(category_data, Query().name == blog.category)
+        
         return self.__process_blog(blog, del_opear)
     
     def get_specify_blog(self, year, month, html_title) -> Blog | None:
@@ -237,6 +315,14 @@ class DatabaseHelper:
             return blog
         else:
             return None
+    
+    def get_specify_blog_o(self, blog:Blog):
+        if blog is None:
+            raise ValueError("blog cannot be None")
+        if not isinstance(blog, Blog):
+            raise TypeError("Expected a Blog instance")
+        
+        return self.get_specify_blog(blog.year, blog.month, blog.html_title)
         
         
         

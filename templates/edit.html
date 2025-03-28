@@ -29,11 +29,8 @@
                     <!-- 添加tag -->
                     <div class="category-container">
                         <input type="text" id="category-input" name="category"
-                            class="writing_title_input edit_category_input" placeholder="选择或输入分类" autocomplete="off">
+                            class="writing_title_input edit_category_input" placeholder="选择或输入分类" autocomplete="off" value="{{ blog.category if blog else '' }}">
                         <ul id="category-dropdown" class="category-dropdown">
-                            <li class="dropdown-item">分类1</li>
-                            <li class="dropdown-item">分类2</li>
-                            <li class="dropdown-item">分类3</li>
                             {% for category in categories %}
                             <li class="dropdown-item">{{ category.name }}</li>
                             {% endfor %}

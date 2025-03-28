@@ -19,7 +19,8 @@ def hash_string(input: str):
 def index():
     site_name = "Silver's Blog"
     personal_intro = "人事匆匆，或许有些可以留在这里。"
-    return render_template('index.html', blogs=dbHelper.get_recent_blogs(), site_name=site_name, personal_intro=personal_intro)
+    categories = dbHelper.get_all_categories()
+    return render_template('index.html', blogs=dbHelper.get_recent_blogs(), site_name=site_name, personal_intro=personal_intro, categories=categories)
 
 @main.route('/edit', methods=['GET', 'POST'])
 def edit_blog():
@@ -102,3 +103,7 @@ def admin_verify():
     else:
         # 验证失败
         return {"status": "error", "message": "密钥错误"}, 401
+
+@main.route('/categorized_blogs')
+def categorized_blogs():
+    pass
