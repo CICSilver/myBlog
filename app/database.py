@@ -194,14 +194,16 @@ class DatabaseHelper:
         """
         return self.blog_table.all()
 
-    def get_recent_blogs(self, default_days=7):
+    def get_recent_blogs(self, default_days=10):
         """
         获取最近的博客
 
         :param rule: default_days: 默认天数
         :return: 最近的博客列表
         """
-        return self.blog_table.all()[-default_days:]
+        recent_blogs = self.blog_table.all()[-default_days:]
+        recent_blogs.reverse()  # 反转列表，最新的在前面
+        return recent_blogs
     
     def insert_blog(self, blog: Blog):
         """
