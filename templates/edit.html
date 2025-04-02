@@ -78,6 +78,15 @@
                 const formData = new FormData(document.querySelector("form"));
                 formData.append("action", action);
 
+                var blogMonth = "{{ blog.month if blog else '' }}";
+                var blogYear = "{{ blog.year if blog else '' }}";
+                var blogDate = "{{ blog.date if blog else '' }}";
+                var blogTime = "{{ blog.time if blog else '' }}";
+                formData.append("month", blogMonth);
+                formData.append("year", blogYear);
+                formData.append("date", blogDate);
+                formData.append("time", blogTime);
+
                 fetch("/edit", {
                     method: "POST",
                     body: formData,

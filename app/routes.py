@@ -34,6 +34,14 @@ def edit_blog():
         blog.title = request.form['title']
         blog.content = request.form['content']
         blog.category = request.form['category']
+        if request.form['month'] != '':
+            blog.month = request.form['month']
+        if request.form['year'] != '':
+            blog.year = request.form['year']
+        if request.form['date'] != '':
+            blog.date = request.form['date']
+        if request.form['time'] != '':
+            blog.time = request.form['time']
 
         action = request.form.get('action')
 

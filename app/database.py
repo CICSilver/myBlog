@@ -214,6 +214,7 @@ class DatabaseHelper:
         
         blogs = self.blog_table.search((Query().year == year) & (Query().month == month))
         date_dict["num"] = len(blogs)
+        self.date_table.update(date_dict, (Query().year == year) & (Query().month == month))
         
         
     def get_all_blogs(self):
@@ -274,9 +275,9 @@ class DatabaseHelper:
         self.__insert_category(blog.category)  # 确保分类存在
         # 更新月份数据
         self.__insert_date(blog)
-        self.__update_blog_num_in_date(blog.year, blog.month)
         # 插入博客数据
         self.blog_table.insert(blog.to_dict()) 
+        self.__update_blog_num_in_date(blog.year, blog.month)
         return {"status": "success", "message": "博客数据插入成功。"}
     
     def __process_blog(self, blog: Blog, operation):
@@ -336,6 +337,9 @@ class DatabaseHelper:
         """
         def del_opear(blog):
             self.blog_table.remove((Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
+            # 删除博客后，更新日期信息
+            self.__update_blog_num_in_date(blog.year, blog.month)
+            
         # 更新分类信息
         res = self.category_table.search(Query().name == blog.category)
         if len(res) == 0:
