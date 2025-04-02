@@ -125,6 +125,14 @@ class DatabaseHelper:
         categories = self.category_table.all()
         return categories
     
+    def get_all_date(self):
+        """
+        获取所有日期列表
+        """
+        dates = self.date_table.all()
+        dates.reverse()  # 反转列表，最新的在前面
+        return dates
+
     def clear_empty_categories(self):
         """
         清空无用分类
@@ -180,14 +188,34 @@ class DatabaseHelper:
         """
         date = {
             "year": blog.year,
-            "month": blog.month
+            "month": blog.month,
+            "num": 1
         }
         # 检查日期是否已存在
         res = self.date_table.search((Query().year == blog.year) & (Query().month == blog.month))
-        if not res:
+        if len(res) == 0:
             # 插入新的日期数据
             self.date_table.insert(date)
 
+    def __update_blog_num_in_date(self, year, month):
+        """
+        更新日期表中的博客数量
+        """
+        if year is None:
+            raise ValueError("year cannot be None")
+        if month is None:
+            raise ValueError("month cannot be None")
+        
+        # 确保date中有num字段
+        res = self.date_table.search((Query().year == year) & (Query().month == month))
+        date_dict = res[0]
+        if "num" not in date_dict:
+            date_dict["num"] = 0
+        
+        blogs = self.blog_table.search((Query().year == year) & (Query().month == month))
+        date_dict["num"] = len(blogs)
+        
+        
     def get_all_blogs(self):
         """
         获取所有博客列表
@@ -204,6 +232,28 @@ class DatabaseHelper:
         recent_blogs = self.blog_table.all()[-default_days:]
         recent_blogs.reverse()  # 反转列表，最新的在前面
         return recent_blogs
+    
+    def get_blogs_by_category(self, category_name: str):
+        """
+        根据分类名称获取博客列表
+        """
+        if category_name is None:
+            raise ValueError("category_name cannot be None")
+        
+        blogs = self.blog_table.search(Query().category == category_name)
+        return blogs
+    
+    def get_blogs_by_date(self, year: str, month: str):
+        """
+        根据年月获取博客列表
+        """
+        if year is None:
+            raise ValueError("year cannot be None")
+        if month is None:
+            raise ValueError("month cannot be None")
+        
+        blogs = self.blog_table.search((Query().year == year) & (Query().month == month))
+        return blogs
     
     def insert_blog(self, blog: Blog):
         """
@@ -223,7 +273,8 @@ class DatabaseHelper:
         
         self.__insert_category(blog.category)  # 确保分类存在
         # 更新月份数据
-        self.__insert_date(blog) 
+        self.__insert_date(blog)
+        self.__update_blog_num_in_date(blog.year, blog.month)
         # 插入博客数据
         self.blog_table.insert(blog.to_dict()) 
         return {"status": "success", "message": "博客数据插入成功。"}

@@ -7,6 +7,7 @@ body {
 
 .container {
     width: 800px;
+    min-height: 100vh;
     margin: 20px auto;
     background: #dbe2e8;
     padding: 20px;
@@ -34,6 +35,11 @@ body {
 
 .personal-title {
     font-size: 35px;
+    
+}
+.personal-title a{
+    text-decoration: none;
+    color:white;
 }
 
 .personal-intro{
@@ -57,10 +63,26 @@ body {
     color: grey;
     white-space: pre-wrap;
     overflow: hidden;
+    -webkit-line-clamp: 7;
+    line-clamp: 7;
     display: -webkit-box;
-    -webkit-line-clamp: 5;
-    line-clamp: 5;
     -webkit-box-orient: vertical;
+}
+.post_content p {
+    margin-bottom: 0;
+}
+.post_content ul,
+.post_content ol {
+    margin: 0;
+    padding-left: 30px;
+}
+.post_content li {
+    margin: 0;
+    padding: 0;
+    line-height: .5;
+}
+.post_content hr {
+    margin: 5px;
 }
 
 .date {

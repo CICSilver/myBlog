@@ -14,13 +14,17 @@ def hash_string(input: str):
     sha256.update(input.encode('utf-8'))
     return sha256.hexdigest() # 返回十六进制哈希值
 
-# =========================== 路由 ===========================
-@main.route('/')
-def index():
+def init_index_with_blogs(_blogs):
     site_name = "Silver's Blog"
     personal_intro = "人事匆匆，或许有些可以留在这里。"
     categories = dbHelper.get_all_categories()
-    return render_template('index.html', blogs=dbHelper.get_recent_blogs(), site_name=site_name, personal_intro=personal_intro, categories=categories)
+    dateList = dbHelper.get_all_date()
+    return render_template('index.html', blogs=_blogs, site_name=site_name, personal_intro=personal_intro, categories=categories, dateList=dateList)
+
+# =========================== 路由 ===========================
+@main.route('/')
+def index():
+    return init_index_with_blogs(dbHelper.get_recent_blogs())
 
 @main.route('/edit', methods=['GET', 'POST'])
 def edit_blog():
@@ -104,6 +108,15 @@ def admin_verify():
         # 验证失败
         return {"status": "error", "message": "密钥错误"}, 401
 
-@main.route('/categorized_blogs')
-def categorized_blogs():
-    pass
+@main.route('/categorized_blogs/<string:categoryName>')
+def categorized_blogs(categoryName):
+    blogs = dbHelper.get_blogs_by_category(categoryName)
+    # 按最新时间排序blogs
+    blogs.reverse()    
+    return init_index_with_blogs(blogs)
+
+@main.route('/date_blogs/<string:year>/<string:month>')
+def archived_blogs(year, month):
+    blogs = dbHelper.get_blogs_by_date(year, month)
+    blogs.reverse()  # 按最新时间排序blogs
+    return init_index_with_blogs(blogs)

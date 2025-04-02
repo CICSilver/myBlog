@@ -14,7 +14,9 @@
     <div class="container">
       <div class="header">
         <div class="personal-header">
-          <div class="personal-title">{{ site_name }}</div>
+          <div class="personal-title">
+            <a href="{{ url_for('main.index') }}">{{ site_name }}</a>
+          </div>
           <div class="personal-intro">{{ personal_intro}}</div>
         </div>
         <div class="header-btn-grp admin-grp">
@@ -32,10 +34,19 @@
         <ul class="sidebar-list">
           {% for category in categories %}
             <li>
-              <a class="navi-href category-href" href="{{ url_for('main.categorized_blogs')}}">{{ category.name }}({{ category.num }})</a>
+              <a class="navi-href category-href" href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}">{{ category.name }} ({{ category.num }})</a>
             </li>
           {% endfor %}
         </ul>
+        <h3 class="entry-header sidebar-header">ARCHIVES</h3>
+        <ul class="sidebar-list">
+          {% for date in dateList %}
+          <li>
+            <a class="navi-href" href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}">{{ date.year }}.{{ date.month }} ({{ date.num }})</a>
+          </li>
+          {% endfor %}
+        </ul>
+
       </div>
       <div class="main">
         {% for blog in blogs %}
