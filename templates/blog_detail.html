@@ -33,7 +33,11 @@
                 </div>
                 <textarea id="markdown-content" style="display:none;">{{ blog.content | safe }}</textarea>
             </div>
-
+            <p class="entry-footer">
+                <span class="blog-footer">
+                    Posted at {{ blog.date }} {{ blog.time }}
+                </span>
+            </p>
         </div>
     </div>
 
