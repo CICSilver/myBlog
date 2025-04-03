@@ -238,9 +238,9 @@ body {
 .entry-content {
     line-height: 1.5;
 }
-.entry-content p {
+/* .entry-content p {
     text-indent: 2em;
-}
+} */
 
 .navigation {
     text-align: center;
@@ -450,4 +450,11 @@ td {
 
 .category-href {
     font-size: 13px;
+}
+
+.entry-footer {
+    padding-right: 20px;
+    font-size: 13px;
+    color: #666;
+    text-align: right;
 }
