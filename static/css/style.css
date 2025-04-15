@@ -5,6 +5,8 @@ body {
     background-color: #56636f;
 }
 
+
+
 .container {
     width: 800px;
     min-height: 100vh;
@@ -73,13 +75,12 @@ body {
 }
 .post_content ul,
 .post_content ol {
-    margin: 0;
-    padding-left: 30px;
+    margin: 0; /* 移除默认外边距 */
+    padding-left: 20px; /* 设置合理的内边距 */
+    line-height: 1.6; /* 设置行间距 */
 }
 .post_content li {
-    margin: 0;
-    padding: 0;
-    line-height: .5;
+    margin-bottom: 8px; /* 设置列表项之间的间距 */
 }
 .post_content hr {
     margin: 5px;
@@ -457,4 +458,8 @@ td {
     font-size: 13px;
     color: #666;
     text-align: right;
+}
+
+.admin-grp {
+    display: none;
 }

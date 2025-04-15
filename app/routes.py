@@ -1,11 +1,11 @@
-from flask import Blueprint, Flask, render_template, redirect, url_for, request, make_response
+from flask import Blueprint, Flask, render_template, redirect, url_for, request, make_response, jsonify
 from datetime import datetime
 from app.database import DatabaseHelper, Blog
 import json
 import hashlib
 # from app import db
 
-admin_key = "XYR_ADMIN_208236" # 管理员密钥
+admin_device_id = set()
 main = Blueprint('main', __name__)
 dbHelper = DatabaseHelper()
 # ========================= 辅助函数 =========================
@@ -99,22 +99,44 @@ def manage_delete_blog(year, month, html_title):
         return render_template('404.html'), 404
     
     return dbHelper.delete_blog(blog)  # 删除博客
-    
 
-@main.route('/admin_verify', methods=['POST'])
+@main.route('/register')
+def register():
+    return render_template('register.html')
+
+@main.route('/register_device', methods=['GET', 'POST'])
+def register_device():
+    """
+    管理员设备注册
+    """
+    data = request.get_json()
+    device_id = data.get('device_id')
+    print(device_id)
+    if not device_id:
+        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
+    response = dbHelper.insert_device_id(device_id)
+    return response
+
+@main.route('/verify_device', methods=['POST'])
 def admin_verify():
     """
-    管理员验证
+    机器验证
     """
-    key = request.json.get("key")
-    if key == admin_key:  # 验证密钥是否正确
-        # 验证成功，设置 Cookie
-        response = make_response({"status": "success", "message": "验证成功"})
-        response.set_cookie("is_admin", "true", max_age=3600 * 24 * 14)  # 设置有效期为 14 天
-        return response
+    data = request.get_json()
+    device_id = data.get('device_id')
+
+    if not device_id:
+        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
+    
+    response = dbHelper.check_device_id(device_id)
+    if response:
+        return jsonify({"status": "success", "message": "设备验证成功"})
     else:
-        # 验证失败
-        return {"status": "error", "message": "密钥错误"}, 401
+        return jsonify({"status": "failed", "message": "设备验证失败"})
+    
+    
+
+    
 
 @main.route('/categorized_blogs/<string:categoryName>')
 def categorized_blogs(categoryName):

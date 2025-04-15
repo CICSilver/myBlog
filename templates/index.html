@@ -6,6 +6,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
@@ -73,6 +74,28 @@
           // 调用渲染函数
           renderMarkdownPreview(contentId, previewId);
       });
+
+      getBrowserFingerprint().then(fingerprint => {
+        console.log("浏览器指纹:", fingerprint);
+    
+        fetch('/verify_device', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ device_id: fingerprint })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+
+            if(data.status === "success") {
+              document.querySelector('.admin-grp').style.display = 'flex';
+            } else {
+              document.querySelector('.admin-grp').style.display = 'none';
+            }
+        });
+    });
     </script>
   </body>
 
