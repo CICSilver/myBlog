@@ -76,7 +76,6 @@
       });
 
       getBrowserFingerprint().then(fingerprint => {
-        console.log("浏览器指纹:", fingerprint);
     
         fetch('/verify_device', {
             method: 'POST',
@@ -87,7 +86,6 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data.message);
 
             if(data.status === "success") {
               document.querySelector('.admin-grp').style.display = 'flex';

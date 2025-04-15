@@ -11,22 +11,11 @@ function GetDeviceId() {
     return deviceId;
 }
 
-function generateDeviceId() {
-    if (!localStorage.getItem('device_id')) {
-        const deviceId = crypto.randomUUID(); // 使用 UUID 生成唯一标识符
-        localStorage.setItem('device_id', deviceId);
-    }
-    return localStorage.getItem('device_id');
-}
-
 async function getBrowserFingerprint() {
-    // 加载 FingerprintJS 库
     const fp = await FingerprintJS.load();
 
-    // 获取浏览器指纹
     const result = await fp.get();
 
-    // 返回唯一的浏览器指纹 ID
     return result.visitorId;
 }
 
