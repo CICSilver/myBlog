@@ -1,78 +1,53 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
+{% block title %}{{ blog.title }} - {{ site_name | default('Mole\'s Hole') }}{% endblock %}
 
-<head>
-    <!-- Debug -->
-    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
-    <!-- Release -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+{% endblock %}
 
-    <!-- Highlight.js -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
-</head>
-
-<body>
-    <div class="container">
-        <div class="header">My Blog</div>
-        <div class="entry">
-            <div class="navigation">
-                <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
-            </div>
-            <div class="entry-header">
-                {{ blog.title }}
-            </div>
-            <div class="markdown-container">
-                <div class="entry-content markdown-body" id="markdown-preview">
-                    <div id="markdown-preview"></div>
-                </div>
-                <textarea id="markdown-content" style="display:none;">{{ blog.content | safe }}</textarea>
-            </div>
-            <p class="entry-footer">
-                <span class="blog-footer">
-                    Posted at {{ blog.date }} {{ blog.time }}
-                </span>
-            </p>
-        </div>
+{% block content %}
+  <div class="entry">
+    <div class="navigation">
+      <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
     </div>
+    <div class="entry-header">{{ blog.title }}</div>
+    <div class="markdown-container">
+      <div class="entry-content markdown-body" id="markdown-preview"></div>
+      <textarea id="markdown-content" style="display:none;">{{ blog.content | safe }}</textarea>
+    </div>
+    <p class="entry-footer">
+      <span class="blog-footer">发表于 {{ blog.date }} {{ blog.time }}</span>
+    </p>
+  </div>
+{% endblock %}
 
-    <script>
-        // 配置 marked.js 使用 highlight.js
-        marked.setOptions({
-            highlight: function (code, lang) {
-                // 如果指定了语言，使用 highlight.js 渲染
-                if (lang && hljs.getLanguage(lang)) {
-                    return hljs.highlight(code, { language: lang }).value;
-                }
-                // 如果未指定语言，使用自动检测
-                return hljs.highlightAuto(code).value;
-            }
-        });
-
-        // 获取隐藏的 Markdown 文本
-        const markdownContent = document.getElementById('markdown-content').value;
-
-        // 使用 marked.js 渲染 Markdown 内容为 HTML
-        document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
-    </script>
-
-    <style>
-        .markdown-container pre {
-            background-color: #1e1e1e;
-            /* 设置代码块的背景色为黑色 */
-            color: #d4d4d4;
-            /* 设置代码块的文字颜色 */
-            padding: 10px;
-            /* 添加内边距 */
-            border-radius: 5px;
-            /* 添加圆角 */
-            overflow-x: auto;
-            /* 允许水平滚动 */
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+  <script>
+    // marked + highlight 渲染
+    marked.setOptions({
+      highlight: function (code, lang) {
+        if (lang && window.hljs && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
         }
-    </style>
-</body>
+        return window.hljs ? hljs.highlightAuto(code).value : code;
+      }
+    });
+    const markdownContent = document.getElementById('markdown-content').value;
+    document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
+  </script>
+  <style>
+    .markdown-container pre {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+  </style>
+{% endblock %}
+

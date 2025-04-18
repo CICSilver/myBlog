@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{{ site_name | default("Mole's Hole") }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">
+          <h1 class="brand-title"><a href="{{ url_for('main.index') }}">{{ site_name | default("Mole's Hole") }}</a></h1>
+          {% if personal_intro is defined %}
+          <h2 class="brand-subtitle">{{ personal_intro }}</h2>
+          {% endif %}
+        </div>
+        <div class="header-actions">
+          <button class="index-btn theme-toggle" id="themeToggle" aria-label="切换主题">🌙</button>
+          <div class="header-btn-grp admin-grp">
+            <button class="index-btn" onclick="logout()">注销</button>
+            <button class="index-btn" onclick="navigateToWriting()">写日志</button>
+            <button class="index-btn" onclick="navigateToManage()">管理</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+
+    <script>
+      // 全局注销方法
+      async function logout() {
+        if (!window.getBrowserFingerprint) return;
+        const fingerprint = await getBrowserFingerprint();
+        fetch('/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_id: fingerprint })
+        })
+        .then(r => r.json())
+        .then(data => { if (data.status === 'success') location.href = '/'; else alert(data.message); })
+        .catch(() => {});
+      }
+
+      // 管理员验证：显示/隐藏管理按钮组
+      (function () {
+        if (!window.getBrowserFingerprint) return;
+        getBrowserFingerprint().then((fingerprint) => {
+          fetch('/verify_device', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id: fingerprint })
+          })
+          .then((r) => r.json())
+          .then((data) => {
+            var grp = document.querySelector('.admin-grp');
+            if (!grp) return;
+            if (data.status === 'success') {
+              grp.style.display = 'flex';
+            } else {
+              grp.style.display = 'none';
+            }
+          })
+          .catch(() => {});
+        });
+      })();
+
+      // 主题切换 + 持久化
+      (function () {
+        var root = document.documentElement;
+        var btn = document.getElementById('themeToggle');
+        var saved = localStorage.getItem('theme') || 'light';
+        root.setAttribute('data-theme', saved);
+        if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+
+        function toggle() {
+          var current = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', current);
+          localStorage.setItem('theme', current);
+          if (btn) btn.textContent = current === 'dark' ? '☀️' : '🌙';
+        }
+        if (btn) btn.addEventListener('click', toggle);
+      })();
+    </script>
+  </body>
+  
+</html>

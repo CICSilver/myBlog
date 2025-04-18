@@ -1,0 +1,1674 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BG8HD82H2S"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BG8HD82H2S');
+</script>
+   <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+   <meta name="generator" content="Movable Type 3.2b5" />
+   
+   <link rel="stylesheet" media="screen and (min-device-width:641px)" href="https://blog.codingnow.com/styles-site.css" type="text/css" />
+   <link rel="stylesheet" media="screen and (max-device-width:640px)" href="https://blog.codingnow.com/mobile.css" type="text/css" />
+   <link rel="stylesheet" type="text/css" media="all" href="/mtcolorer.css" />
+   <link rel="alternate" type="application/atom+xml" title="Atom" href="https://blog.codingnow.com/atom.xml" />
+   <link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://blog.codingnow.com/index.xml" />
+   
+   <title>云风的 BLOG</title>
+   
+   <link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://blog.codingnow.com/rsd.xml" />
+   
+   
+</head>
+<body class="layout-two-column-right">
+   <div id="container">
+      <div id="container-inner" class="pkg">
+      
+         <div id="banner">
+            <div id="banner-inner" class="pkg">
+               <h1 id="banner-header"><a href="https://blog.codingnow.com/" accesskey="1">云风的 BLOG</a></h1>
+               <h2 id="banner-description">思绪来得快去得也快，偶尔会在这里停留</h2>
+            </div>
+         </div>
+         
+         <div id="pagebody">
+            <div id="pagebody-inner" class="pkg">
+               <div id="alpha">
+                  <div id="alpha-inner" class="pkg">
+                  
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/08/lua_class.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1272"
+    dc:title="在 Lua 中定义类型的简单方法"
+    dc:identifier="https://blog.codingnow.com/2025/08/lua_class.html"
+    dc:subject="lua与虚拟机"
+    dc:description="我通常用 Lua 定义一个类型只需要这样做： - 定义一个 object 的新类型 local object = {}; object.__index = object - 定义构建 object 的函数 local function new_object(self) return setmetatable(self or {}, object) end - 给 object 添加一个 get 方法 function object:get(what) return self[what] end - 测试一下..."
+    dc:creator="Cloud"
+    dc:date="2025-08-26T08:37:50+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">August 26, 2025</h2>
+                     <a id="a001312"></a>
+                     <div class="entry" id="entry-1312">
+                        <h3 class="entry-header">在 Lua 中定义类型的简单方法</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>我通常用 Lua 定义一个类型只需要这样做：</p>
+
+<pre>
+-- 定义一个 object 的新类型
+local object = {}; object.__index = object
+
+-- 定义构建 object 的函数
+local function new_object(self)
+  return setmetatable(self or {}, object)
+end
+
+-- 给 object 添加一个 get 方法
+function object:get(what)
+  return self[what]
+end
+
+-- 测试一下
+local obj = new_object { x = "x" }
+assert(obj:get "x" == "x")
+</pre>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/08/lua_class.html#more">阅读全文 "在 Lua 中定义类型的简单方法" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 08:37 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/08/lua_class.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/08/lua_class.html#comments">留言 (5)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/08/gamedev.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1271"
+    dc:title="编写游戏程序的一些启示"
+    dc:identifier="https://blog.codingnow.com/2025/08/gamedev.html"
+    dc:subject="游戏开发"
+    dc:description="这个月我开了个新项目：制作 deep future 的电子版。 之所以做这个事情，是因为我真的很喜欢这个游戏。而过去一年我在构思一个独立游戏的玩法时好像进入了死胡同，我需要一些设计灵感，又需要写点代码保持一下开发状态。思来想去，我确定制作一个成熟桌游的电子版是一个不错的练习。而且这个游戏的单人玩法很接近电子游戏中的 4x 类型，那也是我喜欢的，等还原了原版桌游规则后，我应该可以以此为基础创造一些适合电子游戏特性的东西来。 另一方面，我自以为了解游戏软件从屏幕上每个像素点到最终游戏的技术原理，大部分的过程都亲身实践过。但我总感觉上层的东西，尤其是游戏玩法、交互等部分开发起来没有底层（尤其是引擎部分）顺畅。我也看到很多实际游戏项目的开发周期远大于预期，似乎开发时间被投进了黑洞。 在 GameJam 上两个晚上可以做出的游戏原型，往往又需要花掉 2,3 年时间磨练成成品。我想弄清楚到底遇到了怎样的困难，那些不明不白消耗掉的开发时间到底去了哪里。..."
+    dc:creator="Cloud"
+    dc:date="2025-08-23T01:14:10+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">August 23, 2025</h2>
+                     <a id="a001311"></a>
+                     <div class="entry" id="entry-1311">
+                        <h3 class="entry-header">编写游戏程序的一些启示</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>这个月我开了个新项目：制作 <a href="https://blog.codingnow.com/2025/07/deep_future.html">deep future</a> 的电子版。</p>
+
+<p>之所以做这个事情，是因为我真的很喜欢这个游戏。而过去一年我在构思一个独立游戏的玩法时好像进入了死胡同，我需要一些设计灵感，又需要写点代码保持一下开发状态。思来想去，我确定制作一个成熟桌游的电子版是一个不错的练习。而且这个游戏的单人玩法很接近电子游戏中的 4x 类型，那也是我喜欢的，等还原了原版桌游规则后，我应该可以以此为基础创造一些适合电子游戏特性的东西来。</p>
+
+<p>另一方面，我自以为了解游戏软件从屏幕上每个像素点到最终游戏的技术原理，大部分的过程都亲身实践过。但我总感觉上层的东西，尤其是游戏玩法、交互等部分开发起来没有底层（尤其是引擎部分）顺畅。我也看到很多实际游戏项目的开发周期远大于预期，似乎开发时间被投进了黑洞。</p>
+
+<p>在 GameJam 上两个晚上可以做出的游戏原型，往往又需要花掉 2,3 年时间磨练成成品。我想弄清楚到底遇到了怎样的困难，那些不明不白消耗掉的开发时间到底去了哪里。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/08/gamedev.html#more">阅读全文 "编写游戏程序的一些启示" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 01:14 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/08/gamedev.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/08/gamedev.html#comments">留言 (4)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1270"
+    dc:title="SetWindowText 引起的死锁"
+    dc:identifier="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html"
+    dc:subject="Windows"
+    dc:description="最近发现我在写的小游戏在启动时有很小的概率黑屏。我使用的是 ltask 多线程框架，在黑屏时感觉 ltask 并没有停止工作，似乎只是管理窗口的部分（线程/服务）卡死了。 窗口管理使用的是 sokol_app 做的多平台封装，这只是一个很浅的封装层，但已经够用。我觉得美中不足的是，sokol_app 的 frame 回调函数是放在 WinProc 中，由 Windows 的消息循环被动调度，而不是放在外层的主动 GetMessage 循环中。 即，在 Windows 程序中，线程通常会在最外面写一个这样的 while 循环：..."
+    dc:creator="Cloud"
+    dc:date="2025-08-09T10:51:37+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">August 09, 2025</h2>
+                     <a id="a001310"></a>
+                     <div class="entry" id="entry-1310">
+                        <h3 class="entry-header">SetWindowText 引起的死锁</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>最近发现我在写的小游戏在启动时有很小的概率黑屏。我使用的是 ltask 多线程框架，在黑屏时感觉 ltask 并没有停止工作，似乎只是管理窗口的部分（线程/服务）卡死了。</p>
+
+<p>窗口管理使用的是 <code>sokol_app</code> 做的多平台封装，这只是一个很浅的封装层，但已经够用。我觉得美中不足的是，<code>sokol_app</code> 的 frame 回调函数是放在 WinProc 中，由 Windows 的消息循环被动调度，而不是放在外层的主动 GetMessage 循环中。</p>
+
+<p>即，在 Windows 程序中，线程通常会在最外面写一个这样的 while 循环：</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html#more">阅读全文 "SetWindowText 引起的死锁" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 10:51 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html#comments">留言 (6)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/07/jogging.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1269"
+    dc:title="慢跑"
+    dc:identifier="https://blog.codingnow.com/2025/07/jogging.html"
+    dc:subject="杂记"
+    dc:description="我这两年攀岩时总是体力不够用，出去野攀如果需要先爬山接近的话，往往爬到岩壁下就累个半死不想动了。而我那帮 50 多岁的岩友一个个都比我有活力的多。所以我想通过有氧运动改善一下心肺功能。岩友建议我试试慢跑。 去年底痛风发作 后也考虑过减少一些体重，据说有利于降低尿酸。但有点懒就一直没有开始跑。..."
+    dc:creator="Cloud"
+    dc:date="2025-07-20T12:21:00+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">July 20, 2025</h2>
+                     <a id="a001309"></a>
+                     <div class="entry" id="entry-1309">
+                        <h3 class="entry-header">慢跑</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>我这两年攀岩时总是体力不够用，出去野攀如果需要先爬山接近的话，往往爬到岩壁下就累个半死不想动了。而我那帮 50 多岁的岩友一个个都比我有活力的多。所以我想通过有氧运动改善一下心肺功能。岩友建议我试试慢跑。</p>
+
+<p>去年底<a href="https://blog.codingnow.com/2024/11/podalgia.html">痛风发作</a> 后也考虑过减少一些体重，据说有利于降低尿酸。但有点懒就一直没有开始跑。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/07/jogging.html#more">阅读全文 "慢跑" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 12:21 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/07/jogging.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/07/jogging.html#comments">留言 (12)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/07/deep_future.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1268"
+    dc:title="极度未来（ Deep Future ）给我的启发"
+    dc:identifier="https://blog.codingnow.com/2025/07/deep_future.html"
+    dc:subject="桌面游戏"
+    dc:description="最近我在 bgg 上闲逛时了解到了“Make-as-You-Play”这个游戏子类型，感觉非常有趣。它是一种用纸笔 DIY （或叫 PnP Print and Play）的游戏，但又和传统 DIY 游戏不同，并不是一开始把游戏做好然后再玩，而是边做边玩。对于前者，大多数优秀的 PnP 都有专业发行商发行，如果想玩可以买一套精美的制成品；但 Make as You Play 不同，做的过程是无法取代的，做游戏就是玩的一部分。 极度未来 Deep Future 是“做即是玩”类型的代表作。它太经典了，以至于有非常多的玩家变体、换皮重制。我玩的官方 1.6 版规则。btw ，作者在 bgg 上很活跃，我在官方论坛八年前的规则讨论贴上问了个规则细节：战斗阶段是否可以不损耗人口“假打”而只是为了获得额外加成效果。作者立刻就回复了，并表示会在未来的 1.7 规则书上澄清这一点。 读规则书的确需要一点时间，但理解了游戏设计精神后，规则其实都很自然，所以游戏进程会很流畅。不过依然有许多细节分散在规则书各处，只有在玩过之后才会注意到。我（单人）玩了两个整天，大约玩了接近 100 局，酣畅淋漓。整个游戏的过程有如一部太空歌剧般深深的刻印在我的脑海里，出生就灭亡的文明、离胜利只有一步之遥的遗憾、兴起衰落、各种死法颇有 RogueLike 游戏的精神。难怪有玩家会经年玩一场战役，为只属于自己战役的科技和文明设计精美的卡片。 在玩错了很多规则细节后，我的第一场战役膨胀到了初始卡组的两倍，而我也似乎还无法顺利胜利哪怕一局。所以我决定重开一盒游戏。新的战役只用了 5 盘就让银河推进到了第二纪元（胜利一次），并在地图上留下了永久印记，并制作了第一张文明卡片。这些会深刻的影响同场战役的后续游戏进程。 我感觉这就是这类游戏的亮点：每场游戏都是独特的。玩的时间越长，当前游戏宇宙的特点就有越来越深刻的理解：宇宙中有什么特别的星球、科技、地图的每个区域有不同的宜居星球密度，哪里的战斗强度会更大一些…… 虽然我只玩了单人模式，但游戏支持最多三人。多人游戏可以协作也可以对抗。你可以邀请朋友偶尔光临你的宇宙玩上两盘，不同的玩家会为同一个宇宙留下不同的遗产。和很多遗产类游戏不同，这个游戏只要玩几乎一定会留下点什么，留不下遗产的游戏局是及其罕见的。也就是说，只要玩下去哪怕一小盘都会将游戏无法逆转的改变。..."
+    dc:creator="Cloud"
+    dc:date="2025-07-13T12:50:02+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">July 13, 2025</h2>
+                     <a id="a001308"></a>
+                     <div class="entry" id="entry-1308">
+                        <h3 class="entry-header">极度未来（ Deep Future ）给我的启发</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>最近我在 bgg 上闲逛时了解到了“Make-as-You-Play”这个游戏子类型，感觉非常有趣。它是一种用纸笔 DIY （或叫 PnP Print and Play）的游戏，但又和传统 DIY 游戏不同，并不是一开始把游戏做好然后再玩，而是边做边玩。对于前者，大多数优秀的 PnP 都有专业发行商发行，如果想玩可以买一套精美的制成品；但 Make as You Play 不同，做的过程是无法取代的，做游戏就是玩的一部分。</p>
+
+<p>极度未来 <a href="https://boardgamegeek.com/boardgame/194986/deep-future">Deep Future</a> 是“做即是玩”类型的代表作。它太经典了，以至于有非常多的玩家变体、换皮重制。我玩的官方 1.6 版规则。btw ，作者在 bgg 上很活跃，我在官方论坛八年前的规则讨论贴上问了个规则细节：战斗阶段是否可以不损耗人口“假打”而只是为了获得额外加成效果。作者立刻就回复了，并表示会在未来的 1.7 规则书上澄清这一点。</p>
+
+<p>读规则书的确需要一点时间，但理解了游戏设计精神后，规则其实都很自然，所以游戏进程会很流畅。不过依然有许多细节分散在规则书各处，只有在玩过之后才会注意到。我（单人）玩了两个整天，大约玩了接近 100 局，酣畅淋漓。整个游戏的过程有如一部太空歌剧般深深的刻印在我的脑海里，出生就灭亡的文明、离胜利只有一步之遥的遗憾、兴起衰落、各种死法颇有 RogueLike 游戏的精神。难怪有玩家会经年玩一场战役，为只属于自己战役的科技和文明设计精美的卡片。</p>
+
+<p>在玩错了很多规则细节后，我的第一场战役膨胀到了初始卡组的两倍，而我也似乎还无法顺利胜利哪怕一局。所以我决定重开一盒游戏。新的战役只用了 5 盘就让银河推进到了第二纪元（胜利一次），并在地图上留下了永久印记，并制作了第一张文明卡片。这些会深刻的影响同场战役的后续游戏进程。</p>
+
+<p>我感觉这就是这类游戏的亮点：每场游戏都是独特的。玩的时间越长，当前游戏宇宙的特点就有越来越深刻的理解：宇宙中有什么特别的星球、科技、地图的每个区域有不同的宜居星球密度，哪里的战斗强度会更大一些…… 虽然我只玩了单人模式，但游戏支持最多三人。多人游戏可以协作也可以对抗。你可以邀请朋友偶尔光临你的宇宙玩上两盘，不同的玩家会为同一个宇宙留下不同的遗产。和很多遗产类游戏不同，这个游戏只要玩几乎一定会留下点什么，留不下遗产的游戏局是及其罕见的。也就是说，只要玩下去哪怕一小盘都会将游戏无法逆转的改变。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/07/deep_future.html#more">阅读全文 "极度未来（ Deep Future ）给我的启发" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 12:50 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/07/deep_future.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/07/deep_future.html#comments">留言 (2)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/06/kids.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1267"
+    dc:title="育儿的一些日常"
+    dc:identifier="https://blog.codingnow.com/2025/06/kids.html"
+    dc:subject="杂记"
+    dc:description="以下从我最近两个月发的推文中整理。 可可 晚上可可读着书在床上睡着了。我没叫醒她，给她盖了被子就睡了。早上醒来时她跟我说，完蛋了，昨天晚上我没有洗澡。我说没关系，别被妈妈发现就好了。然后她蹑手蹑脚的偷偷起来换了身衣服，然后又躺回来睡觉。 可可的同学喊她联机 minecraft ，我在隔壁看书，听她们在微信上聊了半天硬是鸡对鸭讲。我过去跟她说，你把电脑屏幕拍个照片给她看不就好了。结果对面喊了句：你怎么玩国际版啊，我玩的是网易中国版，然后安慰可可说，你自己玩也是可以的。我想：到底谁是正版受害者？ 可可最近在读的一本小说突然就找不到了，她怎么都想不起来在哪里。我花了许多时间引导她回忆，终于想起是周三的课外班落在隔壁班的教室里了。如果缺乏引导，她的记忆是绝对不可能打开的。周五家长会，我特地提前了 5 分钟到学校，和隔壁班主任解释了一番，在教室仔细搜寻，果然找到了。可可很开心。 可可最近读书挺认真的，问了好多问题。前几天问了好几个成语的意思，又比问了什么时候用——（破折号），还讨论了为什么小说里要写那么多她觉得并不精彩的情节。 可可二年级，我最近发现她数学是真的不行 :( 今天检查作业错了一道题，引导了半天才发现她对 100 以上的数字概念都没建立起来。比如知道 10 个 100 是 1000 ，但她觉得 20 个 100 是一万，而且讲了一个小时才纠正过来。果然，人类天生的感知就是对数的么？本福特定理诚不我欺。 我觉得文字阅读能力对人的一生非常重要，而现在的小孩娃很难自发练习了 :( 试过很多方法培养兴趣，还是很难。最近一个月试着强制每天半小时文字阅读。两个娃都还听话，虽然觉得是个负担，但也认了这个任务。但经过一段事件，感觉阅读能力真的有提高(从阅读速度判断）。 可可看了几部关于老鼠的小说后，已经开始跟同学说地球上最聪明的动物是老鼠，地球就是老鼠造的计算机了。 可可迷上和我一起玩 rimworld 。假期跟妈妈出去旅行，回到家第一件事就是让我打开电脑继续抓一只豚鼠当宠物。知道游戏可以通过存档回退时间后，她让我试了一下在婚礼上把除新娘之外的人全部杀掉。等她长大，我一定推荐她看一遍杀死比尔。 可可说看到短视频中说 switch 的卡带是苦的。我说你要不要试试，她挑了一张舔了一下说好苦啊。云豆说我也试试。过了一会，可可又换了一张再舔了一下，这下她相信每张 switch 卡带都非常苦了。 可可说，我们玩个游戏，我问你问题，你必须马上回答。我说好。可可问：你最喜欢哥哥还是我？看我没说话，她说，算了，这个问题不好，下一个问题…… 应朋友邀请去扬州玩。在扬泰机场跟可可讲李白的诗，我说古时候送别朋友远行，可能就一辈子不会再见了。可可问，不能打电话吗？..."
+    dc:creator="Cloud"
+    dc:date="2025-06-15T18:52:47+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">June 15, 2025</h2>
+                     <a id="a001307"></a>
+                     <div class="entry" id="entry-1307">
+                        <h3 class="entry-header">育儿的一些日常</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>以下从我最近两个月发的推文中整理。</p>
+
+<h1>可可</h1>
+
+<ol>
+<li><p>晚上可可读着书在床上睡着了。我没叫醒她，给她盖了被子就睡了。早上醒来时她跟我说，完蛋了，昨天晚上我没有洗澡。我说没关系，别被妈妈发现就好了。然后她蹑手蹑脚的偷偷起来换了身衣服，然后又躺回来睡觉。</p></li>
+<li><p>可可的同学喊她联机 minecraft ，我在隔壁看书，听她们在微信上聊了半天硬是鸡对鸭讲。我过去跟她说，你把电脑屏幕拍个照片给她看不就好了。结果对面喊了句：你怎么玩国际版啊，我玩的是网易中国版，然后安慰可可说，你自己玩也是可以的。我想：到底谁是正版受害者？</p></li>
+<li><p>可可最近在读的一本小说突然就找不到了，她怎么都想不起来在哪里。我花了许多时间引导她回忆，终于想起是周三的课外班落在隔壁班的教室里了。如果缺乏引导，她的记忆是绝对不可能打开的。周五家长会，我特地提前了 5 分钟到学校，和隔壁班主任解释了一番，在教室仔细搜寻，果然找到了。可可很开心。</p></li>
+<li><p>可可最近读书挺认真的，问了好多问题。前几天问了好几个成语的意思，又比问了什么时候用——（破折号），还讨论了为什么小说里要写那么多她觉得并不精彩的情节。</p></li>
+<li><p>可可二年级，我最近发现她数学是真的不行 :( 今天检查作业错了一道题，引导了半天才发现她对 100 以上的数字概念都没建立起来。比如知道 10 个 100 是 1000 ，但她觉得 20 个 100 是一万，而且讲了一个小时才纠正过来。果然，人类天生的感知就是对数的么？本福特定理诚不我欺。</p></li>
+<li><p>我觉得文字阅读能力对人的一生非常重要，而现在的小孩娃很难自发练习了 :( 试过很多方法培养兴趣，还是很难。最近一个月试着强制每天半小时文字阅读。两个娃都还听话，虽然觉得是个负担，但也认了这个任务。但经过一段事件，感觉阅读能力真的有提高(从阅读速度判断）。</p></li>
+<li><p>可可看了几部关于老鼠的小说后，已经开始跟同学说地球上最聪明的动物是老鼠，地球就是老鼠造的计算机了。</p></li>
+<li><p>可可迷上和我一起玩 rimworld 。假期跟妈妈出去旅行，回到家第一件事就是让我打开电脑继续抓一只豚鼠当宠物。知道游戏可以通过存档回退时间后，她让我试了一下在婚礼上把除新娘之外的人全部杀掉。等她长大，我一定推荐她看一遍杀死比尔。</p></li>
+<li><p>可可说看到短视频中说 switch 的卡带是苦的。我说你要不要试试，她挑了一张舔了一下说好苦啊。云豆说我也试试。过了一会，可可又换了一张再舔了一下，这下她相信每张 switch 卡带都非常苦了。</p></li>
+<li><p>可可说，我们玩个游戏，我问你问题，你必须马上回答。我说好。可可问：你最喜欢哥哥还是我？看我没说话，她说，算了，这个问题不好，下一个问题……</p></li>
+<li><p>应朋友邀请去扬州玩。在扬泰机场跟可可讲李白的诗，我说古时候送别朋友远行，可能就一辈子不会再见了。可可问，不能打电话吗？</p></li>
+</ol>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/06/kids.html#more">阅读全文 "育儿的一些日常" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 06:52 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/06/kids.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/06/kids.html#comments">留言 (12)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/06/elevator.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1266"
+    dc:title="电梯的交互和调度"
+    dc:identifier="https://blog.codingnow.com/2025/06/elevator.html"
+    dc:subject="杂记"
+    dc:description="今天在网上和人闲扯，说到电梯的交互设计或许是有问题的。一般在楼宇的电梯区，会设置上下两个按钮，让乘客表达自己是要上行还是下行。如果在电梯区显示电梯当前所在楼层的话，就会有人理解为：上是指让电梯轿厢向上运行，下是指让其向下。一旦这样理解，就会输入错误的指令。 几乎每个有过在高层办公室上班经历的程序员都参与过电梯调度算法的讨论。看来，在饭点挤电梯是程序员们的共同记忆。（另一个永恒话题是怎样提高厕所的使用效率）我也不例外，20 多年里，我曾经反反复复和人讨论过这个问题。现在再也不用挤电梯了，似乎可以把过去考虑过的方案记录一下。..."
+    dc:creator="Cloud"
+    dc:date="2025-06-09T14:02:45+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">June 09, 2025</h2>
+                     <a id="a001306"></a>
+                     <div class="entry" id="entry-1306">
+                        <h3 class="entry-header">电梯的交互和调度</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>今天在网上和人闲扯，说到电梯的交互设计或许是有问题的。一般在楼宇的电梯区，会设置上下两个按钮，让乘客表达自己是要上行还是下行。如果在电梯区显示电梯当前所在楼层的话，就会有人理解为：上是指让电梯轿厢向上运行，下是指让其向下。一旦这样理解，就会输入错误的指令。</p>
+
+<p>几乎每个有过在高层办公室上班经历的程序员都参与过电梯调度算法的讨论。看来，在饭点挤电梯是程序员们的共同记忆。（另一个永恒话题是怎样提高厕所的使用效率）我也不例外，20 多年里，我曾经反反复复和人讨论过这个问题。现在再也不用挤电梯了，似乎可以把过去考虑过的方案记录一下。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/06/elevator.html#more">阅读全文 "电梯的交互和调度" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 02:02 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/06/elevator.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/06/elevator.html#comments">留言 (11)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/05/a_star_pathfinding.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1265"
+    dc:title="一个简单的 A star 寻路算法实现"
+    dc:identifier="https://blog.codingnow.com/2025/05/a_star_pathfinding.html"
+    dc:subject="算法与数据结构"
+    dc:description="我需要一个接口简单的寻路模块，所以今天写了一个 。其实之前也写过很多版本，在我上传代码时就发现我自己的 github 账号下早有同名仓库。不过，之前的版本的接口设计不太满意，直接删掉了，用这次的新版本复用老的仓库名字。 我希望达到的目标是，C 接口简单易用，且和地图本身的数据结构无关，只提供寻路功能。这样容易拓展到不同应用场景。 数据结构简单，内存开销固定，在算法执行过程中不额外分配内存。这可以方便的在多线程环境运行。 我不需要处理特别复杂和规模巨大的地图，那种场景应该额外做一些预处理。但在起点和终点的路线结果不长时（即使在大规模地图上），应该有较好的性能。..."
+    dc:creator="Cloud"
+    dc:date="2025-05-14T12:05:48+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">May 14, 2025</h2>
+                     <a id="a001305"></a>
+                     <div class="entry" id="entry-1305">
+                        <h3 class="entry-header">一个简单的 A star 寻路算法实现</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>我需要一个接口简单的寻路模块，所以<a href="https://github.com/cloudwu/pathfinding">今天写了一个</a> 。其实之前也写过很多版本，在我上传代码时就发现我自己的 github 账号下早有同名仓库。不过，之前的版本的接口设计不太满意，直接删掉了，用这次的新版本复用老的仓库名字。</p>
+
+<p>我希望达到的目标是，C 接口简单易用，且和地图本身的数据结构无关，只提供寻路功能。这样容易拓展到不同应用场景。</p>
+
+<p>数据结构简单，内存开销固定，在算法执行过程中不额外分配内存。这可以方便的在多线程环境运行。</p>
+
+<p>我不需要处理特别复杂和规模巨大的地图，那种场景应该额外做一些预处理。但在起点和终点的路线结果不长时（即使在大规模地图上），应该有较好的性能。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/05/a_star_pathfinding.html#more">阅读全文 "一个简单的 A star 寻路算法实现" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 12:05 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/05/a_star_pathfinding.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/05/a_star_pathfinding.html#comments">留言 (7)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/05/dbg_rules_7.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1264"
+    dc:title="卡牌构筑类桌游核心规则之七"
+    dc:identifier="https://blog.codingnow.com/2025/05/dbg_rules_7.html"
+    dc:subject="桌面游戏"
+    dc:description="纯单人游戏在桌面游戏中不太多见，但我很喜欢这种。毕竟，找人一起玩桌游太不容易，虽然多人协作桌游总可以一个人操控多方进行 solo ，但终究不是为单人游戏设计的。今天介绍的两款单人卡牌游戏，我没买到实体版，都只是在桌游模拟器上玩过几盘。 第一款是 Legacy of Yu (2023) 大禹治水。老实说，这不是一款卡牌“构筑”游戏。虽然在游戏过程中玩家还是需要从市场列“购买”新卡片，但游戏过程并不是围绕构筑进行的。这些卡牌更像是消耗品。..."
+    dc:creator="Cloud"
+    dc:date="2025-05-08T14:48:19+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">May 08, 2025</h2>
+                     <a id="a001304"></a>
+                     <div class="entry" id="entry-1304">
+                        <h3 class="entry-header">卡牌构筑类桌游核心规则之七</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>纯单人游戏在桌面游戏中不太多见，但我很喜欢这种。毕竟，找人一起玩桌游太不容易，虽然多人协作桌游总可以一个人操控多方进行 solo ，但终究不是为单人游戏设计的。今天介绍的两款单人卡牌游戏，我没买到实体版，都只是在桌游模拟器上玩过几盘。</p>
+
+<p>第一款是 Legacy of Yu (2023) 大禹治水。老实说，这不是一款卡牌“构筑”游戏。虽然在游戏过程中玩家还是需要从市场列“购买”新卡片，但游戏过程并不是围绕构筑进行的。这些卡牌更像是消耗品。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/05/dbg_rules_7.html#more">阅读全文 "卡牌构筑类桌游核心规则之七" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 02:48 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/05/dbg_rules_7.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/05/dbg_rules_7.html#comments">留言 (1)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/04/log_e.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1263"
+    dc:title="对数和自然对数的底"
+    dc:identifier="https://blog.codingnow.com/2025/04/log_e.html"
+    dc:subject="读书"
+    dc:description="最近读了一本书：《数学的雨伞下》。阅读体验非常好，这本书用浅显的语言，科普了许多深刻的道理。这本书所介绍的知识结构比较类似我挺喜欢的另一本《从一到无穷大》，但讲解更为细致一些，以至于如果事先明白这些知识，甚至会觉得有些冗长。但细细品味，会觉得理解能更深一层。 我在通读完一遍之后，这几天带着儿子精读。重读第一章中“对数之桥”一节时，我思考了一个问题：当年纳皮尔 Napier 到底出于什么动机制作一张高精度对数表，他制表的计算思路是怎样的。书中并没有答案，所以我又在互联网上翻看了当年 Napier 原著 Mirifici Logarithmorum Canonis Descriptio 的介绍，感觉收获颇丰。..."
+    dc:creator="Cloud"
+    dc:date="2025-04-10T22:52:40+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">April 10, 2025</h2>
+                     <a id="a001303"></a>
+                     <div class="entry" id="entry-1303">
+                        <h3 class="entry-header">对数和自然对数的底</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>最近读了一本书：《<a href="https://book.douban.com/subject/36379937/">数学的雨伞下</a>》。阅读体验非常好，这本书用浅显的语言，科普了许多深刻的道理。这本书所介绍的知识结构比较类似我挺喜欢的另一本《从一到无穷大》，但讲解更为细致一些，以至于如果事先明白这些知识，甚至会觉得有些冗长。但细细品味，会觉得理解能更深一层。</p>
+
+<p>我在通读完一遍之后，这几天带着儿子精读。重读第一章中“对数之桥”一节时，我思考了一个问题：当年纳皮尔 Napier 到底出于什么动机制作一张高精度对数表，他制表的计算思路是怎样的。书中并没有答案，所以我又在互联网上翻看了当年 Napier 原著 <a href="https://en.wikipedia.org/wiki/Mirifici_Logarithmorum_Canonis_Descriptio">Mirifici Logarithmorum Canonis Descriptio</a> 的介绍，感觉收获颇丰。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/04/log_e.html#more">阅读全文 "对数和自然对数的底" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 10:52 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/04/log_e.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/04/log_e.html#comments">留言 (4)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/04/dbg_rules_6.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1262"
+    dc:title="卡牌构筑类桌游核心规则之六"
+    dc:identifier="https://blog.codingnow.com/2025/04/dbg_rules_6.html"
+    dc:subject=""
+    dc:description="这次介绍两款在国内人气不高的卡牌构筑类桌游。游戏都还不错，可能是因为没有中文版，所以身边没见什么朋友玩。 首先是 XenoShyft 。它的最初版全名为 XenoShyft: Onslaught (2015) ，后来又出了一个可以独立玩的扩展 XenoShyft: Dreadmire (2017) 。 故事背景有点像星河舰队：由人类军士抵抗虫子大军。简单说，这是一个塔防游戏：游戏分为三个波次，每个波次三轮，一共要面对九轮虫群的冲锋。..."
+    dc:creator="Cloud"
+    dc:date="2025-04-08T21:10:54+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">April 08, 2025</h2>
+                     <a id="a001302"></a>
+                     <div class="entry" id="entry-1302">
+                        <h3 class="entry-header">卡牌构筑类桌游核心规则之六</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>这次介绍两款在国内人气不高的卡牌构筑类桌游。游戏都还不错，可能是因为没有中文版，所以身边没见什么朋友玩。</p>
+
+<p>首先是 XenoShyft 。它的最初版全名为 XenoShyft: Onslaught (2015) ，后来又出了一个可以独立玩的扩展 XenoShyft: Dreadmire (2017) 。</p>
+
+<p>故事背景有点像星河舰队：由人类军士抵抗虫子大军。简单说，这是一个塔防游戏：游戏分为三个波次，每个波次三轮，一共要面对九轮虫群的冲锋。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/04/dbg_rules_6.html#more">阅读全文 "卡牌构筑类桌游核心规则之六" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 09:10 PM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/04/dbg_rules_6.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/04/dbg_rules_6.html#comments">留言 (2)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/03/dbg_rules_5.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1261"
+    dc:title="卡牌构筑类桌游核心规则之五"
+    dc:identifier="https://blog.codingnow.com/2025/03/dbg_rules_5.html"
+    dc:subject="桌面游戏"
+    dc:description="最近的兴趣重心转移，没怎么研究桌游。不过前几个月的笔记还有一点，今天继续整理一下。继续谈谈 PvE 向的卡牌构筑类桌游。 Aeon&apos;s End (2016) 末日决战是一款偏传统卡牌对战规则的游戏：一开始手牌中只有水晶 (gem) 和基础法术 (spell) 卡。游戏过程中，在一个固定市场（9 种）用水晶购买更强力的卡片升级自己的卡组。游戏的目标是合作（或 solo）击败 boss 或 boss 的仆从。如果被敌人攻击太多次，自己的 HP 减到 0 就失败了。 法术卡其实更像是炉石/万智牌中的玩家仆从，只不过是一次性消耗品。需要先部署在桌面，然后才可以攻击。而玩家卡组内的第三种遗物卡（relic）则更像是一般意义的法术：可以即时产生效果。..."
+    dc:creator="Cloud"
+    dc:date="2025-03-12T09:30:12+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">March 12, 2025</h2>
+                     <a id="a001301"></a>
+                     <div class="entry" id="entry-1301">
+                        <h3 class="entry-header">卡牌构筑类桌游核心规则之五</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>最近的兴趣重心转移，没怎么研究桌游。不过前几个月的笔记还有一点，今天继续整理一下。继续谈谈 PvE 向的卡牌构筑类桌游。</p>
+
+<p>Aeon's End (2016) 末日决战是一款偏传统卡牌对战规则的游戏：一开始手牌中只有水晶 (gem) 和基础法术 (spell) 卡。游戏过程中，在一个固定市场（9 种）用水晶购买更强力的卡片升级自己的卡组。游戏的目标是合作（或 solo）击败 boss 或 boss 的仆从。如果被敌人攻击太多次，自己的 HP 减到 0 就失败了。</p>
+
+<p>法术卡其实更像是炉石/万智牌中的玩家仆从，只不过是一次性消耗品。需要先部署在桌面，然后才可以攻击。而玩家卡组内的第三种遗物卡（relic）则更像是一般意义的法术：可以即时产生效果。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/03/dbg_rules_5.html#more">阅读全文 "卡牌构筑类桌游核心规则之五" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 09:30 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/03/dbg_rules_5.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/03/dbg_rules_5.html#comments">留言 (2)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                                          <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2025/03/win10_associate_file_storeapp.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1260"
+    dc:title="Windows 10 如何把文件关联到 Store App 上"
+    dc:identifier="https://blog.codingnow.com/2025/03/win10_associate_file_storeapp.html"
+    dc:subject="我爱折腾"
+    dc:description="我在 Windows 10 下倾向于通过 store 安装 app ，而不是使用独立的软件安装包。这样安装的 app 会比较安全。但正因为这些额外的安全措施，有些过去很容易做的事情却变得麻烦了。比如，把一个特定类型的文件关联到 app 上。 我习惯用 IrfanView64 查看图片。在游戏开发中常见的 .dds 文件它也可以打开（需要额外安装官方插件）。但 IrfanView64 在提交 store 发布时没有提交 .dds 这个后缀名，这导致 windows 10 无法选择用它打开 .dds 文件。在自选打开特定文件类型文件的设置菜单里（设置-默认应用），你会发现怎么都找不到这个应用。..."
+    dc:creator="Cloud"
+    dc:date="2025-03-11T11:13:58+08:00" />
+</rdf:RDF>
+-->
+
+                     
+                     <h2 class="date-header">March 11, 2025</h2>
+                     <a id="a001300"></a>
+                     <div class="entry" id="entry-1300">
+                        <h3 class="entry-header">Windows 10 如何把文件关联到 Store App 上</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                           <p>我在 Windows 10 下倾向于通过 store 安装 app ，而不是使用独立的软件安装包。这样安装的 app 会比较安全。但正因为这些额外的安全措施，有些过去很容易做的事情却变得麻烦了。比如，把一个特定类型的文件关联到 app 上。</p>
+
+<p>我习惯用 IrfanView64 查看图片。在游戏开发中常见的 .dds 文件它也可以打开（需要额外安装官方插件）。但 IrfanView64 在提交 store 发布时没有提交 .dds 这个后缀名，这导致 windows 10 无法选择用它打开 .dds  文件。在自选打开特定文件类型文件的设置菜单里（设置-默认应用），你会发现怎么都找不到这个应用。</p>
+
+                                                      <p class="entry-more-link">
+                              <a href="https://blog.codingnow.com/2025/03/win10_associate_file_storeapp.html#more">阅读全文 "Windows 10 如何把文件关联到 Store App 上" &raquo;</a>
+                           </p>
+                           
+                           <p class="entry-footer">
+                              <span class="post-footers">云风 提交于 11:13 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2025/03/win10_associate_file_storeapp.html">固定链接</a>
+                              | <a href="https://blog.codingnow.com/2025/03/win10_associate_file_storeapp.html#comments">留言 (1)</a>
+                              
+                           </p>
+                           </div>
+                        </div>
+                     </div>
+                     
+                  </div>
+               </div>
+               
+               <div id="beta">
+                  <div id="beta-inner" class="pkg">
+
+
+                        <h2 class="module-header">Misc</h2>
+                        <div class="module-content"><ul class="module-list">
+                                <li class="module-list-item"><a href="https://www.codingnow.com/2004/board">留言本</a></li>
+                                <li class="module-list-item"><a href="https://www.codingnow.com/2000/gmail.gif">用 email 联系我</a></li>
+                                <li class="module-list-item"><a href="https://github.com/cloudwu">Github</a></li>
+                                <li class="module-list-item">我不用微信</li>
+                                <li class="module-list-item">我不用 QQ</li>
+                                </ul>
+                        </div>
+                     <div class="module-search module">
+                        <h2 class="module-header">Search</h2>
+                        <div class="module-content">
+                           <form method="get" action="https://blog.codingnow.com/cgi-bin/mt/mt-search.cgi">
+                              <input type="hidden" name="IncludeBlogs" value="1" />
+                              <input id="search" name="search" size="20" />
+                              <input type="submit" value="站内搜索" />
+                           </form>
+                        </div>
+                     </div>
+                     
+                     <div class="module-categories module">
+                        <h2 class="module-header">Categories</h2>
+                        <div class="module-content">
+                                                <ul class="module-list">
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/aee/" title="">读书</a> (36)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/aeoeec/" title="">概率与桥牌</a> (17)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/" title="">技术</a> (48)
+                           
+                           
+                                                      <ul class="module-list">
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/ant_engine/" title="">Ant Engine</a> (70)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/ecs/" title="">ECS</a> (28)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/erlang/" title="">Erlang</a> (1)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/go_oieno/" title="">Go 语言</a> (8)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/unix/" title="">Unix</a> (3)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/windows/" title="">Windows</a> (23)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/x_window/" title="">X Window</a> (6)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/build_tool/" title="">build tool</a> (12)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/luaoeeeaeau/" title="">lua与虚拟机</a> (176)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/skynet/" title="">skynet</a> (111)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/eo/" title="">调试</a> (31)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/eeaoeeea/" title="">算法与数据结构</a> (41)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/ioeacoeee/" title="">网络与安全</a> (48)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/ooeece/" title="">优化与技巧</a> (52)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eo/oienooeeee/" title="">语言与设计</a> (121)
+                           
+                           
+                              
+                           </li>
+                        </ul>
+                        
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eee/" title="">随笔</a> (71)
+                           
+                           
+                                                      <ul class="module-list">
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/eee/ioaeaiio/" title="">《我的编程感悟》</a> (8)
+                           
+                           
+                              
+                           </li>
+                        </ul>
+                        
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/oiie/" title="">游戏</a> (49)
+                           
+                           
+                                                      <ul class="module-list">
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/oiie/oiie/" title="">游戏开发</a> (224)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/oiie/aaoiie/" title="">桌面游戏</a> (34)
+                           
+                           
+                              
+                           </li>
+                        </ul>
+                        
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/" title="">杂记</a> (173)
+                           
+                           
+                                                      <ul class="module-list">
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/google/" title="">Google</a> (17)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/ooa/" title="">简悦</a> (25)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/eno/" title="">攀岩</a> (15)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/ioeo/" title="">网易</a> (13)
+                           
+                           
+                              
+                           </li>
+                        
+                                                
+                                                      <li class="module-list-item"><a href="https://blog.codingnow.com/ooc/ioouiu/" title="">我爱折腾</a> (44)
+                           
+                           
+                              
+                           </li>
+                        </ul>
+                        
+                           </li>
+                        </ul>
+                        
+                        </div>
+                     </div>
+                     
+                     
+                                          <div class="module-archives module">
+                        <h2 class="module-header"><a href="https://blog.codingnow.com/archives.html">Archives</a></h2>
+                        <div class="module-content">
+                                                   <ul class="module-list">
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/08/">August 2025</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/07/">July 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/06/">June 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/05/">May 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/04/">April 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/03/">March 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/02/">February 2025</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2025/01/">January 2025</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/12/">December 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/11/">November 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/10/">October 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/09/">September 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/08/">August 2024</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/07/">July 2024</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/06/">June 2024</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/05/">May 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/04/">April 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/03/">March 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/02/">February 2024</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2024/01/">January 2024</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/12/">December 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/11/">November 2023</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/10/">October 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/09/">September 2023</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/08/">August 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/07/">July 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/06/">June 2023</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/05/">May 2023</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/04/">April 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/03/">March 2023</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/02/">February 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2023/01/">January 2023</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/12/">December 2022</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/11/">November 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/10/">October 2022</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/09/">September 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/08/">August 2022</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/07/">July 2022</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/06/">June 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/05/">May 2022</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/04/">April 2022</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/03/">March 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/02/">February 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2022/01/">January 2022</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/12/">December 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/11/">November 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/10/">October 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/09/">September 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/08/">August 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/07/">July 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/06/">June 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/05/">May 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/04/">April 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/03/">March 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/02/">February 2021</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2021/01/">January 2021</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/12/">December 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/11/">November 2020</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/10/">October 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/09/">September 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/08/">August 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/07/">July 2020</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/06/">June 2020</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/05/">May 2020</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/04/">April 2020</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/03/">March 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/02/">February 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2020/01/">January 2020</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/12/">December 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/11/">November 2019</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/10/">October 2019</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/09/">September 2019</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/08/">August 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/07/">July 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/06/">June 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/05/">May 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/04/">April 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/03/">March 2019</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/02/">February 2019</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2019/01/">January 2019</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/12/">December 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/11/">November 2018</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/10/">October 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/09/">September 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/08/">August 2018</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/07/">July 2018</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/06/">June 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/05/">May 2018</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/04/">April 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/03/">March 2018</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/02/">February 2018</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2018/01/">January 2018</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/12/">December 2017</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/11/">November 2017</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/10/">October 2017</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/09/">September 2017</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/08/">August 2017</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/07/">July 2017</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/06/">June 2017</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/05/">May 2017</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/04/">April 2017</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/03/">March 2017</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/02/">February 2017</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2017/01/">January 2017</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/12/">December 2016</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/11/">November 2016</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/10/">October 2016</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/09/">September 2016</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/08/">August 2016</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/07/">July 2016</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/06/">June 2016</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/05/">May 2016</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/04/">April 2016</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/03/">March 2016</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/02/">February 2016</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2016/01/">January 2016</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/12/">December 2015</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/11/">November 2015</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/10/">October 2015</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/09/">September 2015</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/08/">August 2015</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/07/">July 2015</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/06/">June 2015</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/05/">May 2015</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/04/">April 2015</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/03/">March 2015</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/02/">February 2015</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2015/01/">January 2015</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/12/">December 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/11/">November 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/10/">October 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/09/">September 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/08/">August 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/07/">July 2014</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/06/">June 2014</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/05/">May 2014</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/04/">April 2014</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/03/">March 2014</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/02/">February 2014</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2014/01/">January 2014</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/12/">December 2013</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/11/">November 2013</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/10/">October 2013</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/09/">September 2013</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/08/">August 2013</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/07/">July 2013</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/06/">June 2013</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/05/">May 2013</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/04/">April 2013</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/03/">March 2013</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/02/">February 2013</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2013/01/">January 2013</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/12/">December 2012</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/11/">November 2012</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/10/">October 2012</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/09/">September 2012</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/08/">August 2012</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/07/">July 2012</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/06/">June 2012</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/05/">May 2012</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/04/">April 2012</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/03/">March 2012</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/02/">February 2012</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2012/01/">January 2012</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/12/">December 2011</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/11/">November 2011</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/10/">October 2011</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/09/">September 2011</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/08/">August 2011</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/07/">July 2011</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/06/">June 2011</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/05/">May 2011</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/04/">April 2011</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/03/">March 2011</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/02/">February 2011</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2011/01/">January 2011</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/12/">December 2010</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/11/">November 2010</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/10/">October 2010</a> (2)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/09/">September 2010</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/08/">August 2010</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/07/">July 2010</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/06/">June 2010</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/05/">May 2010</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/04/">April 2010</a> (3)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/03/">March 2010</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/02/">February 2010</a> (11)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2010/01/">January 2010</a> (10)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/12/">December 2009</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/11/">November 2009</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/10/">October 2009</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/09/">September 2009</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/08/">August 2009</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/07/">July 2009</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/06/">June 2009</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/05/">May 2009</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/04/">April 2009</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/03/">March 2009</a> (12)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/02/">February 2009</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2009/01/">January 2009</a> (4)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/12/">December 2008</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/11/">November 2008</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/10/">October 2008</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/09/">September 2008</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/08/">August 2008</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/07/">July 2008</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/06/">June 2008</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/05/">May 2008</a> (28)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/04/">April 2008</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/03/">March 2008</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/02/">February 2008</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2008/01/">January 2008</a> (12)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/12/">December 2007</a> (5)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/11/">November 2007</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/10/">October 2007</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/09/">September 2007</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/08/">August 2007</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/07/">July 2007</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/06/">June 2007</a> (10)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/05/">May 2007</a> (11)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/04/">April 2007</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/03/">March 2007</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/02/">February 2007</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2007/01/">January 2007</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/12/">December 2006</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/11/">November 2006</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/10/">October 2006</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/09/">September 2006</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/08/">August 2006</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/07/">July 2006</a> (7)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/06/">June 2006</a> (8)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/05/">May 2006</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/04/">April 2006</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/03/">March 2006</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/02/">February 2006</a> (10)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2006/01/">January 2006</a> (13)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2005/12/">December 2005</a> (23)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2005/11/">November 2005</a> (6)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2005/10/">October 2005</a> (9)</li>
+                           
+                                                   
+                              <li class="module-list-item"><a href="https://blog.codingnow.com/2005/09/">September 2005</a> (1)</li>
+                           </ul>
+                        
+                        </div>
+                     </div>
+                     
+                     <div class="module-archives module">
+                        <h2 class="module-header">Recent Posts</h2>
+                        <div class="module-content">
+                           <ul class="module-list">
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/08/lua_class.html">在 Lua 中定义类型的简单方法</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/08/gamedev.html">编写游戏程序的一些启示</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/08/setwindowtext_deadlock.html">SetWindowText 引起的死锁</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/07/jogging.html">慢跑</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/07/deep_future.html">极度未来（ Deep Future ）给我的启发</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/06/kids.html">育儿的一些日常</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/06/elevator.html">电梯的交互和调度</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/05/a_star_pathfinding.html">一个简单的 A star 寻路算法实现</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/05/dbg_rules_7.html">卡牌构筑类桌游核心规则之七</a></li>
+                                                         <li class="module-list-item"><a href="https://blog.codingnow.com/2025/04/log_e.html">对数和自然对数的底</a></li>
+                           
+                           </ul>
+                        </div>
+                     </div>
+
+                     <div class="module-archives module">
+                     <h2 class="module-header">Recent Comments</h2>
+                     <div class="module-content">
+<ul class="module-list">
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/lua_class.html#c50231">在 Lua 中定义类型的简单方法</a> (5)<br>
+		JulyWind :
+		我选3...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/06/kids.html#c50230">育儿的一些日常</a> (12)<br>
+		zy :
+		哈哈哈哈哈哈哈集结了可爱搞笑于一身的可爱小朋友...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/lua_class.html#c50229">在 Lua 中定义类型的简单方法</a> (5)<br>
+		Cloud :
+		其实早期 lua 是没有 boolean 类型的。引入 boolean...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/lua_class.html#c50228">在 Lua 中定义类型的简单方法</a> (5)<br>
+		<a href="https://github.com/hanxi/" rel="nofollow">hanxi</a> :
+		如果 set 里需要存放 false 就不能用 set5 了，虽然不太...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/gamedev.html#c50227">编写游戏程序的一些启示</a> (4)<br>
+		Cloud :
+		https://github.com/cloudwu/deepfutu...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/lua_class.html#c50226">在 Lua 中定义类型的简单方法</a> (5)<br>
+		Cloud :
+		typescript 不够简单：简单是指完整的语言手册（包括标准库）在...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/lua_class.html#c50225">在 Lua 中定义类型的简单方法</a> (5)<br>
+		法外狂徒 :
+		为啥不用typescript呢...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/gamedev.html#c50224">编写游戏程序的一些启示</a> (4)<br>
+		zyy :
+		可以开放共同参与该项目吗?
+对 Deep Future “Make-a...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2010/11/shared_resource.html#c50223">多进程资源共享及多样化加载</a> (28)<br>
+		Cloud :
+		我不在网易十多年了，所以只能猜一下原因：
+
+“30帧”可能是因为 2d...
+	
+	</li>
+	<li class="module-list-item">
+	<p>		<a href="https://blog.codingnow.com/2025/08/gamedev.html#c50222">编写游戏程序的一些启示</a> (4)<br>
+		nothanks :
+		`在 GameJam 上两个晚上可以做出的游戏原型，往往又需要花掉 2...
+	
+	</li>
+
+</ul>
+
+</div></div>
+                     
+                     <div class="module-syndicate module">
+                        <div class="module-content">
+                           <a href="https://blog.codingnow.com/atom.xml">订阅 feed</a><br />
+                           <a href="https://blog.codingnow.com/comments.xml">订阅评论</a><br />
+                           <a href="https://bg.codingnow.com">东西游桌面游戏</a><br />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</body>
+</html>

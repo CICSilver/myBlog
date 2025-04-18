@@ -1,89 +1,81 @@
-<!DOCTYPE html>
-<head>
-    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
-    <!-- <script src="../static/js/scripts.js"></script> -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src=" {{url_for('static', filename='js/scripts.js')}}"></script>
-</head>
-<body>
-    <div class="container manage_container">
-        <div class="header">博客数据管理</div>
-        <div class="navigation">
-            <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
-        </div>
-        <table class="manage_table" border="1" class="manage_table">
-            <thead>
-                <tr>
-                    <th>序号</th>
-                    <th>标题</th>
-                    <th>日期</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for blog in blogs %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ blog.title }}</td>
-                    <td>{{ blog.date ~ ' ' ~ blog.time }}</td>
-                    <td>
-                        <div class="manage-opera-col">
-                            <a class="manage-href" href="{{ url_for('main.manage_edit_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}">编辑</a>
-                            <a class="manage-href" href="javascript:void(0);" onclick="deleteBlogConfirm('{{ url_for('main.manage_delete_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}')">删除</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <!-- 模态窗口 -->
-        <div class="modal-overlay" id="myModalOverlay">
-            <div class="modal" id="myModal">
-                <div class="modal-header">
-                    <h2>模态窗口</h2>
-                </div>
-                <div id="modal-body-content" class="modal-body">
-                    <p>这是一条重要通知。</p>
-                </div>
-                <div style="display: none;" id="modal-hidden-content"></div>
-                <div class="modal-footer">
-                    <button class="grey_btn modal-btn" onclick="deleteBlog()">确定</button>
-                    <button class="grey_btn modal-btn" onclick="closeModal()">取消</button>
-                </div>
-            </div>
-        </div>
+{% extends 'base.html' %}
+{% block title %}管理文章 - {{ site_name | default('Mole\'s Hole') }}{% endblock %}
 
+{% block content %}
+  <div class="manage_container">
+    <div class="navigation" style="margin-bottom:12px;">
+      <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
     </div>
-    <script>
-        var modal = new Modal();
-        function deleteBlogConfirm(deleteUrl) {
-            modal.show('确定删除该条博客吗？');
-            
-            const hidden_content = modal.modalHiddenContent;
-            if(hidden_content) {
-                hidden_content.innerHtml = deleteUrl;
-            }
-        }
+    <div class="header" style="margin-bottom: 10px;">文章管理</div>
+    <table class="manage_table" border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>标题</th>
+          <th>发布时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for blog in blogs %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ blog.title }}</td>
+          <td>{{ blog.date ~ ' ' ~ blog.time }}</td>
+          <td>
+            <div class="manage-opera-col">
+              <a class="manage-href" href="{{ url_for('main.manage_edit_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}">编辑</a>
+              <a class="manage-href" href="javascript:void(0);" onclick="deleteBlogConfirm('{{ url_for('main.manage_delete_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}')">删除</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-        function deleteBlog() {
-            const hidden_content = modal.modalHiddenContent;
-            deleteUrl = hidden_content.innerHtml;
-            fetch(deleteUrl, {
-                method: 'GET',
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === "success") {
-                    // 删除成功，刷新页面
-                    window.location.reload();
-                } else {
-                    // 删除失败，显示错误信息
-                    showModal(data.message);
-                }
-            })
-            .catch(error => {
-                alert("删除请求失败");
-            });
-        }
-    </script>
-</body>
+    <!-- 模态框 -->
+    <div class="modal-overlay" id="myModalOverlay">
+      <div class="modal" id="myModal">
+        <div class="modal-header">
+          <h2>确认操作</h2>
+        </div>
+        <div id="modal-body-content" class="modal-body">
+          <p>确定删除该文章吗？</p>
+        </div>
+        <div style="display: none;" id="modal-hidden-content"></div>
+        <div class="modal-footer">
+          <button class="grey_btn modal-btn" onclick="deleteBlog()">确认</button>
+          <button class="grey_btn modal-btn" onclick="modal.close()">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    var modal = new Modal();
+    function deleteBlogConfirm(deleteUrl) {
+      modal.show('确认删除该文章吗？');
+      const hidden_content = modal.modalHiddenContent;
+      if (hidden_content) {
+        hidden_content.innerHtml = deleteUrl;
+      }
+    }
+    function deleteBlog() {
+      const hidden_content = modal.modalHiddenContent;
+      const deleteUrl = hidden_content.innerHtml;
+      fetch(deleteUrl, { method: 'GET' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'success') {
+            window.location.reload();
+          } else {
+            alert(data.message || '删除失败');
+          }
+        })
+        .catch(() => { alert('删除请求失败'); });
+    }
+  </script>
+{% endblock %}
+
