@@ -134,7 +134,18 @@ def admin_verify():
     else:
         return jsonify({"status": "failed", "message": "设备验证失败"})
     
+@main.route('/logout', methods=['POST'])
+def logout():
+    """
+    注销设备
+    """
+    data = request.get_json()
+    device_id = data.get('device_id')
     
+    if not device_id:
+        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
+    
+    return dbHelper.delete_device_id(device_id)
 
     
 
@@ -150,3 +161,7 @@ def archived_blogs(year, month):
     blogs = dbHelper.get_blogs_by_date(year, month)
     blogs.reverse()  # 按最新时间排序blogs
     return init_index_with_blogs(blogs)
+
+# 添加评论
+def add_comment(blog_id, comment):
+    pass

@@ -21,6 +21,7 @@
           <div class="personal-intro">{{ personal_intro}}</div>
         </div>
         <div class="header-btn-grp admin-grp">
+          <button class="index-btn" onclick="logout()">注销</button>
           <button class="index-btn" onclick="navigateToWriting()">写日志</button>
           <button class="index-btn" onclick="navigateToManage()">管理</button>
         </div>
@@ -94,6 +95,25 @@
             }
         });
     });
+    async function logout()
+    {
+      const fingerprint = await getBrowserFingerprint();
+      fetch('/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ device_id: fingerprint })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === "success") {
+          window.location.href = '/';
+        } else {
+          alert(data.message);
+        }
+      })
+    }
     </script>
   </body>
 

@@ -4,6 +4,13 @@ from tinydb.table import Document
 from datetime import datetime
 from pypinyin import lazy_pinyin
 
+class Comment:
+    def __init__(self, name=None, content=None, date=None, time=None):
+        self.name = name
+        self.content = content
+        self.date = date
+        self.time = time
+
 class Category:
     def __init__(self, html_title=None, name=None, num=0, init_dict=[]):
         if isinstance(init_dict, dict) and len(init_dict) > 0:
@@ -397,6 +404,16 @@ class DatabaseHelper:
         
         self.device_table.insert({'device_id': device_id})
         return {"status": "success", "message": "设备ID插入成功。"}
+    
+    def delete_device_id(self, device_id:str):
+        """
+        删除指定设备id
+        """
+        if device_id is None:
+            raise ValueError("device_id cannot be None")
+        
+        self.device_table.remove(Query().device_id == device_id)
+        return {"status": "success", "message": "设备ID删除成功。"}
     
     def check_device_id(self, device_id: str) -> bool:
         """
