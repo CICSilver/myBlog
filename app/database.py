@@ -5,11 +5,28 @@ from datetime import datetime
 from pypinyin import lazy_pinyin
 
 class Comment:
-    def __init__(self, name=None, content=None, date=None, time=None):
+    def __init__(self, name=None, html_title=None, content=None, date=None, time=None):
         self.name = name
+        self.html_title = html_title
         self.content = content
         self.date = date
         self.time = time
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'html_title': self.html_title,
+            'content': self.content,
+            'date': self.date,
+            'time': self.time
+        }
+    
+    def from_dict(self, data: dict):
+        self.name = data.get('name')
+        self.html_title = data.get('html_title')
+        self.content = data.get('content')
+        self.date = data.get('date')
+        self.time = data.get('time')
 
 class Category:
     def __init__(self, html_title=None, name=None, num=0, init_dict=[]):
