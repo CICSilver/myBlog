@@ -1,26 +1,31 @@
-<!DOCTYPE html>
-<head>
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-</head>
-<body>
-    <script>
-        getBrowserFingerprint().then(fingerprint => {
-            console.log("浏览器指纹:", fingerprint);
-        
-            fetch('/register_device', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ device_id: fingerprint })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data.message);
-                // 跳转回index.html
-                window.location.href = "{{ url_for('main.index') }}";
-            });
-        });
-    </script>
-</body>
+{% extends "base.html" %}
+
+{% block title %}登记设备 | {{ site_name }}{% endblock %}
+{% block body_class %}register-page{% endblock %}
+
+{% block content %}
+<section class="register-stage">
+  <div class="register-pulse"></div>
+  <p class="section-label">Device Registration</p>
+  <h1>正在登记当前设备</h1>
+  <p>完成后会自动返回首页，并解锁写作与管理入口。</p>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  getBrowserFingerprint().then((fingerprint) => {
+    fetch('/register_device', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ device_id: fingerprint })
+    })
+      .then((response) => response.json())
+      .then(() => {
+        window.location.href = "{{ url_for('main.index') }}";
+      });
+  });
+</script>
+{% endblock %}
