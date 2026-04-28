@@ -21,51 +21,23 @@
         </a>
         <div class="toolbar-actions">
           <a class="toolbar-link" href="{{ url_for('main.index') }}">档案首页</a>
-          <div class="header-btn-grp admin-grp" aria-label="管理入口">
+          {% if current_admin_authenticated() %}
+          <div class="header-btn-grp" aria-label="管理入口">
             <button class="toolbar-button" type="button" onclick="navigateToWriting()">写新文章</button>
             <button class="toolbar-button" type="button" onclick="navigateToManage()">后台管理</button>
-            <button class="toolbar-button is-ghost" type="button" onclick="logout()">注销设备</button>
+            <button class="toolbar-button is-ghost" type="button" onclick="logout()">退出</button>
           </div>
+          {% endif %}
         </div>
       </header>
 
       {% block content %}{% endblock %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <script>
+      window.BLOG_CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
-    <script>
-      async function syncAdminControls() {
-        const adminGroups = document.querySelectorAll('.admin-grp');
-
-        if (!adminGroups.length || typeof FingerprintJS === 'undefined') {
-          return;
-        }
-
-        try {
-          const fingerprint = await getBrowserFingerprint();
-          const response = await fetch('/verify_device', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ device_id: fingerprint })
-          });
-          const data = await response.json();
-          const displayValue = data.status === 'success' ? 'flex' : 'none';
-
-          adminGroups.forEach((group) => {
-            group.style.display = displayValue;
-          });
-        } catch (error) {
-          adminGroups.forEach((group) => {
-            group.style.display = 'none';
-          });
-        }
-      }
-
-      window.addEventListener('DOMContentLoaded', syncAdminControls);
-    </script>
   </body>
 </html>

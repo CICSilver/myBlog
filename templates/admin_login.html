@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}管理员登录 | {{ site_name | default("Silver's Blog") }}{% endblock %}
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+<section class="register-stage login-stage">
+  <p class="section-label">Admin Access</p>
+  <h1>管理员登录</h1>
+  <form class="login-form" method="POST" action="{{ url_for('admin_login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if next_url %}
+      <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+    <label class="field-block" for="admin-password">
+      <span>密码</span>
+      <input
+        class="form-input"
+        type="password"
+        id="admin-password"
+        name="password"
+        autocomplete="current-password"
+        required
+        autofocus
+      >
+    </label>
+    {% if error_message %}
+      <p class="form-error">{{ error_message }}</p>
+    {% endif %}
+    <button class="toolbar-button" type="submit">登录</button>
+  </form>
+</section>
+{% endblock %}

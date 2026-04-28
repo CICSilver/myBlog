@@ -30,6 +30,7 @@
 
 <section class="editor-shell">
   <form method="POST" action="/edit" class="editor-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field-grid">
       <label class="field-block" for="html-title">
         <span>HTML 标题</span>
@@ -128,6 +129,9 @@
     try {
       const response = await fetch('/edit', {
         method: 'POST',
+        headers: {
+          'X-CSRF-Token': window.BLOG_CSRF_TOKEN || '',
+        },
         body: formData,
       });
       const data = await response.json();

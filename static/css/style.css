@@ -152,10 +152,6 @@ p {
     gap: 10px;
 }
 
-.admin-grp {
-    display: none;
-}
-
 .toolbar-button,
 .table-action,
 .modal-btn {
@@ -949,6 +945,23 @@ p {
     align-content: center;
     gap: 14px;
     padding: clamp(42px, 8vw, 92px);
+}
+
+.login-stage {
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.login-form {
+    width: min(100%, 420px);
+    display: grid;
+    gap: 18px;
+}
+
+.form-error {
+    margin: 0;
+    color: #8f3a2e;
+    line-height: 1.6;
 }
 
 .register-pulse {

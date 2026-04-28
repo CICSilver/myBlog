@@ -6,19 +6,6 @@ function navigateToManage() {
     window.location.href = '/manage';
 }
 
-function GetDeviceId() {
-    var deviceId = localStorage.getItem("deviceId");
-    return deviceId;
-}
-
-async function getBrowserFingerprint() {
-    const fp = await FingerprintJS.load();
-
-    const result = await fp.get();
-
-    return result.visitorId;
-}
-
 class Modal {
     constructor() {
         this.modalOverlay = document.getElementById("myModalOverlay");
@@ -110,14 +97,12 @@ class Modal {
 }
 
 async function logout() {
-    const fingerprint = await getBrowserFingerprint();
-
     fetch('/logout', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ device_id: fingerprint })
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': window.BLOG_CSRF_TOKEN || ''
+        }
     })
         .then(response => response.json())
         .then(data => {

@@ -103,7 +103,12 @@
     const deleteUrl = modal.getHiddenValue();
 
     try {
-      const response = await fetch(deleteUrl, { method: 'GET' });
+      const response = await fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': window.BLOG_CSRF_TOKEN || '',
+        },
+      });
       const data = await response.json();
 
       if (data.status === 'success') {

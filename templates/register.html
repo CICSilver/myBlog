@@ -5,27 +5,8 @@
 
 {% block content %}
 <section class="register-stage">
-  <div class="register-pulse"></div>
-  <p class="section-label">Device Registration</p>
-  <h1>正在登记当前设备</h1>
-  <p>完成后会自动返回首页，并解锁写作与管理入口。</p>
+  <p class="section-label">Unavailable</p>
+  <h1>该入口已关闭</h1>
+  <p>设备登记已被服务端管理员登录替代。</p>
 </section>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-  getBrowserFingerprint().then((fingerprint) => {
-    fetch('/register_device', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ device_id: fingerprint })
-    })
-      .then((response) => response.json())
-      .then(() => {
-        window.location.href = "{{ url_for('main.index') }}";
-      });
-  });
-</script>
 {% endblock %}

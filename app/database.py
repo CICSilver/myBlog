@@ -124,8 +124,6 @@ class DatabaseHelper:
         self.category_table = blog_db.table('categories')
         # 博客表，存储全部博客
         self.blog_table = blog_db.table('blogs')
-        # 设备ID表，存储设备ID
-        self.device_table = blog_db.table('devices')
 
     def get_all_categories(self):
         """
@@ -389,40 +387,4 @@ class DatabaseHelper:
             raise TypeError("Expected a Blog instance")
         
         return self.get_specify_blog(blog.year, blog.month, blog.html_title)
-    
-    def insert_device_id(self, device_id: str):
-        """
-        插入设备ID到数据库
-        """
-        if device_id is None:
-            raise ValueError("device_id cannot be None")
-        
-        # 检查是否已存在
-        existing_device = self.device_table.search(Query().device_id == device_id)
-        if len(existing_device) > 0:
-            return {"status": "duplicate", "message": "设备ID已存在。"}
-        
-        self.device_table.insert({'device_id': device_id})
-        return {"status": "success", "message": "设备ID插入成功。"}
-    
-    def delete_device_id(self, device_id:str):
-        """
-        删除指定设备id
-        """
-        if device_id is None:
-            raise ValueError("device_id cannot be None")
-        
-        self.device_table.remove(Query().device_id == device_id)
-        return {"status": "success", "message": "设备ID删除成功。"}
-    
-    def check_device_id(self, device_id: str) -> bool:
-        """
-        检查设备ID是否存在
-        """
-        if device_id is None:
-            raise ValueError("device_id cannot be None")
-        
-        existing_device = self.device_table.search(Query().device_id == device_id)
-        return len(existing_device) > 0
-    
         
