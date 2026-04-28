@@ -1,8 +1,24 @@
-from app import blog_db
+from app import blog_db, db_path
+from app.content_history import snapshot_content_db
+from flask import current_app, has_app_context
 from tinydb import Query
 from tinydb.table import Document
 from datetime import datetime
 from pypinyin import lazy_pinyin
+from threading import RLock
+
+
+_write_lock = RLock()
+
+
+def _snapshot_history(reason):
+    try:
+        history_dir = None
+        if has_app_context():
+            history_dir = current_app.config.get("BLOG_CONTENT_HISTORY_DIR")
+        snapshot_content_db(db_path, reason, history_dir=history_dir)
+    except Exception as exc:
+        print("content history snapshot failed: {0}".format(exc))
 
 class Comment:
     def __init__(self, name=None, html_title=None, content=None, date=None, time=None):
@@ -284,25 +300,26 @@ class DatabaseHelper:
         """
         插入博客到数据库
         """
-        if blog is None:
-            raise ValueError("Blog cannot be None")
-        if not isinstance(blog, Blog):
-            raise TypeError("Expected a Blog instance")
-        
+        with _write_lock:
+            if blog is None:
+                raise ValueError("Blog cannot be None")
+            if not isinstance(blog, Blog):
+                raise TypeError("Expected a Blog instance")
 
-        
-        # 检查html_title重复情况，若存在则编号增加
-        blog_in_db = self.get_specify_blog(blog.year, blog.month, blog.html_title)
-        if blog_in_db:
-            return {"status": "duplicate", "message": "html标题重复，请选择处理方式。"}
-        
-        self.__insert_category(blog.category)  # 确保分类存在
-        # 更新月份数据
-        self.__insert_date(blog)
-        # 插入博客数据
-        self.blog_table.insert(blog.to_dict()) 
-        self.__update_blog_num_in_date(blog.year, blog.month)
-        return {"status": "success", "message": "博客数据插入成功。"}
+            # 检查html_title重复情况，若存在则编号增加
+            blog_in_db = self.get_specify_blog(blog.year, blog.month, blog.html_title)
+            if blog_in_db:
+                return {"status": "duplicate", "message": "html标题重复，请选择处理方式。"}
+
+            _snapshot_history("pre-insert-blog")
+            self.__insert_category(blog.category)  # 确保分类存在
+            # 更新月份数据
+            self.__insert_date(blog)
+            # 插入博客数据
+            self.blog_table.insert(blog.to_dict())
+            self.__update_blog_num_in_date(blog.year, blog.month)
+            _snapshot_history("post-insert-blog")
+            return {"status": "success", "message": "博客数据插入成功。"}
     
     def __process_blog(self, blog: Blog, operation):
         """
@@ -324,29 +341,34 @@ class DatabaseHelper:
         """
         更新博客数据
         """
-        def update_opera(blog):
-            self.blog_table.update(blog.to_dict(), (Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
-        
-        # 更新分类信息
-        old_blog_data = self.get_specify_blog_o(blog)
-        if old_blog_data is None:
-            return {"status": "error", "message": "指定的博客不存在。"}
-        if old_blog_data.category != blog.category:
-            # 分类发生变化，更新分类数量
-            res = self.category_table.search(Query().name == old_blog_data.category)
-            old_category_data = res[0]
-            old_category_data['num'] -= 1
-            self.__update_category(Category(init_dict=old_category_data))
-            # 更新新分类数量
-            res = self.category_table.search(Query().name == blog.category)
-            if len(res) == 0:
-                self.__insert_category(blog.category)
-            else:
-                new_category_data = res[0]
-                new_category_data['num'] += 1
-                self.__update_category(Category(init_dict=new_category_data))
+        with _write_lock:
+            def update_opera(blog):
+                self.blog_table.update(blog.to_dict(), (Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
 
-        return self.__process_blog(blog, update_opera)
+            # 更新分类信息
+            old_blog_data = self.get_specify_blog_o(blog)
+            if old_blog_data is None:
+                return {"status": "error", "message": "指定的博客不存在。"}
+
+            _snapshot_history("pre-update-blog")
+            if old_blog_data.category != blog.category:
+                # 分类发生变化，更新分类数量
+                res = self.category_table.search(Query().name == old_blog_data.category)
+                old_category_data = res[0]
+                old_category_data['num'] -= 1
+                self.__update_category(Category(init_dict=old_category_data))
+                # 更新新分类数量
+                res = self.category_table.search(Query().name == blog.category)
+                if len(res) == 0:
+                    self.__insert_category(blog.category)
+                else:
+                    new_category_data = res[0]
+                    new_category_data['num'] += 1
+                    self.__update_category(Category(init_dict=new_category_data))
+
+            response = self.__process_blog(blog, update_opera)
+            _snapshot_history("post-update-blog")
+            return response
 
 
 
@@ -359,23 +381,27 @@ class DatabaseHelper:
 
         {"status": "success", "message": "博客数据删除成功。"}
         """
-        def del_opear(blog):
-            self.blog_table.remove((Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
-            # 删除博客后，更新日期信息
-            self.__update_blog_num_in_date(blog.year, blog.month)
-            
-        # 更新分类信息
-        res = self.category_table.search(Query().name == blog.category)
-        if len(res) == 0:
-            raise ValueError("分类不存在")
-        category_data = res[0]
-        category_data['num'] -= 1
-        if category_data['num'] <= 0:
-            self.category_table.remove(Query().name == blog.category)
-        else:
-            self.category_table.update(category_data, Query().name == blog.category)
-        
-        return self.__process_blog(blog, del_opear)
+        with _write_lock:
+            def del_opear(blog):
+                self.blog_table.remove((Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
+                # 删除博客后，更新日期信息
+                self.__update_blog_num_in_date(blog.year, blog.month)
+
+            _snapshot_history("pre-delete-blog")
+            # 更新分类信息
+            res = self.category_table.search(Query().name == blog.category)
+            if len(res) == 0:
+                raise ValueError("分类不存在")
+            category_data = res[0]
+            category_data['num'] -= 1
+            if category_data['num'] <= 0:
+                self.category_table.remove(Query().name == blog.category)
+            else:
+                self.category_table.update(category_data, Query().name == blog.category)
+
+            response = self.__process_blog(blog, del_opear)
+            _snapshot_history("post-delete-blog")
+            return response
     
     def get_specify_blog(self, year, month, html_title) -> Blog | None:
         """
