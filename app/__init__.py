@@ -14,8 +14,9 @@ blog_db = TinyDB(db_path)  # 基础数据库
 
 def create_app():
     app = Flask(__name__, static_folder="../static", template_folder="../templates")
-    app.config["SECRET_KEY"] = _get_secret_key()
-    app.config["ADMIN_LOGIN_PATH"] = _get_admin_login_path()
+    app.config.from_pyfile(_local_config_path(), silent=True)
+    app.config["SECRET_KEY"] = _get_secret_key(app)
+    app.config["ADMIN_LOGIN_PATH"] = _get_admin_login_path(app)
     app.permanent_session_lifetime = timedelta(days=14)
 
     from app.routes import main
@@ -43,23 +44,32 @@ def create_app():
     return app
 
 
-def _is_development():
-    return os.environ.get("BLOG_ENV", "development").lower() != "production"
+def _local_config_path():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(project_root, "instance", "config.py")
 
 
-def _get_secret_key():
-    secret_key = os.environ.get("BLOG_SECRET_KEY")
+def _get_config_value(app, key, default=None):
+    return os.environ.get(key) or app.config.get(key, default)
+
+
+def _is_development(app):
+    return str(_get_config_value(app, "BLOG_ENV", "development")).lower() != "production"
+
+
+def _get_secret_key(app):
+    secret_key = _get_config_value(app, "BLOG_SECRET_KEY")
     if secret_key:
         return secret_key
 
-    if _is_development():
+    if _is_development(app):
         return "dev-only-change-this-secret-key"
 
     raise RuntimeError("BLOG_SECRET_KEY must be configured in production.")
 
 
-def _get_admin_login_path():
-    path = os.environ.get("BLOG_ADMIN_LOGIN_PATH", "/__silver-admin-login")
+def _get_admin_login_path(app):
+    path = _get_config_value(app, "BLOG_ADMIN_LOGIN_PATH", "/__silver-admin-login")
     if not path.startswith("/"):
         path = "/" + path
     return path

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from flask import (
     abort,
+    current_app,
     jsonify,
     redirect,
     render_template,
@@ -58,11 +59,11 @@ def verify_admin_password(password):
     if not password:
         return False
 
-    password_hash = os.environ.get("BLOG_ADMIN_PASSWORD_HASH")
+    password_hash = _get_config_value("BLOG_ADMIN_PASSWORD_HASH")
     if password_hash:
         return check_password_hash(password_hash, password)
 
-    configured_password = os.environ.get("BLOG_ADMIN_PASSWORD")
+    configured_password = _get_config_value("BLOG_ADMIN_PASSWORD")
     if configured_password:
         return hmac.compare_digest(configured_password, password)
 
@@ -120,3 +121,7 @@ def _safe_next_url(next_url):
         return None
 
     return next_url
+
+
+def _get_config_value(key):
+    return os.environ.get(key) or current_app.config.get(key)
