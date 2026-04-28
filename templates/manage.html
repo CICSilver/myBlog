@@ -36,7 +36,7 @@
         </thead>
         <tbody>
           {% for blog in blogs %}
-            <tr>
+            <tr data-blog-row>
               <td>{{ loop.index }}</td>
               <td>{{ blog.title }}</td>
               <td>{{ blog.category }}</td>
@@ -52,7 +52,8 @@
                   <button
                     class="table-action is-danger"
                     type="button"
-                    onclick="deleteBlogConfirm('{{ url_for('main.manage_delete_blog', year=blog.year, month=blog.month, html_title=blog.html_title) }}', '{{ blog.title }}')"
+                    data-delete-url="{{ url_for('main.manage_delete_blog', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
+                    data-blog-title="{{ blog.title }}"
                   >
                     删除
                   </button>
@@ -89,6 +90,8 @@
 {% block extra_scripts %}
 <script>
   const modal = new Modal();
+  let pendingDeleteButton = null;
+  let isDeleting = false;
 
   function deleteBlogConfirm(deleteUrl, blogTitle) {
     modal.setTitle('删除文章');
@@ -99,8 +102,29 @@
     modal.addButton('确认删除', deleteBlog, 'danger');
   }
 
+  function refreshTableIndexes() {
+    document.querySelectorAll('[data-blog-row]').forEach((row, index) => {
+      const indexCell = row.querySelector('td:first-child');
+      if (indexCell) {
+        indexCell.textContent = index + 1;
+      }
+    });
+
+    const totalNode = document.querySelector('.admin-summary strong');
+    if (totalNode) {
+      totalNode.textContent = document.querySelectorAll('[data-blog-row]').length;
+    }
+  }
+
   async function deleteBlog() {
     const deleteUrl = modal.getHiddenValue();
+    if (!deleteUrl || isDeleting) {
+      return;
+    }
+
+    isDeleting = true;
+    modal.clearButtons();
+    modal.addButton('删除中...', () => {}, 'danger');
 
     try {
       const response = await fetch(deleteUrl, {
@@ -112,19 +136,41 @@
       const data = await response.json();
 
       if (data.status === 'success') {
-        window.location.reload();
+        const row = pendingDeleteButton ? pendingDeleteButton.closest('[data-blog-row]') : null;
+        if (row) {
+          row.remove();
+          refreshTableIndexes();
+        }
+        pendingDeleteButton = null;
+        isDeleting = false;
+        modal.close();
+
+        if (!document.querySelector('[data-blog-row]')) {
+          window.location.reload();
+        }
       } else {
+        isDeleting = false;
         modal.setTitle('删除失败');
         modal.clearButtons();
         modal.show(data.message || '删除请求未成功完成。');
         modal.addButton('关闭', () => modal.close(), 'secondary');
       }
     } catch (error) {
+      isDeleting = false;
       modal.setTitle('删除失败');
       modal.clearButtons();
       modal.show('删除请求失败，请稍后再试。');
       modal.addButton('关闭', () => modal.close(), 'secondary');
     }
   }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-delete-url]').forEach((button) => {
+      button.addEventListener('click', function () {
+        pendingDeleteButton = button;
+        deleteBlogConfirm(button.dataset.deleteUrl, button.dataset.blogTitle);
+      });
+    });
+  });
 </script>
 {% endblock %}

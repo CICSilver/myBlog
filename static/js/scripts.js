@@ -30,7 +30,10 @@ class Modal {
         }
 
         if (modalMsg && this.modalBody) {
-            this.modalBody.innerHTML = `<p>${modalMsg}</p>`;
+            this.modalBody.replaceChildren();
+            const paragraph = document.createElement("p");
+            paragraph.textContent = modalMsg;
+            this.modalBody.appendChild(paragraph);
         }
 
         this.modalOverlay.style.display = "block";
@@ -58,7 +61,10 @@ class Modal {
 
     setTitle(title) {
         if (this.modalHeader) {
-            this.modalHeader.innerHTML = `<h2>${title}</h2>`;
+            this.modalHeader.replaceChildren();
+            const heading = document.createElement("h2");
+            heading.textContent = title;
+            this.modalHeader.appendChild(heading);
         }
     }
 
