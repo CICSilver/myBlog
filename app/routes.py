@@ -1,25 +1,29 @@
-from flask import Blueprint, Flask, render_template, redirect, url_for, request, make_response, jsonify
-from datetime import datetime
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from app.database import DatabaseHelper, Blog
+from app.auth import admin_logout, login_required, validate_csrf_token
 import json
-import hashlib
-# from app import db
 
-admin_device_id = set()
 main = Blueprint('main', __name__)
 dbHelper = DatabaseHelper()
+SITE_NAME = "Silver's Blog"
+PERSONAL_INTRO = "人事匆匆，或许有些可以留在这里。"
 # ========================= 辅助函数 =========================
-def hash_string(input: str):
-    sha256 = hashlib.sha256()
-    sha256.update(input.encode('utf-8'))
-    return sha256.hexdigest() # 返回十六进制哈希值
+def get_site_context():
+    return {
+        "site_name": SITE_NAME,
+        "personal_intro": PERSONAL_INTRO,
+    }
 
 def init_index_with_blogs(_blogs):
-    site_name = "Silver's Blog"
-    personal_intro = "人事匆匆，或许有些可以留在这里。"
     categories = dbHelper.get_all_categories()
     dateList = dbHelper.get_all_date()
-    return render_template('index.html', blogs=_blogs, site_name=site_name, personal_intro=personal_intro, categories=categories, dateList=dateList)
+    return render_template(
+        'index.html',
+        blogs=_blogs,
+        categories=categories,
+        dateList=dateList,
+        **get_site_context(),
+    )
 
 # =========================== 路由 ===========================
 @main.route('/')
@@ -27,8 +31,10 @@ def index():
     return init_index_with_blogs(dbHelper.get_recent_blogs())
 
 @main.route('/edit', methods=['GET', 'POST'])
+@login_required
 def edit_blog():
     if request.method == 'POST':
+        validate_csrf_token()
         blog = Blog()
         blog.html_title = request.form['html-title']
         blog.title = request.form['title']
@@ -62,7 +68,13 @@ def edit_blog():
         return response
     
     categories = dbHelper.get_all_categories()
-    return render_template('edit.html', blog=None, blog_content=None, categories=categories)
+    return render_template(
+        'edit.html',
+        blog=None,
+        blog_content=None,
+        categories=categories,
+        **get_site_context(),
+    )
 
 @main.route('/<int:year>/<int:month>/<string:html_title>')
 def blog_detail(year, month, html_title):
@@ -70,82 +82,54 @@ def blog_detail(year, month, html_title):
     blog = dbHelper.get_specify_blog(str(year), str(month), html_title)
     
     if blog:
-        return render_template('blog_detail.html', blog=blog)
+        return render_template('blog_detail.html', blog=blog, **get_site_context())
     else:
-        return render_template('404.html'), 404
+        return render_template('404.html', **get_site_context()), 404
 
 @main.route('/manage')
+@login_required
 def blog_manage():
     """
     博客管理页面
     """
     blogs = dbHelper.get_all_blogs()
-    return render_template('manage.html', blogs=blogs)
+    return render_template('manage.html', blogs=blogs, **get_site_context())
 
 @main.route('/edit/<string:year>/<string:month>/<string:html_title>')
+@login_required
 def manage_edit_blog(year, month, html_title):
     blog = dbHelper.get_specify_blog(year, month, html_title)
     if blog is None:
-        return render_template('404.html'), 404
+        return render_template('404.html', **get_site_context()), 404
     
     blog_content = json.dumps(blog.content)
     categories = dbHelper.get_all_categories()
-    return render_template('edit.html', blog=blog, blog_content=blog_content, categories=categories)
+    return render_template(
+        'edit.html',
+        blog=blog,
+        blog_content=blog_content,
+        categories=categories,
+        **get_site_context(),
+    )
 
-@main.route('/delete/<string:year>/<string:month>/<string:html_title>')
+@main.route('/delete/<string:year>/<string:month>/<string:html_title>', methods=['POST'])
+@login_required
 def manage_delete_blog(year, month, html_title):
+    validate_csrf_token()
     blog = dbHelper.get_specify_blog(year, month, html_title)
     if blog is None:
-        return render_template('404.html'), 404
+        return jsonify({"status": "error", "message": "指定的博客不存在。"}), 404
     
     return dbHelper.delete_blog(blog)  # 删除博客
 
 @main.route('/register')
 def register():
-    return render_template('register.html')
-
-@main.route('/register_device', methods=['GET', 'POST'])
-def register_device():
-    """
-    管理员设备注册
-    """
-    data = request.get_json()
-    device_id = data.get('device_id')
-    print(device_id)
-    if not device_id:
-        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
-    response = dbHelper.insert_device_id(device_id)
-    return response
-
-@main.route('/verify_device', methods=['POST'])
-def admin_verify():
-    """
-    机器验证
-    """
-    data = request.get_json()
-    device_id = data.get('device_id')
-
-    if not device_id:
-        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
-    
-    response = dbHelper.check_device_id(device_id)
-    if response:
-        return jsonify({"status": "success", "message": "设备验证成功"})
-    else:
-        return jsonify({"status": "failed", "message": "设备验证失败"})
+    return redirect(url_for('main.index'))
     
 @main.route('/logout', methods=['POST'])
+@login_required
 def logout():
-    """
-    注销设备
-    """
-    data = request.get_json()
-    device_id = data.get('device_id')
-    
-    if not device_id:
-        return jsonify({"status": "error", "message": "缺少设备ID"}), 400
-    
-    return dbHelper.delete_device_id(device_id)
+    return admin_logout()
 
     
 

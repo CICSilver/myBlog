@@ -1,12 +1,14 @@
-{% extends 'base.html' %}
-{% block title %}404 - 页面未找到{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}页面不存在 | {{ site_name }}{% endblock %}
+{% block body_class %}error-page{% endblock %}
 
 {% block content %}
-  <div class="entry" style="text-align:center; padding:40px 20px;">
-    <div id="error" style="font-size:72px; color: var(--muted);">404</div>
-    <h1 style="margin: 10px 0; color: var(--text);">未找到该页面</h1>
-    <p style="color: var(--muted);">抱歉，您访问的页面不存在或已被移除。</p>
-    <a class="navi-href" href="{{ url_for('main.index')}}">返回首页</a>
-  </div>
+<section class="error-shell">
+  <p class="section-label">Missing Archive</p>
+  <div class="error-code">404</div>
+  <h1>未找到相关页面</h1>
+  <p>这条索引可能已经失效，或者它从一开始就没有被写进这份档案。</p>
+  <a class="toolbar-button" href="{{ url_for('main.index') }}">返回首页</a>
+</section>
 {% endblock %}
-

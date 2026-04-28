@@ -1,75 +1,168 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
 {% block title %}{{ site_name }}{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block vendor_styles %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css"
+>
+{% endblock %}
 
 {% block extra_head %}
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 {% endblock %}
 
 {% block content %}
-  <div class="layout">
-    <section class="main">
-      <div class="posts-panel">
-        {% for blog in blogs %}
-        <h2 class="date-header">{{ blog.date }}</h2>
-        <div class="entry">
-          <h3 class="entry-header">{{ blog.title }}</h3>
-          <div class="entry-content">
-            <div class="entry-body markdown-body" id="markdown-preview-{{ loop.index }}"></div>
-            <textarea id="markdown-content-{{ loop.index }}" style="display:none;">{{ blog.content | safe }}</textarea>
-            <p class="entry-more-link">
-              <a href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}">阅读全文 "{{ blog.title }}" &raquo;</a>
-            </p>
+  {% if blogs %}
+    {% set featured = blogs[0] %}
+    <section class="home-hero">
+      <div class="hero-copyblock">
+        <div class="hero-composition">
+          <div class="hero-title-group">
+            <p class="section-label">Creative Writing Archive</p>
+            <div class="hero-title-frame">
+              <span class="hero-title-tag">Personal edition</span>
+              <h1 class="hero-title" aria-label="{{ site_name }}">
+                <span class="hero-title-word">Silver's</span>
+                <span class="hero-title-word hero-title-word-offset">Blog</span>
+              </h1>
+              <p class="hero-subtitle">记录那些值得留下来的技术、情绪、片段与学习痕迹。</p>
+              <div class="hero-signature-line">
+                <span class="hero-signature-mark">“</span>
+                <p class="hero-summary">{{ personal_intro }}</p>
+              </div>
+            </div>
           </div>
         </div>
-        {% endfor %}
       </div>
     </section>
 
-    <aside class="sidebar">
-      <h3 class="entry-header sidebar-header">MISC</h3>
-      <ul class="sidebar-list">
-        <li>自留地</li>
-      </ul>
-      <h3 class="entry-header sidebar-header">CATEGORIES</h3>
-      <ul class="sidebar-list">
-        {% for category in categories %}
-          <li>
-            <a class="navi-href category-href" href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}">{{ category.name }} ({{ category.num }})</a>
-          </li>
-        {% endfor %}
-      </ul>
-      <h3 class="entry-header sidebar-header">ARCHIVES</h3>
-      <ul class="sidebar-list">
-        {% for date in dateList %}
-          <li>
-            <a class="navi-href" href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}">{{ date.year }}.{{ date.month }} ({{ date.num }})</a>
-          </li>
-        {% endfor %}
-      </ul>
-    </aside>
-  </div>
+    <section class="home-body">
+      <aside class="archive-sidebar">
+        <section class="sidebar-block">
+          <p class="section-label">Archive Note</p>
+          <p class="sidebar-copy">
+            这里保存的是技术记录、随笔和学习痕迹。它不是社交时间线，而是一份可回看的个人创作目录。
+          </p>
+        </section>
+
+        <section class="sidebar-block">
+          <div class="sidebar-heading">
+            <h2>分类索引</h2>
+            <span>{{ categories | length }}</span>
+          </div>
+          <ul class="archive-list">
+            {% for category in categories %}
+              <li>
+                <a href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}">
+                  <span>{{ category.name }}</span>
+                  <em>{{ category.num }}</em>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+
+        <section class="sidebar-block">
+          <div class="sidebar-heading">
+            <h2>时间归档</h2>
+            <span>{{ dateList | length }}</span>
+          </div>
+          <ul class="archive-list">
+            {% for date in dateList %}
+              <li>
+                <a href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}">
+                  <span>{{ date.year }}.{{ date.month }}</span>
+                  <em>{{ date.num }}</em>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      </aside>
+
+      <section class="entry-stream">
+        <article class="feature-article">
+          <div class="stream-heading stream-heading-compact">
+            <p class="section-label">Latest Entry</p>
+            <h2>最新文章</h2>
+          </div>
+          <h3 class="feature-title">
+            <a href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}">
+              {{ featured.title }}
+            </a>
+          </h3>
+          <div class="feature-meta">
+            <span>{{ featured.date }}</span>
+            <span>{{ featured.category }}</span>
+          </div>
+          <div class="feature-preview markdown-body" id="markdown-preview-featured"></div>
+          <textarea id="markdown-content-featured" data-preview-lines="8" hidden>{{ featured.content | safe }}</textarea>
+          <a
+            class="entry-link"
+            href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}"
+          >
+            进入全文
+          </a>
+        </article>
+
+        <div class="stream-heading">
+          <p class="section-label">Archive Stream</p>
+          <h2>近期归档</h2>
+        </div>
+
+        {% if blogs | length > 1 %}
+          {% for blog in blogs %}
+            {% if not loop.first %}
+              <article class="entry-line">
+                <div class="entry-line-meta">
+                  <span>{{ blog.date }}</span>
+                  <span>{{ blog.category }}</span>
+                </div>
+                <div class="entry-line-main">
+                  <h3 class="entry-line-title">
+                    <a href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}">
+                      {{ blog.title }}
+                    </a>
+                  </h3>
+                  <div class="entry-line-preview markdown-body" id="markdown-preview-stream-{{ loop.index }}"></div>
+                  <textarea id="markdown-content-stream-{{ loop.index }}" hidden>{{ blog.content | safe }}</textarea>
+                  <a
+                    class="entry-link"
+                    href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
+                  >
+                    阅读全文
+                  </a>
+                </div>
+              </article>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <div class="empty-stage compact">
+            <p>第一篇文章已经入档，接下来继续写，首页会逐渐长成完整的归档流。</p>
+          </div>
+        {% endif %}
+      </section>
+    </section>
+  {% else %}
+    <section class="empty-stage">
+      <p class="section-label">Archive Waiting</p>
+      <h1>归档还是空的</h1>
+      <p>第一篇文章写下去之后，这里会开始长出属于你的时间线。</p>
+    </section>
+  {% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
-  <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
-  <script>
-    // 渲染首页预览
-    document.querySelectorAll('[id^="markdown-content-"]').forEach((textarea) => {
-      const contentId = textarea.id;
-      const previewId = contentId.replace('content', 'preview');
-      renderMarkdownPreview(contentId, previewId);
-    });
+<script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+<script>
+  document.querySelectorAll('[id^="markdown-content-"]').forEach((textarea) => {
+    const contentId = textarea.id;
+    const previewId = contentId.replace('content', 'preview');
 
-    async function logout() {
-      const fingerprint = await getBrowserFingerprint();
-      fetch('/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: fingerprint })
-      })
-      .then(r => r.json())
-      .then(data => { if (data.status === 'success') location.href = '/'; else alert(data.message); });
-    }
-  </script>
+    renderMarkdownPreview(contentId, previewId);
+  });
+</script>
 {% endblock %}

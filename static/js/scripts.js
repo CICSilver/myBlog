@@ -6,19 +6,6 @@ function navigateToManage() {
     window.location.href = '/manage';
 }
 
-function GetDeviceId() {
-    var deviceId = localStorage.getItem("deviceId");
-    return deviceId;
-}
-
-async function getBrowserFingerprint() {
-    const fp = await FingerprintJS.load();
-
-    const result = await fp.get();
-
-    return result.visitorId;
-}
-
 class Modal {
     constructor() {
         this.modalOverlay = document.getElementById("myModalOverlay");
@@ -27,36 +14,46 @@ class Modal {
         this.modalBody = document.getElementById("modal-body-content");
         this.modalHiddenContent = document.getElementById("modal-hidden-content");
         this.modalFooter = document.getElementById("modal-footer");
+
+        if (this.modalOverlay) {
+            this.modalOverlay.addEventListener("click", (event) => {
+                if (event.target === this.modalOverlay) {
+                    this.close();
+                }
+            });
+        }
     }
 
     show(modalMsg) {
-        if (modalMsg) {
+        if (!this.modalOverlay || !this.modal) {
+            return;
+        }
+
+        if (modalMsg && this.modalBody) {
             this.modalBody.innerHTML = `<p>${modalMsg}</p>`;
         }
 
-        // 显示模态窗口的背景
         this.modalOverlay.style.display = "block";
-        this.modalOverlay.classList.remove("fade-out");
+        document.body.classList.add("modal-open");
 
-        // 设置模态窗口的动画效果
-        setTimeout(() => {
-            this.modal.style.top = "50%"; // 将窗口移动到视口中间
-            this.modal.style.opacity = "1"; // 设置透明度为完全可见
-        }, 10); // 延迟是为了确保动画生效
+        requestAnimationFrame(() => {
+            this.modalOverlay.classList.add("is-visible");
+            this.modal.classList.add("is-visible");
+        });
     }
 
-    // 关闭模态窗口
     close() {
-        this.modalOverlay.classList.add("fade-out");
+        if (!this.modalOverlay || !this.modal) {
+            return;
+        }
 
-        // 隐藏模态窗口的动画效果
-        this.modal.style.top = "-100%"; // 将窗口移回视口上方
-        this.modal.style.opacity = "0"; // 设置透明度为不可见
+        this.modalOverlay.classList.remove("is-visible");
+        this.modal.classList.remove("is-visible");
+        document.body.classList.remove("modal-open");
 
-        // 等待动画结束后隐藏模态窗口的背景
         setTimeout(() => {
-            this.modalOverlay.style.display = "none"; // 隐藏背景
-        }, 300); // 延迟与 CSS 的 transition 时间一致
+            this.modalOverlay.style.display = "none";
+        }, 220);
     }
 
     setTitle(title) {
@@ -65,11 +62,26 @@ class Modal {
         }
     }
 
-    // 添加按钮到模态窗口的底部
-    addButton(btnText, onClickFunction) {
+    setHiddenValue(value) {
+        if (this.modalHiddenContent) {
+            this.modalHiddenContent.textContent = value;
+        }
+    }
+
+    getHiddenValue() {
+        return this.modalHiddenContent ? this.modalHiddenContent.textContent : "";
+    }
+
+    addButton(btnText, onClickFunction, tone = "default") {
         if (this.modalFooter) {
             const btn = document.createElement("button");
-            btn.className = "grey_btn modal-btn";
+            btn.type = "button";
+            btn.className = "modal-btn";
+            if (tone === "secondary") {
+                btn.classList.add("is-secondary");
+            } else if (tone === "danger") {
+                btn.classList.add("is-danger");
+            }
             btn.innerText = btnText;
             btn.onclick = onClickFunction;
 
@@ -77,7 +89,6 @@ class Modal {
         }
     }
 
-    // 清空模态窗口底部的按钮
     clearButtons() {
         if (this.modalFooter) {
             this.modalFooter.innerHTML = "";
@@ -85,4 +96,20 @@ class Modal {
     }
 }
 
-
+async function logout() {
+    fetch('/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': window.BLOG_CSRF_TOKEN || ''
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                window.location.href = '/';
+            } else {
+                alert(data.message);
+            }
+        });
+}

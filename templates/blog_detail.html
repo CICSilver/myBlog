@@ -1,53 +1,56 @@
-{% extends 'base.html' %}
-{% block title %}{{ blog.title }} - {{ site_name | default('Mole\'s Hole') }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}{{ blog.title }} | {{ site_name }}{% endblock %}
+{% block body_class %}detail-page{% endblock %}
+
+{% block vendor_styles %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css"
+>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css"
+>
+{% endblock %}
 
 {% block extra_head %}
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
 {% endblock %}
 
 {% block content %}
-  <div class="entry">
-    <div class="navigation">
-      <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
+<section class="reading-shell">
+  <header class="reading-lead">
+    <p class="section-label">Archive Entry</p>
+    <h1 class="reading-title">{{ blog.title }}</h1>
+    <div class="reading-meta">
+      <span>{{ blog.date }} {{ blog.time }}</span>
+      <span>{{ blog.category }}</span>
     </div>
-    <div class="entry-header">{{ blog.title }}</div>
-    <div class="markdown-container">
-      <div class="entry-content markdown-body" id="markdown-preview"></div>
-      <textarea id="markdown-content" style="display:none;">{{ blog.content | safe }}</textarea>
-    </div>
-    <p class="entry-footer">
-      <span class="blog-footer">发表于 {{ blog.date }} {{ blog.time }}</span>
-    </p>
-  </div>
+    <a class="toolbar-link back-link" href="{{ url_for('main.index') }}">返回档案首页</a>
+  </header>
+
+  <article class="reading-article markdown-body" id="markdown-preview"></article>
+  <textarea id="markdown-content" hidden>{{ blog.content | safe }}</textarea>
+</section>
 {% endblock %}
 
 {% block extra_scripts %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
-  <script>
-    // marked + highlight 渲染
-    marked.setOptions({
-      highlight: function (code, lang) {
-        if (lang && window.hljs && hljs.getLanguage(lang)) {
-          return hljs.highlight(code, { language: lang }).value;
-        }
-        return window.hljs ? hljs.highlightAuto(code).value : code;
+<script>
+  marked.setOptions({
+    highlight: function (code, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        return hljs.highlight(code, { language: lang }).value;
       }
-    });
-    const markdownContent = document.getElementById('markdown-content').value;
-    document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
-  </script>
-  <style>
-    .markdown-container pre {
-      background-color: #1e1e1e;
-      color: #d4d4d4;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-    }
-  </style>
-{% endblock %}
 
+      return hljs.highlightAuto(code).value;
+    }
+  });
+
+  const markdownContent = document.getElementById('markdown-content').value;
+  document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
+</script>
+{% endblock %}

@@ -1,81 +1,130 @@
-{% extends 'base.html' %}
-{% block title %}管理文章 - {{ site_name | default('Mole\'s Hole') }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}管理归档 | {{ site_name }}{% endblock %}
+{% block body_class %}manage-page{% endblock %}
 
 {% block content %}
-  <div class="manage_container">
-    <div class="navigation" style="margin-bottom:12px;">
-      <a class="navi-href" href="{{ url_for('main.index') }}">返回首页</a>
-    </div>
-    <div class="header" style="margin-bottom: 10px;">文章管理</div>
-    <table class="manage_table" border="1">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>标题</th>
-          <th>发布时间</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for blog in blogs %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>{{ blog.title }}</td>
-          <td>{{ blog.date ~ ' ' ~ blog.time }}</td>
-          <td>
-            <div class="manage-opera-col">
-              <a class="manage-href" href="{{ url_for('main.manage_edit_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}">编辑</a>
-              <a class="manage-href" href="javascript:void(0);" onclick="deleteBlogConfirm('{{ url_for('main.manage_delete_blog',year=blog.year,month=blog.month,html_title=blog.html_title) }}')">删除</a>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- 模态框 -->
-    <div class="modal-overlay" id="myModalOverlay">
-      <div class="modal" id="myModal">
-        <div class="modal-header">
-          <h2>确认操作</h2>
-        </div>
-        <div id="modal-body-content" class="modal-body">
-          <p>确定删除该文章吗？</p>
-        </div>
-        <div style="display: none;" id="modal-hidden-content"></div>
-        <div class="modal-footer">
-          <button class="grey_btn modal-btn" onclick="deleteBlog()">确认</button>
-          <button class="grey_btn modal-btn" onclick="modal.close()">取消</button>
-        </div>
-      </div>
-    </div>
+<section class="admin-hero">
+  <div>
+    <p class="section-label">Archive Console</p>
+    <h1>博客数据管理</h1>
+    <p class="admin-copy">整理标题、核对发布时间，并维护这份个人创作档案的结构。</p>
   </div>
+  <div class="admin-summary">
+    <span class="stat-label">当前总计</span>
+    <strong>{{ blogs | length }}</strong>
+    <span class="stat-note">篇文章</span>
+  </div>
+</section>
+
+<section class="table-shell">
+  <div class="table-toolbar">
+    <a class="toolbar-button" href="{{ url_for('main.edit_blog') }}">写新文章</a>
+  </div>
+
+  {% if blogs %}
+    <div class="table-wrap">
+      <table class="manage_table">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>标题</th>
+            <th>分类</th>
+            <th>日期</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for blog in blogs %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ blog.title }}</td>
+              <td>{{ blog.category }}</td>
+              <td>{{ blog.date ~ ' ' ~ blog.time }}</td>
+              <td>
+                <div class="manage-opera-col">
+                  <a
+                    class="table-action"
+                    href="{{ url_for('main.manage_edit_blog', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
+                  >
+                    编辑
+                  </a>
+                  <button
+                    class="table-action is-danger"
+                    type="button"
+                    onclick="deleteBlogConfirm('{{ url_for('main.manage_delete_blog', year=blog.year, month=blog.month, html_title=blog.html_title) }}', '{{ blog.title }}')"
+                  >
+                    删除
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-stage compact">
+      <p class="section-label">No Data Yet</p>
+      <h2>还没有文章可管理</h2>
+      <p>先写下一篇文章，这里会自动形成可编辑的归档列表。</p>
+    </div>
+  {% endif %}
+</section>
+
+<div class="modal-overlay" id="myModalOverlay">
+  <div class="modal" id="myModal">
+    <div class="modal-header" id="modal-header">
+      <h2>确认操作</h2>
+    </div>
+    <div id="modal-body-content" class="modal-body">
+      <p>这是一条重要通知。</p>
+    </div>
+    <div id="modal-hidden-content" hidden></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-  <script>
-    var modal = new Modal();
-    function deleteBlogConfirm(deleteUrl) {
-      modal.show('确认删除该文章吗？');
-      const hidden_content = modal.modalHiddenContent;
-      if (hidden_content) {
-        hidden_content.innerHtml = deleteUrl;
-      }
-    }
-    function deleteBlog() {
-      const hidden_content = modal.modalHiddenContent;
-      const deleteUrl = hidden_content.innerHtml;
-      fetch(deleteUrl, { method: 'GET' })
-        .then(r => r.json())
-        .then(data => {
-          if (data.status === 'success') {
-            window.location.reload();
-          } else {
-            alert(data.message || '删除失败');
-          }
-        })
-        .catch(() => { alert('删除请求失败'); });
-    }
-  </script>
-{% endblock %}
+<script>
+  const modal = new Modal();
 
+  function deleteBlogConfirm(deleteUrl, blogTitle) {
+    modal.setTitle('删除文章');
+    modal.clearButtons();
+    modal.setHiddenValue(deleteUrl);
+    modal.show(`确定删除《${blogTitle}》吗？删除后无法恢复。`);
+    modal.addButton('取消', () => modal.close(), 'secondary');
+    modal.addButton('确认删除', deleteBlog, 'danger');
+  }
+
+  async function deleteBlog() {
+    const deleteUrl = modal.getHiddenValue();
+
+    try {
+      const response = await fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': window.BLOG_CSRF_TOKEN || '',
+        },
+      });
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        window.location.reload();
+      } else {
+        modal.setTitle('删除失败');
+        modal.clearButtons();
+        modal.show(data.message || '删除请求未成功完成。');
+        modal.addButton('关闭', () => modal.close(), 'secondary');
+      }
+    } catch (error) {
+      modal.setTitle('删除失败');
+      modal.clearButtons();
+      modal.show('删除请求失败，请稍后再试。');
+      modal.addButton('关闭', () => modal.close(), 'secondary');
+    }
+  }
+</script>
+{% endblock %}

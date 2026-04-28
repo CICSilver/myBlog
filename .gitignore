@@ -5,4 +5,6 @@ app/__pycache__/
 *.log
 test/
 db/
-temp_part.css
+output/
+instance/config.py
+.env
