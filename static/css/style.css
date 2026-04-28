@@ -10,6 +10,12 @@
     --accent: #a25b33;
     --accent-strong: #8f4b26;
     --accent-soft: rgba(162, 91, 51, 0.12);
+    --success: #3f6f56;
+    --success-soft: rgba(63, 111, 86, 0.14);
+    --warning: #9a6a24;
+    --warning-soft: rgba(154, 106, 36, 0.14);
+    --danger: #8f3a2e;
+    --danger-soft: rgba(143, 58, 46, 0.14);
     --line: rgba(36, 28, 24, 0.12);
     --line-strong: rgba(36, 28, 24, 0.22);
     --shadow: 0 28px 70px rgba(62, 40, 29, 0.12);
@@ -202,7 +208,7 @@ p {
 
 .table-action.is-danger,
 .modal-btn.is-danger {
-    background: #8f3a2e;
+    background: var(--danger);
 }
 
 .table-action.is-danger:hover,
@@ -217,6 +223,7 @@ p {
 .table-shell,
 .editor-hero,
 .editor-shell,
+.writing-workspace,
 .error-shell,
 .register-stage {
     animation: rise-in 0.7s ease-out both;
@@ -235,6 +242,7 @@ p {
 .table-shell,
 .editor-hero,
 .editor-shell,
+.writing-workspace,
 .error-shell,
 .register-stage {
     border: 1px solid var(--line);
@@ -730,6 +738,167 @@ p {
     gap: 10px;
 }
 
+.edit-page .page-shell {
+    width: min(1380px, calc(100% - 32px));
+    padding-bottom: 48px;
+}
+
+.edit-page .site-toolbar {
+    margin-bottom: 14px;
+}
+
+.writing-workspace {
+    min-height: calc(100vh - 142px);
+    padding: clamp(16px, 2vw, 24px);
+}
+
+.writing-form {
+    gap: 16px;
+}
+
+.writing-topbar {
+    position: sticky;
+    top: 12px;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: -8px -8px 2px;
+    padding: 14px 16px;
+    border: 1px solid rgba(36, 28, 24, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 250, 242, 0.92);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 38px rgba(62, 40, 29, 0.1);
+}
+
+.writing-titleblock {
+    min-width: 0;
+}
+
+.writing-titleblock h1 {
+    margin: 5px 0 4px;
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    line-height: 1.12;
+}
+
+.writing-titleblock p {
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+.writing-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.save-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 252, 248, 0.76);
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.save-status.is-dirty,
+.save-status.is-saving {
+    border-color: rgba(154, 106, 36, 0.32);
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.save-status.is-saved {
+    border-color: rgba(63, 111, 86, 0.3);
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.save-status.is-error {
+    border-color: rgba(143, 58, 46, 0.3);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.submit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+    transform: none;
+}
+
+.writing-fields {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.45fr) minmax(190px, 0.78fr) minmax(190px, 0.78fr);
+    gap: 14px;
+    align-items: end;
+}
+
+.field-title .form-input {
+    font-size: 1.08rem;
+    font-weight: 650;
+}
+
+.writing-workspace .editor-stage {
+    min-height: 460px;
+    border-color: rgba(36, 28, 24, 0.16);
+    border-radius: 18px;
+    background: #fffdf8;
+    box-shadow: 0 18px 48px rgba(62, 40, 29, 0.08);
+}
+
+.writing-workspace .editor-stage .editormd {
+    margin-bottom: 0 !important;
+    border: none;
+}
+
+.writing-workspace .editor-stage .CodeMirror {
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.72;
+}
+
+.writing-workspace .editor-stage .CodeMirror-scroll {
+    padding: 8px 0;
+}
+
+.writing-workspace .editor-stage .editormd-preview-container {
+    padding: 24px 28px;
+}
+
+.writing-footer {
+    margin-bottom: 0;
+    padding-top: 0;
+}
+
+.writing-metrics {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.writing-metrics span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 252, 248, 0.66);
+}
+
 .editor-form {
     display: grid;
     gap: 22px;
@@ -827,15 +996,25 @@ p {
     overflow-y: auto;
 }
 
+.category-dropdown.is-open {
+    display: block;
+}
+
 .dropdown-item {
     padding: 10px 14px;
     color: var(--ink-soft);
     cursor: pointer;
 }
 
-.dropdown-item:hover {
+.dropdown-item:hover,
+.dropdown-item:focus {
     background: rgba(162, 91, 51, 0.08);
     color: var(--accent-strong);
+}
+
+.dropdown-empty {
+    padding: 10px 14px;
+    color: var(--ink-faint);
 }
 
 .tooltip {
@@ -1064,6 +1243,14 @@ p {
     .hero-composition {
         display: block;
     }
+
+    .writing-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field-title {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (max-width: 760px) {
@@ -1087,6 +1274,7 @@ p {
     .table-shell,
     .editor-hero,
     .editor-shell,
+    .writing-workspace,
     .error-shell,
     .register-stage {
         border-radius: 22px;
@@ -1096,9 +1284,41 @@ p {
         align-items: flex-start;
     }
 
+    .edit-page .site-toolbar {
+        gap: 10px;
+        margin-bottom: 10px;
+        padding: 12px;
+    }
+
+    .edit-page .brand-overline {
+        display: none;
+    }
+
+    .edit-page .brand-name {
+        font-size: 1.22rem;
+    }
+
+    .edit-page .toolbar-actions {
+        gap: 8px;
+    }
+
+    .edit-page .header-btn-grp {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+    }
+
+    .edit-page .header-btn-grp .toolbar-button {
+        min-height: 36px;
+        padding: 0 8px;
+        font-size: 0.84rem;
+    }
+
     .toolbar-actions,
     .header-btn-grp,
     .table-toolbar,
+    .writing-actions,
     .editor-footer,
     .modal-footer {
         flex-direction: column;
@@ -1110,8 +1330,81 @@ p {
     .reading-lead,
     .reading-article,
     .table-shell,
-    .editor-shell {
+    .editor-shell,
+    .writing-workspace {
         padding: 20px;
+    }
+
+    .edit-page .page-shell {
+        width: min(100% - 20px, 100%);
+        padding-bottom: 36px;
+    }
+
+    .writing-topbar {
+        position: static;
+        align-items: stretch;
+        flex-direction: column;
+        margin: -8px -8px 0;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .writing-titleblock h1 {
+        margin-bottom: 0;
+        font-size: 1.38rem;
+    }
+
+    .writing-titleblock p {
+        display: none;
+    }
+
+    .writing-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .writing-actions .toolbar-button,
+    .writing-actions .save-status {
+        width: 100%;
+    }
+
+    .writing-actions .save-status {
+        grid-column: 1 / -1;
+        min-height: 30px;
+        justify-content: center;
+    }
+
+    .writing-actions .toolbar-button {
+        min-height: 38px;
+        padding: 0 12px;
+    }
+
+    .writing-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .field-title {
+        grid-column: 1 / -1;
+    }
+
+    .writing-workspace .field-block {
+        gap: 8px;
+        font-size: 0.9rem;
+    }
+
+    .writing-workspace .form-input {
+        min-height: 48px;
+        padding: 0 12px;
+    }
+
+    .writing-workspace .editor-stage {
+        min-height: 420px;
+    }
+
+    .writing-workspace .editor-stage .editormd-preview-container {
+        padding: 18px;
     }
 
     .entry-line {
@@ -1156,6 +1449,19 @@ p {
 
     .modal {
         width: calc(100vw - 20px);
+    }
+}
+
+@media (max-width: 360px) {
+    .edit-page .header-btn-grp,
+    .writing-fields,
+    .writing-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .field-title,
+    .writing-actions .save-status {
+        grid-column: auto;
     }
 }
 

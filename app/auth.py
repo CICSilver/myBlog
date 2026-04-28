@@ -60,8 +60,8 @@ def verify_admin_password(password):
         return False
 
     password_hash = _get_config_value("BLOG_ADMIN_PASSWORD_HASH")
-    if password_hash:
-        return check_password_hash(password_hash, password)
+    if password_hash and check_password_hash(password_hash, password):
+        return True
 
     configured_password = _get_config_value("BLOG_ADMIN_PASSWORD")
     if configured_password:
@@ -124,4 +124,23 @@ def _safe_next_url(next_url):
 
 
 def _get_config_value(key):
-    return os.environ.get(key) or current_app.config.get(key)
+    env_value = os.environ.get(key)
+    if _has_text(env_value):
+        return _normalize_secret_value(env_value)
+
+    return _normalize_secret_value(current_app.config.get(key))
+
+
+def _has_text(value):
+    return isinstance(value, str) and value.strip() != ""
+
+
+def _normalize_secret_value(value):
+    if not isinstance(value, str):
+        return value
+
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1].strip()
+
+    return value
