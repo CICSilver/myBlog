@@ -1470,18 +1470,34 @@ html[data-theme="dark"] .theme-toggle-icon::after {
     overflow-x: auto;
 }
 
-.markdown-body table tr {
-    background: transparent;
+.markdown-body table tr,
+.editor-stage .editormd-preview-container table tr,
+.editor-stage .editormd-html-preview table tr {
+    background-color: transparent;
     border-top-color: var(--line);
 }
 
-.markdown-body table tr:nth-child(2n) {
-    background: var(--row-hover);
+.markdown-body table thead tr,
+.editor-stage .editormd-preview-container table thead tr,
+.editor-stage .editormd-html-preview table thead tr {
+    background-color: var(--table-head-surface);
+}
+
+.markdown-body table tr:nth-child(2n),
+.editor-stage .editormd-preview-container table tbody tr:nth-child(2n),
+.editor-stage .editormd-html-preview table tbody tr:nth-child(2n) {
+    background-color: var(--row-hover);
 }
 
 .markdown-body table th,
 .markdown-body table td {
     border-color: var(--line);
+}
+
+.markdown-body table th,
+.editor-stage .editormd-preview-container table th,
+.editor-stage .editormd-html-preview table th {
+    color: var(--ink);
 }
 
 @keyframes rise-in {
