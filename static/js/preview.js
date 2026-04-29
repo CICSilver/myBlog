@@ -1,3 +1,7 @@
+function trimAsciiWhitespace(value) {
+    return value.replace(/^[ \t\r\f\v]+|[ \t\r\f\v]+$/g, '');
+}
+
 // 渲染 Markdown 预览
 function renderMarkdownPreview(markdownContentId, previewContainerId) {
     // 获取隐藏的 Markdown 文本
@@ -17,20 +21,21 @@ function renderMarkdownPreview(markdownContentId, previewContainerId) {
     // 提取前几行，跳过开头空行，遇到表格停止
     const previewLines = [];
     for (let i = 0; i < lines.length && previewLines.length < maxLines; i++) {
-        const line = lines[i].trim();
+        const line = lines[i];
+        const controlLine = trimAsciiWhitespace(line);
 
-        if (!line && previewLines.length === 0) {
+        if (!controlLine && previewLines.length === 0) {
             continue;
         }
 
         // 如果遇到表格（以 | 开头或包含 |），停止处理
-        if (line.startsWith('|') || line.includes('|')) {
+        if (controlLine.startsWith('|') || controlLine.includes('|')) {
             break;
         }
 
         // 如果是标题（以 # 开头），只保留标题文本
-        if (line.startsWith('#')) {
-            previewLines.push(line.replace(/^#+\s*/, '')); // 去掉 # 和前面的空格
+        if (controlLine.startsWith('#')) {
+            previewLines.push(controlLine.replace(/^#+[ \t]*/, '')); // 去掉 # 和前面的空格
         } else {
             previewLines.push(line);
         }

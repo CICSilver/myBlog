@@ -1,3 +1,88 @@
+const THEME_STORAGE_KEY = "silver-blog-theme";
+const THEME_VALUES = ["light", "dark"];
+
+function isValidTheme(theme) {
+    return THEME_VALUES.includes(theme);
+}
+
+function getStoredTheme() {
+    try {
+        const theme = window.localStorage.getItem(THEME_STORAGE_KEY);
+        return isValidTheme(theme) ? theme : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+function setStoredTheme(theme) {
+    try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+        return;
+    }
+}
+
+function getSystemTheme() {
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function updateThemeControls(theme) {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    const label = nextTheme === "dark" ? "切换到深色模式" : "切换到浅色模式";
+
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+        button.setAttribute("aria-label", label);
+        button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+        button.setAttribute("title", label);
+        button.dataset.themeState = theme;
+    });
+
+    document.querySelectorAll("[data-theme-toggle-label]").forEach((labelNode) => {
+        labelNode.textContent = label;
+    });
+}
+
+function applyTheme(theme, shouldPersist = false) {
+    const nextTheme = isValidTheme(theme) ? theme : "light";
+
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+
+    if (shouldPersist) {
+        setStoredTheme(nextTheme);
+    }
+
+    updateThemeControls(nextTheme);
+}
+
+function initThemeToggle() {
+    applyTheme(getStoredTheme() || document.documentElement.dataset.theme || getSystemTheme());
+
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+            applyTheme(currentTheme === "dark" ? "light" : "dark", true);
+        });
+    });
+
+    if (window.matchMedia) {
+        const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const handleSystemThemeChange = (event) => {
+            if (!getStoredTheme()) {
+                applyTheme(event.matches ? "dark" : "light");
+            }
+        };
+
+        if (typeof systemThemeQuery.addEventListener === "function") {
+            systemThemeQuery.addEventListener("change", handleSystemThemeChange);
+        } else if (typeof systemThemeQuery.addListener === "function") {
+            systemThemeQuery.addListener(handleSystemThemeChange);
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", initThemeToggle);
+
 function navigateToWriting() {
     window.location.href = '/edit';
 }

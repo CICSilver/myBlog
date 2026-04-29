@@ -6,9 +6,31 @@ from tinydb.table import Document
 from datetime import datetime
 from pypinyin import lazy_pinyin
 from threading import RLock
+import re
 
 
 _write_lock = RLock()
+
+
+def normalize_html_title(value, fallback="post"):
+    slug = _slugify_html_title(value)
+    if slug:
+        return slug
+
+    slug = _slugify_html_title(fallback)
+    return slug or "post"
+
+
+def _slugify_html_title(value):
+    if value is None:
+        return ""
+
+    slug = "_".join(lazy_pinyin(str(value)))
+    slug = slug.strip().lower()
+    slug = re.sub(r"\s+", "_", slug)
+    slug = re.sub(r"[^a-z0-9_-]+", "_", slug)
+    slug = re.sub(r"_+", "_", slug)
+    return slug.strip("_-")
 
 
 def _snapshot_history(reason):
@@ -306,10 +328,7 @@ class DatabaseHelper:
             if not isinstance(blog, Blog):
                 raise TypeError("Expected a Blog instance")
 
-            # 检查html_title重复情况，若存在则编号增加
-            blog_in_db = self.get_specify_blog(blog.year, blog.month, blog.html_title)
-            if blog_in_db:
-                return {"status": "duplicate", "message": "html标题重复，请选择处理方式。"}
+            self.__ensure_unique_html_title(blog)
 
             _snapshot_history("pre-insert-blog")
             self.__insert_category(blog.category)  # 确保分类存在
@@ -319,7 +338,40 @@ class DatabaseHelper:
             self.blog_table.insert(blog.to_dict())
             self.__update_blog_num_in_date(blog.year, blog.month)
             _snapshot_history("post-insert-blog")
-            return {"status": "success", "message": "博客数据插入成功。"}
+            return {"status": "success", "message": "博客数据插入成功。", "html_title": blog.html_title}
+
+    def __ensure_unique_html_title(self, blog: Blog, exclude_key=None):
+        base_title = normalize_html_title(blog.html_title, blog.title)
+        candidate = base_title
+        suffix = 1
+
+        while self.__blog_html_title_exists(blog.year, blog.month, candidate, exclude_key):
+            candidate = "{0}_{1}".format(base_title, suffix)
+            suffix += 1
+
+        blog.html_title = candidate
+
+    def __blog_html_title_exists(self, year, month, html_title, exclude_key=None):
+        blogs = self.blog_table.search(
+            (Query().html_title == html_title)
+            & (Query().year == year)
+            & (Query().month == month)
+        )
+
+        if exclude_key is None:
+            return len(blogs) > 0
+
+        exclude_year, exclude_month, exclude_html_title = exclude_key
+        for blog in blogs:
+            if (
+                blog.get("year") == exclude_year
+                and blog.get("month") == exclude_month
+                and blog.get("html_title") == exclude_html_title
+            ):
+                continue
+            return True
+
+        return False
     
     def __process_blog(self, blog: Blog, operation):
         """
@@ -337,18 +389,28 @@ class DatabaseHelper:
         operation(blog)
         return {"status": "success", "message": "博客数据更新成功。"}
 
-    def update_blog(self, blog: Blog):
+    def update_blog(self, blog: Blog, original_key=None):
         """
         更新博客数据
         """
         with _write_lock:
+            original_key = original_key or (blog.year, blog.month, blog.html_title)
+            original_year, original_month, original_html_title = original_key
+
             def update_opera(blog):
-                self.blog_table.update(blog.to_dict(), (Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
+                self.blog_table.update(
+                    blog.to_dict(),
+                    (Query().year == original_year)
+                    & (Query().month == original_month)
+                    & (Query().html_title == original_html_title),
+                )
 
             # 更新分类信息
-            old_blog_data = self.get_specify_blog_o(blog)
+            old_blog_data = self.get_specify_blog(original_year, original_month, original_html_title)
             if old_blog_data is None:
                 return {"status": "error", "message": "指定的博客不存在。"}
+
+            self.__ensure_unique_html_title(blog, exclude_key=original_key)
 
             _snapshot_history("pre-update-blog")
             if old_blog_data.category != blog.category:
@@ -368,6 +430,7 @@ class DatabaseHelper:
 
             response = self.__process_blog(blog, update_opera)
             _snapshot_history("post-update-blog")
+            response["html_title"] = blog.html_title
             return response
 
 

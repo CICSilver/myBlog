@@ -36,7 +36,7 @@ def edit_blog():
     if request.method == 'POST':
         validate_csrf_token()
         blog = Blog()
-        blog.html_title = request.form['html-title']
+        blog.html_title = request.form.get('html-title', '')
         blog.title = request.form['title']
         blog.content = request.form['content']
         blog.category = request.form['category']
@@ -54,15 +54,17 @@ def edit_blog():
         response = {"status":"default_failed", "message":"操作失败"}
         if action == "update":
             # 更新博客
-            response = dbHelper.update_blog(blog)
+            original_key = (
+                request.form.get('original-year') or blog.year,
+                request.form.get('original-month') or blog.month,
+                request.form.get('original-html-title') or blog.html_title,
+            )
+            response = dbHelper.update_blog(blog, original_key=original_key)
         elif action == "insert":
             # 插入新博客
             response = dbHelper.insert_blog(blog)
         elif action == "insert_new":
-            # 有重复情况，修改html_title后插入新博客
-            index = blog.html_title.rfind('_')
-            index = 1 if index == -1 else index + 1
-            blog.html_title = f"{blog.html_title}_{index}"
+            # 兼容旧前端动作，具体去重交给数据库层统一处理
             response = dbHelper.insert_blog(blog)
 
         return response

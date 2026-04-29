@@ -18,6 +18,9 @@
 <section class="writing-workspace">
   <form method="POST" action="{{ url_for('main.edit_blog') }}" class="editor-form writing-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="original-year" value="{{ blog.year if blog else '' }}">
+    <input type="hidden" name="original-month" value="{{ blog.month if blog else '' }}">
+    <input type="hidden" name="original-html-title" value="{{ blog.html_title if blog else '' }}">
 
     <div class="writing-topbar">
       <div class="writing-titleblock">
@@ -57,9 +60,8 @@
           type="text"
           id="html-title"
           name="html-title"
-          placeholder="例如：archive_note_01"
+          placeholder="留空则自动生成"
           value="{{ blog.html_title if blog else '' }}"
-          required
           autocomplete="off"
         >
       </label>
@@ -96,7 +98,7 @@
         <span id="content-counter">0 字 / 0 字符</span>
         <span>Markdown</span>
       </div>
-      <p class="editor-note">HTML 标题会把空格转成下划线；分类支持输入新值或复用现有分类。</p>
+      <p class="editor-note">HTML 标题可手动填写；留空时会根据博客标题生成，重复时自动追加编号。</p>
     </div>
   </form>
 </section>
@@ -122,6 +124,8 @@
   const saveStatus = document.getElementById('save-status');
   const saveButton = document.getElementById('save-button');
   const contentCounter = document.getElementById('content-counter');
+  const defaultSaveAction = "{{ 'update' if blog else 'insert' }}";
+  const CHINESE_PARAGRAPH_INDENT = '\u3000\u3000';
   let isSubmitting = false;
   let editorChangeBound = false;
 
@@ -145,6 +149,25 @@
     height: calculateEditorHeight(),
     markdown: {{ blog_content | safe if blog_content else '""' | safe }},
     path: "{{ url_for('static', filename='vendor/editor.md/lib/') }}",
+    toolbarIcons: function () {
+      const icons = editormd.toolbarModes.full.slice();
+      const insertAfter = icons.indexOf('quote');
+      icons.splice(insertAfter >= 0 ? insertAfter + 1 : icons.length, 0, 'chinese-indent');
+      return icons;
+    },
+    toolbarIconsClass: {
+      'chinese-indent': 'fa-indent',
+    },
+    toolbarHandlers: {
+      'chinese-indent': function (cm) {
+        insertChineseParagraphIndent(cm);
+      },
+    },
+    lang: {
+      toolbar: {
+        'chinese-indent': '插入中文段首缩进',
+      },
+    },
     onload: function () {
       bindEditorEvents(this);
       updateCounter();
@@ -188,6 +211,93 @@
     if (editor && typeof editor.height === 'function' && !(editor.state && editor.state.fullscreen)) {
       editor.height(calculateEditorHeight());
     }
+  }
+
+  function missingChineseIndentPrefix(lineText) {
+    if (lineText.startsWith(CHINESE_PARAGRAPH_INDENT)) {
+      return '';
+    }
+
+    if (lineText.startsWith('\u3000')) {
+      return '\u3000';
+    }
+
+    return CHINESE_PARAGRAPH_INDENT;
+  }
+
+  function getSelectionLineRange(range) {
+    const start = range.from();
+    const end = range.to();
+    const isEmpty = typeof range.empty === 'function' ? range.empty() : start.line === end.line && start.ch === end.ch;
+    let endLine = end.line;
+
+    if (!isEmpty && end.ch === 0 && endLine > start.line) {
+      endLine -= 1;
+    }
+
+    return {
+      startLine: start.line,
+      endLine,
+    };
+  }
+
+  function insertChineseParagraphIndent(cm) {
+    if (!cm || typeof cm.getLine !== 'function') {
+      return;
+    }
+
+    const ranges = typeof cm.listSelections === 'function'
+      ? cm.listSelections()
+      : [{
+        from: () => cm.getCursor(),
+        to: () => cm.getCursor(),
+        empty: () => true,
+      }];
+    const cursor = typeof cm.getCursor === 'function' ? cm.getCursor() : null;
+    const hasSelection = typeof cm.somethingSelected === 'function' && cm.somethingSelected();
+    const linesToIndent = [];
+    const seenLines = new Set();
+
+    ranges.forEach((range) => {
+      const { startLine, endLine } = getSelectionLineRange(range);
+
+      for (let lineNumber = startLine; lineNumber <= endLine; lineNumber += 1) {
+        if (seenLines.has(lineNumber)) {
+          continue;
+        }
+
+        const prefix = missingChineseIndentPrefix(cm.getLine(lineNumber) || '');
+        if (prefix) {
+          seenLines.add(lineNumber);
+          linesToIndent.push({ line: lineNumber, prefix });
+        }
+      }
+    });
+
+    if (linesToIndent.length === 0) {
+      cm.focus();
+      return;
+    }
+
+    cm.operation(function () {
+      linesToIndent
+        .sort((left, right) => right.line - left.line)
+        .forEach((item) => {
+          cm.replaceRange(item.prefix, { line: item.line, ch: 0 }, { line: item.line, ch: 0 }, '+input');
+        });
+    });
+
+    if (!hasSelection && cursor) {
+      const cursorLineIndent = linesToIndent.find((item) => item.line === cursor.line);
+      if (cursorLineIndent) {
+        cm.setCursor(cursor.line, cursor.ch + cursorLineIndent.prefix.length);
+      }
+    }
+
+    syncEditorContent();
+    markDirty();
+    updateCounter();
+    cm.focus();
   }
 
   function bindEditorEvents(editorInstance) {
@@ -238,17 +348,7 @@
       });
       const data = await response.json();
 
-      if (data.status === 'duplicate') {
-        isSubmitting = false;
-        saveButton.disabled = false;
-        setSaveStatus('需要确认', 'dirty');
-        modal.setTitle('标题冲突');
-        modal.clearButtons();
-        modal.show(data.message);
-        modal.addButton('覆盖原文', () => handleBlogSubmit('update'));
-        modal.addButton('另存为新文', () => handleBlogSubmit('insert_new'));
-        modal.addButton('取消', () => modal.close(), 'secondary');
-      } else if (data.status === 'success') {
+      if (data.status === 'success') {
         setSaveStatus('已保存', 'saved');
         window.location.href = '/';
       } else {
@@ -273,7 +373,7 @@
 
   writingForm.addEventListener('submit', function (event) {
     event.preventDefault();
-    handleBlogSubmit('insert');
+    handleBlogSubmit(defaultSaveAction);
   });
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -341,57 +441,15 @@
   document.addEventListener('DOMContentLoaded', function () {
     const htmlTitleInput = document.getElementById('html-title');
     const titleInput = document.getElementById('title');
-    const tooltip = document.createElement('div');
-    let slugWasEdited = Boolean(htmlTitleInput.value.trim());
-
-    tooltip.className = 'tooltip';
-    tooltip.textContent = 'HTML 标题不能包含中文字符。';
-    document.body.appendChild(tooltip);
-
-    function normalizeSlug(value) {
-      return value
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_-]/g, '');
-    }
-
-    function showHtmlTitleTip() {
-      const rect = htmlTitleInput.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + window.scrollX}px`;
-      tooltip.style.top = `${rect.bottom + window.scrollY + 8}px`;
-      tooltip.style.display = 'block';
-    }
-
-    function hideHtmlTitleTip() {
-      tooltip.style.display = 'none';
-    }
 
     htmlTitleInput.addEventListener('input', function () {
-      slugWasEdited = true;
       this.value = this.value.replace(/\s+/g, '_');
-
-      if (/[\u4e00-\u9fa5]/.test(this.value)) {
-        showHtmlTitleTip();
-      } else {
-        hideHtmlTitleTip();
-      }
-
       markDirty();
     });
 
     titleInput.addEventListener('input', function () {
-      if (!slugWasEdited) {
-        const nextSlug = normalizeSlug(titleInput.value);
-        if (nextSlug) {
-          htmlTitleInput.value = nextSlug;
-        }
-      }
-
       markDirty();
     });
-
-    htmlTitleInput.addEventListener('blur', hideHtmlTitleTip);
   });
 
   document.addEventListener('DOMContentLoaded', function () {

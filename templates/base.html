@@ -8,6 +8,27 @@
       name="description"
       content="{{ meta_description | default(personal_intro | default('个人创作与归档博客。')) }}"
     >
+    <script>
+      (function () {
+        const storageKey = 'silver-blog-theme';
+        const allowedThemes = ['light', 'dark'];
+        let storedTheme = null;
+
+        try {
+          storedTheme = window.localStorage.getItem(storageKey);
+        } catch (error) {
+          storedTheme = null;
+        }
+
+        const systemTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+        const theme = allowedThemes.includes(storedTheme) ? storedTheme : systemTheme;
+
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
     {% block vendor_styles %}{% endblock %}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_head %}{% endblock %}
@@ -20,6 +41,17 @@
           <span class="brand-name">{{ site_name | default("Silver's Blog") }}</span>
         </a>
         <div class="toolbar-actions">
+          <button
+            class="theme-toggle"
+            type="button"
+            data-theme-toggle
+            aria-label="切换到深色模式"
+            aria-pressed="false"
+            title="切换到深色模式"
+          >
+            <span class="theme-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden" data-theme-toggle-label>切换主题</span>
+          </button>
           <a class="toolbar-link" href="{{ url_for('main.index') }}">档案首页</a>
           {% if current_admin_authenticated() %}
           <div class="header-btn-grp" aria-label="管理入口">

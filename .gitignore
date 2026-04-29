@@ -1,10 +1,31 @@
-test.json
-test.py
-app/__pycache__/
-.vscode
-*.log
-test/
+# Python runtime cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local virtual environments
+.venv/
+venv/
+env/
+
+# Local config and runtime data
+.env
+instance/config.py
 db/
 output/
-instance/config.py
-.env
+
+# Editor and diagnostic noise
+.vscode/
+*.log
+
+# Local scratch/reference files
+test.json
+test.py
+test/
+_ref*.html
+_ref*.css
