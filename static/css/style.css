@@ -22,6 +22,10 @@
     --danger-line: rgba(143, 58, 46, 0.3);
     --line: rgba(36, 28, 24, 0.12);
     --line-strong: rgba(36, 28, 24, 0.22);
+    --divider-line-faint: rgba(123, 83, 59, 0.05);
+    --divider-line: rgba(123, 83, 59, 0.22);
+    --divider-accent: rgba(162, 91, 51, 0.34);
+    --divider-glow: rgba(162, 91, 51, 0.1);
     --shadow: 0 28px 70px rgba(62, 40, 29, 0.12);
     --page-background:
         radial-gradient(circle at top left, rgba(162, 91, 51, 0.2), transparent 32%),
@@ -114,6 +118,10 @@ html[data-theme="dark"] {
     --danger-line: rgba(223, 138, 118, 0.3);
     --line: rgba(242, 231, 219, 0.13);
     --line-strong: rgba(242, 231, 219, 0.24);
+    --divider-line-faint: rgba(242, 231, 219, 0.04);
+    --divider-line: rgba(242, 231, 219, 0.16);
+    --divider-accent: rgba(210, 145, 98, 0.42);
+    --divider-glow: rgba(210, 145, 98, 0.18);
     --shadow: 0 30px 72px rgba(0, 0, 0, 0.28);
     --page-background:
         radial-gradient(circle at top left, rgba(210, 145, 98, 0.18), transparent 34%),
@@ -1433,7 +1441,21 @@ html[data-theme="dark"] .theme-toggle-icon::after {
 }
 
 .markdown-body hr {
-    border-color: var(--line);
+    height: 1px;
+    padding: 0;
+    border: 0;
+    margin: 2.7rem 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--divider-line-faint) 14%,
+        var(--divider-line) 34%,
+        var(--divider-accent) 50%,
+        var(--divider-line) 66%,
+        var(--divider-line-faint) 86%,
+        transparent 100%
+    );
+    box-shadow: 0 1px 0 var(--divider-glow);
 }
 
 .markdown-body blockquote {
