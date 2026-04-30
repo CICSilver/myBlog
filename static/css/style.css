@@ -81,6 +81,7 @@
     --pulse-surface:
         radial-gradient(circle, rgba(162, 91, 51, 0.9) 0 18%, rgba(162, 91, 51, 0.16) 18% 58%, transparent 58%);
     --pre-surface: #201d1b;
+    --pre-ink: #f4e8dc;
     --pre-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
     --radius-lg: 28px;
     --radius-md: 18px;
@@ -172,6 +173,7 @@ html[data-theme="dark"] {
     --pulse-surface:
         radial-gradient(circle, rgba(210, 145, 98, 0.9) 0 18%, rgba(210, 145, 98, 0.18) 18% 58%, transparent 58%);
     --pre-surface: #15110f;
+    --pre-ink: #f2e7db;
     --pre-shadow: inset 0 0 0 1px rgba(242, 231, 219, 0.08);
 }
 
@@ -1442,6 +1444,7 @@ html[data-theme="dark"] .theme-toggle-icon::after {
 .markdown-body pre {
     padding: 18px;
     border-radius: 18px;
+    color: var(--pre-ink);
     background: var(--pre-surface);
     box-shadow: var(--pre-shadow);
 }
