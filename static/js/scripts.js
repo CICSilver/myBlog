@@ -83,6 +83,73 @@ function initThemeToggle() {
 
 document.addEventListener("DOMContentLoaded", initThemeToggle);
 
+function initAdminBookmarkMenu() {
+    const triggers = Array.from(document.querySelectorAll("[data-admin-bookmark-trigger]"));
+
+    if (!triggers.length) {
+        return;
+    }
+
+    function getMenu(trigger) {
+        const menuId = trigger.getAttribute("aria-controls");
+        if (menuId) {
+            return document.getElementById(menuId);
+        }
+
+        return trigger.parentElement ? trigger.parentElement.querySelector("[data-admin-bookmark-menu]") : null;
+    }
+
+    function closeMenu(trigger) {
+        const menu = getMenu(trigger);
+        if (!menu) {
+            return;
+        }
+
+        menu.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+    }
+
+    function closeAllMenus(exceptTrigger = null) {
+        triggers.forEach((trigger) => {
+            if (trigger !== exceptTrigger) {
+                closeMenu(trigger);
+            }
+        });
+    }
+
+    triggers.forEach((trigger) => {
+        const menu = getMenu(trigger);
+        if (!menu) {
+            return;
+        }
+
+        trigger.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const shouldOpen = trigger.getAttribute("aria-expanded") !== "true";
+
+            closeAllMenus(trigger);
+            menu.hidden = !shouldOpen;
+            trigger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        });
+
+        menu.addEventListener("click", (event) => {
+            event.stopPropagation();
+        });
+    });
+
+    document.addEventListener("click", () => {
+        closeAllMenus();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeAllMenus();
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initAdminBookmarkMenu);
+
 function navigateToWriting() {
     window.location.href = '/edit';
 }

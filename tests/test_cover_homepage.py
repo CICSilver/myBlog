@@ -1,5 +1,7 @@
 import unittest
 
+from flask import session
+
 from app import create_app
 from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
 import app.routes as routes_module
@@ -89,6 +91,39 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(self.stub_db_helper.insert_called)
         self.assertEqual(response.get_json()["status"], "error")
+
+    def test_homepage_cover_hides_admin_menu_when_logged_out(self):
+        blogs = [self.make_blog("featured", "最新文章")]
+
+        with self.app.test_request_context("/"):
+            html = routes_module.init_index_with_blogs(blogs)
+
+        self.assertIn('class="home-cover"', html)
+        self.assertIn('class="admin-bookmark-trigger is-inert"', html)
+        self.assertNotIn('class="site-toolbar"', html)
+        self.assertNotIn('data-admin-bookmark-trigger', html)
+        self.assertNotIn('data-admin-bookmark-menu', html)
+        self.assertNotIn('onclick="navigateToWriting()">写作', html)
+        self.assertNotIn('onclick="navigateToManage()">管理', html)
+        self.assertNotIn('onclick="logout()">退出', html)
+        self.assertNotIn('<p class="section-label">Archive Note</p>', html)
+
+    def test_homepage_cover_shows_bookmark_menu_when_logged_in(self):
+        blogs = [self.make_blog("featured", "最新文章")]
+
+        with self.app.test_request_context("/"):
+            session[ADMIN_SESSION_KEY] = True
+            html = routes_module.init_index_with_blogs(blogs)
+
+        self.assertIn('class="home-cover"', html)
+        self.assertNotIn('class="site-toolbar"', html)
+        self.assertIn('data-admin-bookmark-trigger', html)
+        self.assertIn('data-admin-bookmark-menu', html)
+        self.assertIn('aria-expanded="false"', html)
+        self.assertIn('onclick="navigateToWriting()">写作', html)
+        self.assertIn('onclick="navigateToManage()">管理', html)
+        self.assertIn('onclick="logout()">退出', html)
+        self.assertNotIn('class="header-btn-grp"', html)
 
 
 if __name__ == "__main__":

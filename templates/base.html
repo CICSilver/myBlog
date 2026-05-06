@@ -35,33 +35,35 @@
   </head>
   <body class="{% block body_class %}{% endblock %}">
     <div class="page-shell">
-      <header class="site-toolbar">
-        <a class="brand-lockup" href="{{ url_for('main.index') }}">
-          <span class="brand-overline">Creative Archive</span>
-          <span class="brand-name">{{ site_name | default("Silver's Blog") }}</span>
-        </a>
-        <div class="toolbar-actions">
-          <button
-            class="theme-toggle"
-            type="button"
-            data-theme-toggle
-            aria-label="切换到深色模式"
-            aria-pressed="false"
-            title="切换到深色模式"
-          >
-            <span class="theme-toggle-icon" aria-hidden="true"></span>
-            <span class="visually-hidden" data-theme-toggle-label>切换主题</span>
-          </button>
-          <a class="toolbar-link" href="{{ url_for('main.index') }}">档案首页</a>
-          {% if current_admin_authenticated() %}
-          <div class="header-btn-grp" aria-label="管理入口">
-            <button class="toolbar-button" type="button" onclick="navigateToWriting()">写新文章</button>
-            <button class="toolbar-button" type="button" onclick="navigateToManage()">后台管理</button>
-            <button class="toolbar-button is-ghost" type="button" onclick="logout()">退出</button>
+      {% block site_header %}
+        <header class="site-toolbar">
+          <a class="brand-lockup" href="{{ url_for('main.index') }}">
+            <span class="brand-overline">Creative Archive</span>
+            <span class="brand-name">{{ site_name | default("Silver's Blog") }}</span>
+          </a>
+          <div class="toolbar-actions">
+            <button
+              class="theme-toggle"
+              type="button"
+              data-theme-toggle
+              aria-label="切换到深色模式"
+              aria-pressed="false"
+              title="切换到深色模式"
+            >
+              <span class="theme-toggle-icon" aria-hidden="true"></span>
+              <span class="visually-hidden" data-theme-toggle-label>切换主题</span>
+            </button>
+            <a class="toolbar-link" href="{{ url_for('main.index') }}">档案首页</a>
+            {% if current_admin_authenticated() %}
+            <div class="header-btn-grp" aria-label="管理入口">
+              <button class="toolbar-button" type="button" onclick="navigateToWriting()">写新文章</button>
+              <button class="toolbar-button" type="button" onclick="navigateToManage()">后台管理</button>
+              <button class="toolbar-button is-ghost" type="button" onclick="logout()">退出</button>
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
-        </div>
-      </header>
+        </header>
+      {% endblock %}
 
       {% block content %}{% endblock %}
     </div>
