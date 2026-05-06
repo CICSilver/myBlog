@@ -683,6 +683,38 @@ html[data-theme="dark"] .theme-toggle-icon::after {
     backdrop-filter: none;
 }
 
+.feature-cover {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 7;
+    border-radius: 22px;
+    background: var(--surface-muted);
+    box-shadow: 0 20px 46px rgba(62, 40, 29, 0.14);
+}
+
+.feature-cover img,
+.entry-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.24s ease;
+}
+
+.feature-cover:hover img,
+.entry-cover:hover img {
+    transform: scale(1.035);
+}
+
+.feature-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 48%, rgba(31, 23, 19, 0.38));
+    pointer-events: none;
+}
+
 .feature-title {
     font-size: clamp(2rem, 3vw, 2.8rem);
     line-height: 1.08;
@@ -843,6 +875,21 @@ html[data-theme="dark"] .theme-toggle-icon::after {
     transform: translateX(6px);
 }
 
+.entry-line.has-cover {
+    grid-template-columns: 170px minmax(132px, 156px) minmax(0, 1fr);
+    align-items: start;
+}
+
+.entry-cover {
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 5 / 4;
+    border-radius: 18px;
+    background: var(--surface-muted);
+    box-shadow: 0 16px 34px rgba(62, 40, 29, 0.12);
+}
+
 .entry-line-main {
     display: grid;
     gap: 12px;
@@ -859,6 +906,15 @@ html[data-theme="dark"] .theme-toggle-icon::after {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 5;
+}
+
+.feature-article.has-cover .feature-preview img,
+.entry-line.has-cover .entry-line-preview img {
+    display: none;
+}
+
+.entry-line.has-cover .entry-line-preview {
+    -webkit-line-clamp: 3;
 }
 
 .reading-shell {
@@ -1073,6 +1129,10 @@ html[data-theme="dark"] .theme-toggle-icon::after {
 .field-title .form-input {
     font-size: 1.08rem;
     font-weight: 650;
+}
+
+.field-cover {
+    grid-column: 1 / -1;
 }
 
 .writing-workspace .editor-stage {
@@ -1739,6 +1799,21 @@ html[data-theme="dark"] .theme-toggle-icon::after {
     .entry-line {
         grid-template-columns: 1fr;
         gap: 12px;
+    }
+
+    .entry-line.has-cover {
+        grid-template-columns: 1fr;
+    }
+
+    .entry-cover {
+        max-width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 18px;
+    }
+
+    .feature-cover {
+        aspect-ratio: 16 / 9;
+        border-radius: 18px;
     }
 
     .feature-article {

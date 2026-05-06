@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
-from app.database import DatabaseHelper, Blog
+from app.database import DatabaseHelper, Blog, normalize_cover_url
 from app.auth import admin_logout, login_required, validate_csrf_token
 import json
 
@@ -40,6 +40,10 @@ def edit_blog():
         blog.title = request.form['title']
         blog.content = request.form['content']
         blog.category = request.form['category']
+        try:
+            blog.cover_url = normalize_cover_url(request.form.get('cover-url', ''))
+        except ValueError as exc:
+            return jsonify({"status": "error", "message": str(exc)}), 400
         if request.form['month'] != '':
             blog.month = request.form['month']
         if request.form['year'] != '':

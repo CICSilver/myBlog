@@ -6,6 +6,7 @@ from tinydb.table import Document
 from datetime import datetime
 from pypinyin import lazy_pinyin
 from threading import RLock
+from urllib.parse import urlparse
 import re
 
 
@@ -31,6 +32,27 @@ def _slugify_html_title(value):
     slug = re.sub(r"[^a-z0-9_-]+", "_", slug)
     slug = re.sub(r"_+", "_", slug)
     return slug.strip("_-")
+
+
+def normalize_cover_url(value):
+    if value is None:
+        return ""
+
+    cover_url = str(value).strip()
+    if not cover_url:
+        return ""
+
+    if any(char.isspace() for char in cover_url):
+        raise ValueError("封面地址不能包含空白字符。")
+
+    if cover_url.startswith("/static/"):
+        return cover_url
+
+    parsed = urlparse(cover_url)
+    if parsed.scheme == "https" and parsed.netloc:
+        return cover_url
+
+    raise ValueError("封面地址仅支持 /static/... 或 https://...。")
 
 
 def _snapshot_history(reason):
@@ -99,12 +121,13 @@ class Category:
 
 
 class Blog:
-    def __init__(self, html_title=None, title=None, content=None, category=None):
+    def __init__(self, html_title=None, title=None, content=None, category=None, cover_url=None):
         now = datetime.now()
         self.html_title = html_title
         self.title = title
         self.content = content
         self.category = category
+        self.cover_url = cover_url or ""
         self.year = str(now.year)   # 默认当前年份
         self.month = str(now.month)
         self.date = now.strftime('%Y-%m-%d')
@@ -119,6 +142,7 @@ class Blog:
             'title': self.title,
             'content': self.content,
             'category': self.category,
+            'cover_url': self.cover_url or "",
             'year': self.year,
             'month': self.month,
             'date': self.date,
@@ -133,6 +157,7 @@ class Blog:
         self.title = data.get('title')
         self.content = data.get('content')
         self.category = data.get('category')
+        self.cover_url = data.get('cover_url') or ""
         self.year = data.get('year')
         self.month = data.get('month')
         self.date = data.get('date')

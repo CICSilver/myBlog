@@ -5,7 +5,7 @@ import unittest
 from tinydb import TinyDB
 
 import app.database as database_module
-from app.database import Blog, DatabaseHelper, normalize_html_title
+from app.database import Blog, DatabaseHelper, normalize_cover_url, normalize_html_title
 
 
 class BlogHtmlTitleTest(unittest.TestCase):
@@ -39,6 +39,28 @@ class BlogHtmlTitleTest(unittest.TestCase):
     def test_normalizes_manual_and_fallback_titles(self):
         self.assertEqual(normalize_html_title("Manual Title", "ignored"), "manual_title")
         self.assertEqual(normalize_html_title("", "随笔"), "sui_bi")
+
+    def test_normalizes_supported_cover_urls(self):
+        self.assertEqual(normalize_cover_url(""), "")
+        self.assertEqual(normalize_cover_url("  /static/covers/post.jpg  "), "/static/covers/post.jpg")
+        self.assertEqual(
+            normalize_cover_url("https://example.com/covers/post.jpg"),
+            "https://example.com/covers/post.jpg",
+        )
+
+    def test_rejects_unsupported_cover_urls(self):
+        invalid_urls = [
+            "javascript:alert(1)",
+            "http://example.com/cover.jpg",
+            "//example.com/cover.jpg",
+            "/uploads/cover.jpg",
+            "https://example.com/cover image.jpg",
+        ]
+
+        for url in invalid_urls:
+            with self.subTest(url=url):
+                with self.assertRaises(ValueError):
+                    normalize_cover_url(url)
 
     def test_insert_generates_html_title_when_blank(self):
         blog = self.make_blog(html_title="", title="随笔")
@@ -115,6 +137,28 @@ class BlogHtmlTitleTest(unittest.TestCase):
             self.helper.get_specify_blog("2026", "4", "indented_update").content,
             updated.content,
         )
+
+    def test_insert_and_update_preserve_cover_url(self):
+        original = self.make_blog(html_title="cover_url", title="Original")
+        original.cover_url = "/static/covers/original.jpg"
+        updated = self.make_blog(html_title="cover_url", title="Updated")
+        updated.cover_url = "https://example.com/cover.jpg"
+
+        self.helper.insert_blog(original)
+        self.helper.update_blog(updated, original_key=("2026", "4", "cover_url"))
+
+        stored = self.helper.get_specify_blog("2026", "4", "cover_url")
+        self.assertEqual(stored.cover_url, "https://example.com/cover.jpg")
+
+    def test_old_blog_record_without_cover_url_reads_empty(self):
+        blog = self.make_blog(html_title="legacy_record")
+        blog_data = blog.to_dict()
+        del blog_data["cover_url"]
+        self.helper.blog_table.insert(blog_data)
+
+        stored = self.helper.get_specify_blog("2026", "4", "legacy_record")
+
+        self.assertEqual(stored.cover_url, "")
 
 
 if __name__ == "__main__":

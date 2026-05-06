@@ -96,6 +96,20 @@
           <li class="dropdown-empty" hidden>没有匹配分类</li>
         </ul>
       </label>
+
+      <label class="field-block field-cover" for="cover-url">
+        <span>封面地址</span>
+        <input
+          class="form-input"
+          type="text"
+          id="cover-url"
+          name="cover-url"
+          placeholder="/static/... 或 https://..."
+          value="{{ blog.cover_url if blog else '' }}"
+          inputmode="url"
+          autocomplete="off"
+        >
+      </label>
     </div>
 
     <div class="editor-stage">

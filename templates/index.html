@@ -17,28 +17,6 @@
 {% block content %}
   {% if blogs %}
     {% set featured = blogs[0] %}
-    <section class="home-hero">
-      <div class="hero-copyblock">
-        <div class="hero-composition">
-          <div class="hero-title-group">
-            <p class="section-label">Creative Writing Archive</p>
-            <div class="hero-title-frame">
-              <span class="hero-title-tag">Personal edition</span>
-              <h1 class="hero-title" aria-label="{{ site_name }}">
-                <span class="hero-title-word">Silver's</span>
-                <span class="hero-title-word hero-title-word-offset">Blog</span>
-              </h1>
-              <p class="hero-subtitle">记录那些值得留下来的技术、情绪、片段与学习痕迹。</p>
-              <div class="hero-signature-line">
-                <span class="hero-signature-mark">“</span>
-                <p class="hero-summary">{{ personal_intro }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="home-body">
       <aside class="archive-sidebar">
         <section class="sidebar-block">
@@ -84,7 +62,19 @@
       </aside>
 
       <section class="entry-stream">
-        <article class="feature-article">
+        <article class="feature-article{% if featured.cover_url %} has-cover{% endif %}">
+          {% if featured.cover_url %}
+            <a
+              class="feature-cover"
+              href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}"
+            >
+              <img
+                src="{{ featured.cover_url }}"
+                alt="{{ featured.title or '文章封面' }}"
+                loading="eager"
+              >
+            </a>
+          {% endif %}
           <div class="stream-heading stream-heading-compact">
             <p class="section-label">Latest Entry</p>
             <h2>最新文章</h2>
@@ -116,11 +106,23 @@
         {% if blogs | length > 1 %}
           {% for blog in blogs %}
             {% if not loop.first %}
-              <article class="entry-line">
+              <article class="entry-line{% if blog.cover_url %} has-cover{% endif %}">
                 <div class="entry-line-meta">
                   <span>{{ blog.date }}</span>
                   <span>{{ blog.category }}</span>
                 </div>
+                {% if blog.cover_url %}
+                  <a
+                    class="entry-cover"
+                    href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
+                  >
+                    <img
+                      src="{{ blog.cover_url }}"
+                      alt="{{ blog.title or '文章封面' }}"
+                      loading="lazy"
+                    >
+                  </a>
+                {% endif %}
                 <div class="entry-line-main">
                   <h3 class="entry-line-title">
                     <a href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}">
