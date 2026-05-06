@@ -770,7 +770,7 @@ html[data-theme="light"] .pull-light-cord::after {
     display: block;
     width: 32px;
     height: 76px;
-    background: url("../images/archive-bookmark.png") center / contain no-repeat;
+    background: url("../images/archive-bookmark.png") center top / contain no-repeat;
     filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.28));
     transform-origin: top center;
     transition:

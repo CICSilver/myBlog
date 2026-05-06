@@ -15,6 +15,13 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("let editor = null", self.source)
         self.assertIn("autoLoadModules: false", self.source)
 
+    def test_enter_preserves_chinese_paragraph_indent(self):
+        self.assertIn("editorInstance.cm.addKeyMap", self.source)
+        self.assertIn("Enter: continueChineseParagraphIndent", self.source)
+        self.assertIn("return CodeMirror.Pass", self.source)
+        self.assertIn("lineText.startsWith(CHINESE_PARAGRAPH_INDENT)", self.source)
+        self.assertIn("cm.replaceRange('\\n' + CHINESE_PARAGRAPH_INDENT", self.source)
+
     def test_codemirror_assets_are_loaded_by_template(self):
         self.assertIn("vendor/editor.md/lib/codemirror/codemirror.min.css", self.source)
         self.assertIn("vendor/editor.md/lib/codemirror/addon/dialog/dialog.css", self.source)

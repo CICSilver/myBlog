@@ -45,5 +45,6 @@ function renderMarkdownPreview(markdownContentId, previewContainerId) {
     const previewMarkdown = previewLines.join('\n');
 
     // 使用 marked.js 渲染提取的 Markdown 为 HTML
+    marked.setOptions({ breaks: true });
     previewElement.innerHTML = marked.parse(previewMarkdown);
 }

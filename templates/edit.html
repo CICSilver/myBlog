@@ -270,6 +270,28 @@
     };
   }
 
+  function continueChineseParagraphIndent(cm) {
+    if (!cm || typeof cm.getCursor !== 'function' || typeof cm.getLine !== 'function') {
+      return CodeMirror.Pass;
+    }
+
+    if (typeof cm.somethingSelected === 'function' && cm.somethingSelected()) {
+      return CodeMirror.Pass;
+    }
+
+    const cursor = cm.getCursor();
+    const lineText = cm.getLine(cursor.line) || '';
+
+    if (!lineText.startsWith(CHINESE_PARAGRAPH_INDENT) || cursor.ch < CHINESE_PARAGRAPH_INDENT.length) {
+      return CodeMirror.Pass;
+    }
+
+    cm.replaceRange('\n' + CHINESE_PARAGRAPH_INDENT, cursor, cursor, '+input');
+    syncEditorContent();
+    markDirty();
+    updateCounter();
+  }
+
   function insertChineseParagraphIndent(cm) {
     if (!cm || typeof cm.getLine !== 'function') {
       return;
@@ -335,6 +357,13 @@
     }
 
     editorChangeBound = true;
+    if (typeof editorInstance.cm.addKeyMap === 'function') {
+      editorInstance.cm.addKeyMap({
+        name: 'silverChineseParagraphIndent',
+        Enter: continueChineseParagraphIndent,
+      });
+    }
+
     editorInstance.cm.on('change', function () {
       markDirty();
       updateCounter();

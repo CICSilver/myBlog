@@ -41,6 +41,7 @@
 {% block extra_scripts %}
 <script>
   marked.setOptions({
+    breaks: true,
     highlight: function (code, lang) {
       if (lang && hljs.getLanguage(lang)) {
         return hljs.highlight(code, { language: lang }).value;
