@@ -16,10 +16,20 @@
 {% endblock %}
 
 {% block content %}
-  {% set archive_note = "雪泥留爪，旧游成文。" %}
+  {% set archive_note = "泥留鸿爪，旧游成文。" %}
   <section class="home-cover" aria-labelledby="home-cover-title">
-    <div class="home-cover-topbar">
-      <p class="home-cover-kicker">Creative Writing Archive</p>
+    <span class="home-cover-plum" aria-hidden="true"></span>
+    <div class="home-cover-main">
+      <div class="home-cover-brand">
+        <p class="home-cover-kicker">Creative Writing Archive</p>
+        <h1 class="home-cover-title" id="home-cover-title">{{ site_name | default("Silver's Blog") }}</h1>
+      </div>
+
+      <div class="home-cover-note" aria-label="Archive Note">
+        <span aria-hidden="true">“</span>
+        <p>{{ archive_note }}</p>
+      </div>
+
       <div class="home-cover-controls">
         <button
           class="theme-toggle cover-theme-toggle"
@@ -29,7 +39,7 @@
           aria-pressed="false"
           title="切换到深色模式"
         >
-          <span class="theme-toggle-icon" aria-hidden="true"></span>
+          <span class="pull-light-cord" aria-hidden="true"></span>
           <span class="visually-hidden" data-theme-toggle-label>切换主题</span>
         </button>
 
@@ -64,20 +74,6 @@
             </span>
           {% endif %}
         </div>
-      </div>
-    </div>
-
-    <div class="home-cover-main">
-      <div class="home-cover-copy">
-        <p class="home-cover-edition">Personal Edition</p>
-        <h1 class="home-cover-title" id="home-cover-title">{{ site_name | default("Silver's Blog") }}</h1>
-        <div class="home-cover-note" aria-label="Archive Note">
-          <span aria-hidden="true">“</span>
-          <p>{{ archive_note }}</p>
-        </div>
-      </div>
-      <div class="home-cover-spine" aria-hidden="true">
-        <span>Archive</span>
       </div>
     </div>
   </section>
