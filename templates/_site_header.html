@@ -1,0 +1,38 @@
+{% set cover_title_id = site_cover_title_id | default("site-cover-title") %}
+{% set cover_title_tag = site_cover_title_tag | default("span") %}
+{% set archive_note = site_cover_note | default("泥留鸿爪，旧游成文。") %}
+{% set admin_bookmark_menu_id = site_cover_menu_id | default("site-admin-bookmark-menu") %}
+<header class="home-cover" aria-labelledby="{{ cover_title_id }}">
+  <span class="home-cover-plum" aria-hidden="true"></span>
+  <div class="home-cover-main">
+    <a class="home-cover-brand" href="{{ url_for('main.index') }}">
+      <span class="home-cover-kicker">Creative Writing Archive</span>
+      {% if cover_title_tag == "h1" %}
+        <h1 class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</h1>
+      {% else %}
+        <span class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</span>
+      {% endif %}
+    </a>
+
+    <div class="home-cover-note" aria-label="Archive Note">
+      <span aria-hidden="true">“</span>
+      <p>{{ archive_note }}</p>
+    </div>
+
+    <div class="home-cover-controls">
+      <button
+        class="theme-toggle cover-theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="切换到深色模式"
+        aria-pressed="false"
+        title="切换到深色模式"
+      >
+        <span class="pull-light-cord" aria-hidden="true"></span>
+        <span class="visually-hidden" data-theme-toggle-label>切换主题</span>
+      </button>
+
+      {% include "_admin_bookmark.html" %}
+    </div>
+  </div>
+</header>

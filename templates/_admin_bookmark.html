@@ -1,0 +1,32 @@
+{% set menu_id = admin_bookmark_menu_id | default("site-admin-bookmark-menu") %}
+<div class="admin-bookmark{% if current_admin_authenticated() %} has-menu{% endif %}">
+  {% if current_admin_authenticated() %}
+    <button
+      class="admin-bookmark-trigger"
+      type="button"
+      data-admin-bookmark-trigger
+      aria-expanded="false"
+      aria-controls="{{ menu_id }}"
+      aria-haspopup="menu"
+      title="管理入口"
+    >
+      <span class="bookmark-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">打开管理菜单</span>
+    </button>
+    <div
+      class="admin-bookmark-menu"
+      id="{{ menu_id }}"
+      data-admin-bookmark-menu
+      role="menu"
+      hidden
+    >
+      <button type="button" role="menuitem" onclick="navigateToWriting()">写作</button>
+      <button type="button" role="menuitem" onclick="navigateToManage()">管理</button>
+      <button type="button" role="menuitem" onclick="logout()">退出</button>
+    </div>
+  {% else %}
+    <span class="admin-bookmark-trigger is-inert" aria-hidden="true">
+      <span class="bookmark-icon" aria-hidden="true"></span>
+    </span>
+  {% endif %}
+</div>

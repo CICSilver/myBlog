@@ -1,4 +1,6 @@
+import re
 import unittest
+from pathlib import Path
 
 from flask import session
 
@@ -10,6 +12,9 @@ import app.routes as routes_module
 class StubDatabaseHelper:
     def __init__(self):
         self.insert_called = False
+
+    def get_all_blogs(self):
+        return []
 
     def get_all_categories(self):
         return [{"name": "随笔", "num": 2}]
@@ -123,6 +128,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
 
         self.assertIn('class="home-cover"', html)
         self.assertNotIn('class="site-toolbar"', html)
+        self.assertIn('class="admin-bookmark has-menu"', html)
         self.assertIn('data-admin-bookmark-trigger', html)
         self.assertIn('data-admin-bookmark-menu', html)
         self.assertIn('aria-expanded="false"', html)
@@ -133,7 +139,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertNotIn('disabled aria-disabled="true">退出', html)
         self.assertNotIn('class="header-btn-grp"', html)
 
-    def test_edit_page_keeps_default_toolbar_layout(self):
+    def test_edit_page_uses_shared_cover_header(self):
         with self.app.test_client() as client:
             with client.session_transaction() as flask_session:
                 flask_session[ADMIN_SESSION_KEY] = True
@@ -142,15 +148,53 @@ class HomepageCoverRenderingTest(unittest.TestCase):
 
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('class="site-toolbar"', html)
-        self.assertIn("Creative Archive", html)
+        self.assertIn('class="home-cover"', html)
+        self.assertIn("Creative Writing Archive", html)
         self.assertIn("Silver&#39;s Blog", html)
-        self.assertIn("档案首页", html)
-        self.assertIn("写新文章", html)
-        self.assertIn("后台管理", html)
-        self.assertIn("退出", html)
-        self.assertNotIn('class="home-cover"', html)
-        self.assertNotIn('data-admin-bookmark-menu', html)
+        self.assertIn('class="theme-toggle cover-theme-toggle"', html)
+        self.assertIn('class="pull-light-cord"', html)
+        self.assertNotIn("theme-toggle-icon", html)
+        self.assertIn('class="admin-bookmark has-menu"', html)
+        self.assertIn('data-admin-bookmark-trigger', html)
+        self.assertIn('data-admin-bookmark-menu', html)
+        self.assertIn('onclick="navigateToWriting()">写作', html)
+        self.assertIn('onclick="navigateToManage()">管理', html)
+        self.assertIn('onclick="logout()">退出', html)
+        self.assertNotIn('class="header-btn-grp"', html)
+        self.assertNotIn('class="site-toolbar"', html)
+
+    def test_manage_page_uses_shared_cover_header(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+
+            response = client.get("/manage")
+
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="home-cover"', html)
+        self.assertIn("博客数据管理", html)
+        self.assertIn('class="theme-toggle cover-theme-toggle"', html)
+        self.assertIn('class="pull-light-cord"', html)
+        self.assertIn('class="admin-bookmark has-menu"', html)
+        self.assertNotIn('class="site-toolbar"', html)
+        self.assertNotIn("theme-toggle-icon", html)
+
+    def test_shared_cover_header_stacks_bookmark_menu_above_page_panels(self):
+        css = (Path(__file__).resolve().parents[1] / "static" / "css" / "style.css").read_text(
+            encoding="utf-8"
+        )
+
+        home_cover = re.search(r"\.home-cover\s*\{(?P<body>[^}]*)\}", css, re.S)
+        writing_topbar = re.search(r"\.writing-topbar\s*\{(?P<body>[^}]*)\}", css, re.S)
+
+        self.assertIsNotNone(home_cover)
+        self.assertIsNotNone(writing_topbar)
+        self.assertIn("position: relative;", home_cover.group("body"))
+        self.assertIn("z-index: 50;", home_cover.group("body"))
+        self.assertNotIn(".edit-page .home-cover", css)
+        self.assertIn("position: sticky;", writing_topbar.group("body"))
+        self.assertIn("z-index: 25;", writing_topbar.group("body"))
 
 
 if __name__ == "__main__":
