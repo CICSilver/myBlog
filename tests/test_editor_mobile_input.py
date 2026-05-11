@@ -22,6 +22,14 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("lineText.startsWith(CHINESE_PARAGRAPH_INDENT)", self.source)
         self.assertIn("cm.replaceRange('\\n' + CHINESE_PARAGRAPH_INDENT", self.source)
 
+    def test_editor_toolbar_hides_unused_buttons(self):
+        for icon in ["emoji", "goto-line", "preview", "search", "help", "info"]:
+            self.assertIn(f"'{icon}'", self.source)
+
+        self.assertIn("HIDDEN_EDITOR_TOOLBAR_ICONS", self.source)
+        self.assertIn("compactToolbarIcons(editormd.toolbarModes.full)", self.source)
+        self.assertIn("icon === '|'", self.source)
+
     def test_codemirror_assets_are_loaded_by_template(self):
         self.assertIn("vendor/editor.md/lib/codemirror/codemirror.min.css", self.source)
         self.assertIn("vendor/editor.md/lib/codemirror/addon/dialog/dialog.css", self.source)

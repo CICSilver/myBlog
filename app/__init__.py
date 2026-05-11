@@ -27,6 +27,8 @@ def create_app():
     app.config["SECRET_KEY"] = _get_secret_key(app)
     app.config["ADMIN_LOGIN_PATH"] = _get_admin_login_path(app)
     app.config["BLOG_CONTENT_HISTORY_DIR"] = _get_content_history_dir(app)
+    app.config["BLOG_COVER_UPLOAD_DIR"] = _get_cover_upload_dir(app)
+    app.config["BLOG_COVER_MAX_BYTES"] = _get_cover_max_bytes(app)
     app.config["BLOG_DB_PATH"] = db_path
     app.permanent_session_lifetime = timedelta(days=14)
 
@@ -89,6 +91,19 @@ def _get_admin_login_path(app):
 
 def _get_content_history_dir(app):
     return _get_config_value(app, "BLOG_CONTENT_HISTORY_DIR") or default_history_dir()
+
+
+def _get_cover_upload_dir(app):
+    return _get_config_value(app, "BLOG_COVER_UPLOAD_DIR") or os.path.join(
+        project_root,
+        "instance",
+        "uploads",
+        "covers",
+    )
+
+
+def _get_cover_max_bytes(app):
+    return int(_get_config_value(app, "BLOG_COVER_MAX_BYTES", 5 * 1024 * 1024))
 
 
 def _register_history_commands(app):

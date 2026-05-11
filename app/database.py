@@ -45,14 +45,14 @@ def normalize_cover_url(value):
     if any(char.isspace() for char in cover_url):
         raise ValueError("封面地址不能包含空白字符。")
 
-    if cover_url.startswith("/static/"):
+    if cover_url.startswith("/static/") or cover_url.startswith("/media/covers/"):
         return cover_url
 
     parsed = urlparse(cover_url)
     if parsed.scheme == "https" and parsed.netloc:
         return cover_url
 
-    raise ValueError("封面地址仅支持 /static/... 或 https://...。")
+    raise ValueError("封面地址仅支持 /static/...、/media/covers/... 或 https://...。")
 
 
 def _snapshot_history(reason):

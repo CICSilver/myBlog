@@ -64,6 +64,10 @@
     --control-surface: rgba(255, 252, 248, 0.88);
     --control-surface-soft: rgba(255, 252, 248, 0.66);
     --control-focus-surface: #fffdf8;
+    --cover-upload-surface: rgba(255, 252, 248, 0.72);
+    --cover-upload-hover: rgba(162, 91, 51, 0.08);
+    --cover-upload-line: rgba(162, 91, 51, 0.34);
+    --cover-upload-plus: #8f4b26;
     --focus-border: rgba(162, 91, 51, 0.55);
     --focus-ring: 0 0 0 4px rgba(162, 91, 51, 0.1);
     --editor-surface: #fffdf8;
@@ -160,6 +164,10 @@ html[data-theme="dark"] {
     --control-surface: rgba(43, 33, 28, 0.9);
     --control-surface-soft: rgba(45, 35, 30, 0.68);
     --control-focus-surface: #32251f;
+    --cover-upload-surface: rgba(38, 29, 25, 0.72);
+    --cover-upload-hover: rgba(210, 145, 98, 0.12);
+    --cover-upload-line: rgba(210, 145, 98, 0.38);
+    --cover-upload-plus: #efb07a;
     --focus-border: rgba(210, 145, 98, 0.58);
     --focus-ring: 0 0 0 4px rgba(210, 145, 98, 0.16);
     --editor-surface: #241b17;
@@ -1565,6 +1573,130 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     grid-column: 1 / -1;
 }
 
+.cover-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cover-dropzone {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(100%, 420px);
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    overflow: hidden;
+    border: 1px dashed var(--cover-upload-line);
+    border-radius: var(--radius-sm);
+    background: var(--cover-upload-surface);
+    color: var(--cover-upload-plus);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.cover-dropzone:hover,
+.cover-dropzone:focus-visible,
+.cover-dropzone.is-dragover {
+    outline: none;
+    border-color: var(--focus-border);
+    background: var(--cover-upload-hover);
+    box-shadow: var(--focus-ring);
+}
+
+.cover-dropzone.is-error {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+}
+
+.cover-dropzone.is-uploading {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.cover-dropzone.is-uploading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent),
+        rgba(0, 0, 0, 0.16);
+    animation: cover-upload-pulse 1.1s linear infinite;
+}
+
+.cover-plus {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--cover-upload-line);
+    border-radius: 50%;
+    font-size: 2.4rem;
+    line-height: 1;
+    font-weight: 300;
+}
+
+.cover-preview-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cover-plus[hidden],
+.cover-preview-image[hidden],
+.cover-remove-button[hidden] {
+    display: none;
+}
+
+.cover-remove-button {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--control-surface);
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 1.35rem;
+    line-height: 1;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.cover-remove-button:hover,
+.cover-remove-button:focus-visible {
+    outline: none;
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.cover-remove-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+.cover-upload-status {
+    min-height: 1.4em;
+    color: var(--ink-faint);
+    font-size: 0.86rem;
+}
+
+.cover-upload-status.is-saved {
+    color: var(--success);
+}
+
+.cover-upload-status.is-uploading {
+    color: var(--warning);
+}
+
+.cover-upload-status.is-error {
+    color: var(--danger);
+}
+
 .writing-workspace .editor-stage {
     min-height: 460px;
     border-color: var(--topbar-line);
@@ -2027,6 +2159,16 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     }
 }
 
+@keyframes cover-upload-pulse {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
 @keyframes pulse {
     0% {
         transform: scale(0.96);
@@ -2322,6 +2464,14 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     .writing-workspace .form-input {
         min-height: 48px;
         padding: 0 12px;
+    }
+
+    .cover-upload-row {
+        align-items: flex-start;
+    }
+
+    .cover-dropzone {
+        width: 100%;
     }
 
     .writing-workspace .editor-stage {

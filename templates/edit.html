@@ -97,19 +97,52 @@
         </ul>
       </label>
 
-      <label class="field-block field-cover" for="cover-url">
-        <span>封面地址</span>
+      <div class="field-block field-cover">
+        <span>封面图片</span>
         <input
-          class="form-input"
-          type="text"
+          type="hidden"
           id="cover-url"
           name="cover-url"
-          placeholder="/static/... 或 https://..."
           value="{{ blog.cover_url if blog else '' }}"
-          inputmode="url"
-          autocomplete="off"
         >
-      </label>
+        <input
+          class="cover-file-input"
+          type="file"
+          id="cover-file"
+          name="cover-image"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+        >
+        <div class="cover-upload-row">
+          <button
+            class="cover-dropzone{% if blog and blog.cover_url %} has-cover{% endif %}"
+            type="button"
+            id="cover-dropzone"
+            aria-label="{{ '更换封面图片' if blog and blog.cover_url else '上传封面图片' }}"
+          >
+            <img
+              id="cover-preview-image"
+              class="cover-preview-image"
+              src="{{ blog.cover_url if blog and blog.cover_url else '' }}"
+              alt="封面预览"
+              {% if not blog or not blog.cover_url %}hidden{% endif %}
+            >
+            <span class="cover-plus" id="cover-plus" aria-hidden="true"{% if blog and blog.cover_url %} hidden{% endif %}>+</span>
+          </button>
+          <button
+            class="cover-remove-button"
+            id="cover-remove-button"
+            type="button"
+            aria-label="移除封面图片"
+            {% if not blog or not blog.cover_url %}hidden{% endif %}
+          >
+            ×
+          </button>
+        </div>
+        <span id="cover-upload-status" class="cover-upload-status is-idle" aria-live="polite">
+          {{ '已设置封面' if blog and blog.cover_url else '未设置封面' }}
+        </span>
+      </div>
     </div>
 
     <div class="editor-stage">
@@ -149,9 +182,25 @@
   const saveStatus = document.getElementById('save-status');
   const saveButton = document.getElementById('save-button');
   const contentCounter = document.getElementById('content-counter');
+  const coverUrlInput = document.getElementById('cover-url');
+  const coverFileInput = document.getElementById('cover-file');
+  const coverDropzone = document.getElementById('cover-dropzone');
+  const coverPreviewImage = document.getElementById('cover-preview-image');
+  const coverPlus = document.getElementById('cover-plus');
+  const coverRemoveButton = document.getElementById('cover-remove-button');
+  const coverUploadStatus = document.getElementById('cover-upload-status');
   const defaultSaveAction = "{{ 'update' if blog else 'insert' }}";
   const CHINESE_PARAGRAPH_INDENT = '\u3000\u3000';
+  const HIDDEN_EDITOR_TOOLBAR_ICONS = new Set([
+    'emoji',
+    'goto-line',
+    'preview',
+    'search',
+    'help',
+    'info',
+  ]);
   let isSubmitting = false;
+  let isCoverUploading = false;
   let editorChangeBound = false;
 
   function calculateEditorHeight() {
@@ -171,6 +220,21 @@
 
   let editor = null;
 
+  function compactToolbarIcons(icons) {
+    return icons.reduce((result, icon) => {
+      if (HIDDEN_EDITOR_TOOLBAR_ICONS.has(icon)) {
+        return result;
+      }
+
+      if (icon === '|' && (result.length === 0 || result[result.length - 1] === '|')) {
+        return result;
+      }
+
+      result.push(icon);
+      return result;
+    }, []).filter((icon, index, result) => icon !== '|' || index < result.length - 1);
+  }
+
   editor = editormd('markdown-editor', {
     width: '100%',
     height: calculateEditorHeight(),
@@ -178,7 +242,7 @@
     path: "{{ url_for('static', filename='vendor/editor.md/lib/') }}",
     autoLoadModules: false,
     toolbarIcons: function () {
-      const icons = editormd.toolbarModes.full.slice();
+      const icons = compactToolbarIcons(editormd.toolbarModes.full);
       const insertAfter = icons.indexOf('quote');
       icons.splice(insertAfter >= 0 ? insertAfter + 1 : icons.length, 0, 'chinese-indent');
       return icons;
@@ -209,6 +273,10 @@
     saveStatus.className = `save-status is-${state}`;
   }
 
+  function updateSaveButtonState() {
+    saveButton.disabled = isSubmitting || isCoverUploading;
+  }
+
   function markDirty() {
     if (!isSubmitting) {
       setSaveStatus('有未保存修改', 'dirty');
@@ -234,6 +302,108 @@
     const markdown = getEditorMarkdown();
     const compactLength = markdown.replace(/\s/g, '').length;
     contentCounter.textContent = `${compactLength} 字 / ${markdown.length} 字符`;
+  }
+
+  function setCoverStatus(text, state) {
+    if (!coverUploadStatus) {
+      return;
+    }
+
+    coverUploadStatus.textContent = text;
+    coverUploadStatus.className = `cover-upload-status is-${state}`;
+  }
+
+  function setCoverPreview(coverUrl) {
+    const hasCover = Boolean(coverUrl);
+
+    if (coverDropzone) {
+      coverDropzone.classList.toggle('has-cover', hasCover);
+      coverDropzone.classList.remove('is-error');
+      coverDropzone.setAttribute('aria-label', hasCover ? '更换封面图片' : '上传封面图片');
+    }
+
+    if (coverPreviewImage) {
+      coverPreviewImage.hidden = !hasCover;
+      coverPreviewImage.src = hasCover ? coverUrl : '';
+    }
+
+    if (coverPlus) {
+      coverPlus.hidden = hasCover;
+    }
+
+    if (coverRemoveButton) {
+      coverRemoveButton.hidden = !hasCover;
+    }
+  }
+
+  function setCoverUploading(uploading) {
+    isCoverUploading = uploading;
+
+    if (coverDropzone) {
+      coverDropzone.classList.toggle('is-uploading', uploading);
+    }
+
+    if (coverFileInput) {
+      coverFileInput.disabled = uploading;
+    }
+
+    if (coverRemoveButton) {
+      coverRemoveButton.disabled = uploading;
+    }
+
+    updateSaveButtonState();
+  }
+
+  async function uploadCoverFile(file) {
+    if (!file || isCoverUploading) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('cover-image', file);
+    if (coverDropzone) {
+      coverDropzone.classList.remove('is-error');
+    }
+    setCoverUploading(true);
+    setCoverStatus('上传中...', 'uploading');
+
+    try {
+      const response = await fetch("{{ url_for('main.upload_cover_image') }}", {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': window.BLOG_CSRF_TOKEN || '',
+        },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || data.status !== 'success' || !data.cover_url) {
+        throw new Error(data.message || '封面上传失败。');
+      }
+
+      coverUrlInput.value = data.cover_url;
+      setCoverPreview(data.cover_url);
+      setCoverStatus('封面已上传', 'saved');
+      markDirty();
+    } catch (error) {
+      if (coverDropzone) {
+        coverDropzone.classList.add('is-error');
+      }
+      setCoverStatus(error.message || '封面上传失败。', 'error');
+    } finally {
+      if (coverFileInput) {
+        coverFileInput.value = '';
+      }
+      setCoverUploading(false);
+    }
+  }
+
+  function handleCoverFiles(files) {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    uploadCoverFile(files[0]);
   }
 
   function resizeEditor(editorInstance = editor) {
@@ -383,8 +553,16 @@
       return;
     }
 
+    if (isCoverUploading) {
+      modal.setTitle('封面上传中');
+      modal.clearButtons();
+      modal.show('封面图片仍在上传，请稍后保存。');
+      modal.addButton('关闭', () => modal.close(), 'secondary');
+      return;
+    }
+
     isSubmitting = true;
-    saveButton.disabled = true;
+    updateSaveButtonState();
     setSaveStatus('保存中...', 'saving');
     syncEditorContent();
 
@@ -411,7 +589,7 @@
         window.location.href = '/';
       } else {
         isSubmitting = false;
-        saveButton.disabled = false;
+        updateSaveButtonState();
         setSaveStatus('保存失败', 'error');
         modal.setTitle('保存失败');
         modal.clearButtons();
@@ -420,7 +598,7 @@
       }
     } catch (error) {
       isSubmitting = false;
-      saveButton.disabled = false;
+      updateSaveButtonState();
       setSaveStatus('保存失败', 'error');
       modal.setTitle('保存失败');
       modal.clearButtons();
@@ -432,6 +610,59 @@
   writingForm.addEventListener('submit', function (event) {
     event.preventDefault();
     handleBlogSubmit(defaultSaveAction);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!coverDropzone || !coverFileInput || !coverUrlInput) {
+      return;
+    }
+
+    setCoverPreview(coverUrlInput.value);
+
+    coverDropzone.addEventListener('click', function () {
+      if (!isCoverUploading) {
+        coverFileInput.click();
+      }
+    });
+
+    coverFileInput.addEventListener('change', function (event) {
+      handleCoverFiles(event.target.files);
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      coverDropzone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        if (isCoverUploading) {
+          return;
+        }
+
+        coverDropzone.classList.add('is-dragover');
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = 'copy';
+        }
+      });
+    });
+
+    coverDropzone.addEventListener('dragleave', function (event) {
+      if (!coverDropzone.contains(event.relatedTarget)) {
+        coverDropzone.classList.remove('is-dragover');
+      }
+    });
+
+    coverDropzone.addEventListener('drop', function (event) {
+      event.preventDefault();
+      coverDropzone.classList.remove('is-dragover');
+      handleCoverFiles(event.dataTransfer ? event.dataTransfer.files : null);
+    });
+
+    if (coverRemoveButton) {
+      coverRemoveButton.addEventListener('click', function () {
+        coverUrlInput.value = '';
+        setCoverPreview('');
+        setCoverStatus('未设置封面', 'idle');
+        markDirty();
+      });
+    }
   });
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -511,12 +742,13 @@
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    writingForm.querySelectorAll('input').forEach((input) => {
+    writingForm.querySelectorAll('input:not([type="file"])').forEach((input) => {
       input.addEventListener('change', markDirty);
     });
 
     bindEditorEvents(editor);
     updateCounter();
+    updateSaveButtonState();
     window.setTimeout(resizeEditor, 80);
     window.addEventListener('resize', debounce(resizeEditor, 160));
   });

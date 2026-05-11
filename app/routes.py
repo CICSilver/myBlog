@@ -1,12 +1,30 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
+)
 from app.database import DatabaseHelper, Blog, normalize_cover_url
 from app.auth import admin_logout, login_required, validate_csrf_token
+from datetime import datetime
 import json
+import os
+import secrets
 
 main = Blueprint('main', __name__)
 dbHelper = DatabaseHelper()
 SITE_NAME = "Silver's Blog"
 PERSONAL_INTRO = "人事匆匆，或许有些可以留在这里。"
+SUPPORTED_COVER_EXTENSIONS = {
+    ".jpg": "jpg",
+    ".jpeg": "jpg",
+    ".png": "png",
+    ".webp": "webp",
+}
 # ========================= 辅助函数 =========================
 def get_site_context():
     return {
@@ -25,10 +43,84 @@ def init_index_with_blogs(_blogs):
         **get_site_context(),
     )
 
+def _cover_upload_error(message, status_code=400):
+    return jsonify({"status": "error", "message": message}), status_code
+
+
+def _detect_cover_image_type(payload):
+    if payload.startswith(b"\xff\xd8\xff"):
+        return "jpg"
+
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+
+    if len(payload) >= 12 and payload[:4] == b"RIFF" and payload[8:12] == b"WEBP":
+        return "webp"
+
+    return None
+
+
+def _allowed_cover_extension(filename):
+    _, extension = os.path.splitext(filename or "")
+    return SUPPORTED_COVER_EXTENSIONS.get(extension.lower())
+
+
+def _cover_size_message(max_bytes):
+    return "封面图片不能超过 {0}MB。".format(max_bytes // (1024 * 1024))
+
+
 # =========================== 路由 ===========================
 @main.route('/')
 def index():
     return init_index_with_blogs(dbHelper.get_recent_blogs())
+
+@main.route('/media/covers/<path:filename>')
+def media_cover(filename):
+    return send_from_directory(current_app.config["BLOG_COVER_UPLOAD_DIR"], filename)
+
+@main.route('/edit/cover', methods=['POST'])
+@login_required
+def upload_cover_image():
+    validate_csrf_token()
+
+    cover_file = request.files.get("cover-image")
+    if cover_file is None:
+        return _cover_upload_error("请选择要上传的封面图片。")
+
+    expected_type = _allowed_cover_extension(cover_file.filename)
+    if expected_type is None:
+        return _cover_upload_error("封面图片仅支持 JPG、PNG 或 WebP。")
+
+    max_bytes = int(current_app.config.get("BLOG_COVER_MAX_BYTES", 5 * 1024 * 1024))
+    payload = cover_file.stream.read(max_bytes + 1)
+
+    if len(payload) > max_bytes:
+        return _cover_upload_error(_cover_size_message(max_bytes), 413)
+
+    if not payload:
+        return _cover_upload_error("封面图片不能为空。")
+
+    detected_type = _detect_cover_image_type(payload)
+    if detected_type is None:
+        return _cover_upload_error("封面图片格式无法识别。")
+
+    if detected_type != expected_type:
+        return _cover_upload_error("封面图片扩展名与实际格式不一致。")
+
+    now = datetime.now()
+    year = now.strftime("%Y")
+    month = now.strftime("%m")
+    filename = "{0}.{1}".format(secrets.token_urlsafe(16), detected_type)
+    upload_dir = current_app.config["BLOG_COVER_UPLOAD_DIR"]
+    target_dir = os.path.join(upload_dir, year, month)
+    os.makedirs(target_dir, exist_ok=True)
+
+    target_path = os.path.join(target_dir, filename)
+    with open(target_path, "wb") as image_file:
+        image_file.write(payload)
+
+    cover_url = "/media/covers/{0}/{1}/{2}".format(year, month, filename)
+    return jsonify({"status": "success", "cover_url": cover_url})
 
 @main.route('/edit', methods=['GET', 'POST'])
 @login_required

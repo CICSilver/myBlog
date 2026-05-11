@@ -16,6 +16,7 @@ env/
 # Local config and runtime data
 .env
 instance/config.py
+instance/uploads/
 db/
 output/
 

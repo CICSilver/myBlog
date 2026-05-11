@@ -43,6 +43,7 @@ class BlogHtmlTitleTest(unittest.TestCase):
     def test_normalizes_supported_cover_urls(self):
         self.assertEqual(normalize_cover_url(""), "")
         self.assertEqual(normalize_cover_url("  /static/covers/post.jpg  "), "/static/covers/post.jpg")
+        self.assertEqual(normalize_cover_url("/media/covers/2026/05/post.jpg"), "/media/covers/2026/05/post.jpg")
         self.assertEqual(
             normalize_cover_url("https://example.com/covers/post.jpg"),
             "https://example.com/covers/post.jpg",

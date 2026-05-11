@@ -6,12 +6,15 @@ from flask import session
 
 from app import create_app
 from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
+from app.database import Blog
 import app.routes as routes_module
 
 
 class StubDatabaseHelper:
     def __init__(self):
         self.insert_called = False
+        self.last_inserted_blog = None
+        self.specified_blog = None
 
     def get_all_blogs(self):
         return []
@@ -24,7 +27,11 @@ class StubDatabaseHelper:
 
     def insert_blog(self, blog):
         self.insert_called = True
+        self.last_inserted_blog = blog
         return {"status": "success", "message": "ok", "html_title": blog.html_title}
+
+    def get_specify_blog(self, year, month, html_title):
+        return self.specified_blog
 
 
 class HomepageCoverRenderingTest(unittest.TestCase):
@@ -96,6 +103,82 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(self.stub_db_helper.insert_called)
         self.assertEqual(response.get_json()["status"], "error")
+
+    def test_media_cover_url_is_accepted_on_insert(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as session:
+                session[ADMIN_SESSION_KEY] = True
+                session[CSRF_SESSION_KEY] = "csrf-token"
+
+            response = client.post(
+                "/edit",
+                headers={"X-CSRF-Token": "csrf-token"},
+                data={
+                    "html-title": "media_cover",
+                    "title": "Media cover",
+                    "content": "content",
+                    "category": "随笔",
+                    "cover-url": "/media/covers/2026/05/upload.jpg",
+                    "month": "",
+                    "year": "",
+                    "date": "",
+                    "time": "",
+                    "action": "insert",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.stub_db_helper.insert_called)
+        self.assertEqual(self.stub_db_helper.last_inserted_blog.cover_url, "/media/covers/2026/05/upload.jpg")
+
+    def test_edit_page_renders_cover_upload_control(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+
+            response = client.get("/edit")
+
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('type="hidden"', html)
+        self.assertIn('id="cover-url"', html)
+        self.assertIn('name="cover-url"', html)
+        self.assertIn('id="cover-file"', html)
+        self.assertIn('name="cover-image"', html)
+        self.assertIn('class="cover-dropzone"', html)
+        self.assertIn('id="cover-plus"', html)
+        self.assertIn('>+</span>', html)
+        self.assertIn("dragenter", html)
+        self.assertIn("dragover", html)
+        self.assertIn("drop", html)
+        self.assertIn('fetch("/edit/cover"', html)
+        self.assertNotIn('type="text"\n          id="cover-url"', html)
+
+    def test_edit_page_previews_existing_cover(self):
+        blog = Blog()
+        blog.html_title = "existing"
+        blog.title = "Existing"
+        blog.content = "content"
+        blog.category = "随笔"
+        blog.cover_url = "/media/covers/2026/05/existing.jpg"
+        blog.year = "2026"
+        blog.month = "5"
+        blog.date = "2026-05-11"
+        blog.time = "10:00:00"
+        self.stub_db_helper.specified_blog = blog
+
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+
+            response = client.get("/edit/2026/5/existing")
+
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="cover-dropzone has-cover"', html)
+        self.assertIn('src="/media/covers/2026/05/existing.jpg"', html)
+        self.assertIn('value="/media/covers/2026/05/existing.jpg"', html)
+        self.assertIn("已设置封面", html)
 
     def test_homepage_cover_hides_admin_menu_when_logged_out(self):
         blogs = [self.make_blog("featured", "最新文章")]
@@ -195,6 +278,8 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertNotIn(".edit-page .home-cover", css)
         self.assertIn("position: sticky;", writing_topbar.group("body"))
         self.assertIn("z-index: 25;", writing_topbar.group("body"))
+        self.assertIn(".cover-plus[hidden]", css)
+        self.assertIn(".cover-remove-button[hidden]", css)
 
 
 if __name__ == "__main__":
