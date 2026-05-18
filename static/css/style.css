@@ -1454,6 +1454,50 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     background: var(--row-hover);
 }
 
+.panel-title {
+    margin: 4px 0 0;
+    font-size: 1.28rem;
+}
+
+.analytics-shell + .analytics-shell {
+    margin-top: 18px;
+}
+
+.analytics-table {
+    min-width: 820px;
+}
+
+.recent-views-table {
+    min-width: 920px;
+}
+
+.table-link {
+    color: var(--accent-strong);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.table-link:hover {
+    text-decoration: underline;
+}
+
+.muted-text {
+    color: var(--ink-faint);
+}
+
+.analytics-table code {
+    display: inline-block;
+    max-width: 15rem;
+    overflow-wrap: anywhere;
+    padding: 3px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--control-surface-soft);
+    color: var(--ink);
+    font-family: Consolas, "Liberation Mono", monospace;
+    font-size: 0.92rem;
+}
+
 .manage-opera-col {
     display: flex;
     flex-wrap: wrap;

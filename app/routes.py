@@ -180,6 +180,7 @@ def blog_detail(year, month, html_title):
     blog = dbHelper.get_specify_blog(str(year), str(month), html_title)
     
     if blog:
+        _record_article_view(blog)
         return render_template('blog_detail.html', blog=blog, **get_site_context())
     else:
         return render_template('404.html', **get_site_context()), 404
@@ -192,6 +193,19 @@ def blog_manage():
     """
     blogs = dbHelper.get_all_blogs()
     return render_template('manage.html', blogs=blogs, **get_site_context())
+
+@main.route('/manage/views')
+@login_required
+def article_view_manage():
+    """
+    文章浏览量统计页面
+    """
+    view_dashboard = dbHelper.get_article_view_dashboard(recent_limit=100)
+    return render_template(
+        'view_stats.html',
+        view_dashboard=view_dashboard,
+        **get_site_context(),
+    )
 
 @main.route('/edit/<string:year>/<string:month>/<string:html_title>')
 @login_required
@@ -247,3 +261,28 @@ def archived_blogs(year, month):
 # 添加评论
 def add_comment(blog_id, comment):
     pass
+
+
+def _record_article_view(blog):
+    try:
+        dbHelper.record_article_view(
+            blog,
+            _get_client_ip(),
+            request.path,
+        )
+    except Exception as exc:
+        print("article view record failed: {0}".format(exc))
+
+
+def _get_client_ip():
+    if current_app.config.get("BLOG_TRUST_PROXY_HEADERS"):
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        forwarded_ip = forwarded_for.split(",", 1)[0].strip()
+        if forwarded_ip:
+            return forwarded_ip
+
+        real_ip = request.headers.get("X-Real-IP", "").strip()
+        if real_ip:
+            return real_ip
+
+    return request.remote_addr or ""

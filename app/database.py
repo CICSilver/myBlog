@@ -204,6 +204,8 @@ class DatabaseHelper:
         self.category_table = blog_db.table('categories')
         # 博客表，存储全部博客
         self.blog_table = blog_db.table('blogs')
+        # 文章访问记录表，存储每一次文章详情页访问
+        self.article_view_table = blog_db.table('article_views')
 
     def get_all_categories(self):
         """
@@ -309,6 +311,91 @@ class DatabaseHelper:
         获取所有博客列表
         """
         return self.blog_table.all()
+
+    def record_article_view(self, blog: Blog, ip, path, viewed_at=None):
+        """
+        记录一次文章详情页访问。访问统计不参与内容历史快照。
+        """
+        if blog is None:
+            raise ValueError("Blog cannot be None")
+        if not isinstance(blog, Blog):
+            raise TypeError("Expected a Blog instance")
+
+        view_record = {
+            "year": blog.year,
+            "month": blog.month,
+            "html_title": blog.html_title,
+            "blog_title": blog.title,
+            "ip": ip or "",
+            "viewed_at": viewed_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "path": path or "",
+        }
+
+        with _write_lock:
+            self.article_view_table.insert(view_record)
+
+        return view_record
+
+    def get_article_view_dashboard(self, recent_limit=100):
+        """
+        获取后台浏览量统计所需的汇总数据。
+        """
+        views = self.article_view_table.all()
+
+        return {
+            "total_views": len(views),
+            "unique_ip_count": len({view.get("ip") for view in views if view.get("ip")}),
+            "article_summaries": self._summarize_article_views(views),
+            "recent_views": self._recent_article_views(views, recent_limit),
+        }
+
+    def _summarize_article_views(self, views):
+        summaries = {}
+
+        for view in views:
+            key = (
+                view.get("year"),
+                view.get("month"),
+                view.get("html_title"),
+            )
+            summary = summaries.setdefault(
+                key,
+                {
+                    "year": view.get("year"),
+                    "month": view.get("month"),
+                    "html_title": view.get("html_title"),
+                    "blog_title": view.get("blog_title") or "Untitled",
+                    "path": view.get("path") or "",
+                    "views": 0,
+                    "last_viewed_at": "",
+                },
+            )
+
+            summary["views"] += 1
+
+            if view.get("blog_title"):
+                summary["blog_title"] = view.get("blog_title")
+            if view.get("path"):
+                summary["path"] = view.get("path")
+            if view.get("viewed_at") and view.get("viewed_at") > summary["last_viewed_at"]:
+                summary["last_viewed_at"] = view.get("viewed_at")
+
+        article_summaries = list(summaries.values())
+        article_summaries.sort(
+            key=lambda summary: (summary["views"], summary.get("last_viewed_at") or ""),
+            reverse=True,
+        )
+        return article_summaries
+
+    def _recent_article_views(self, views, limit):
+        if limit is None:
+            limit = 100
+
+        limit = max(int(limit), 0)
+        if limit == 0:
+            return []
+
+        return list(reversed(views[-limit:]))
 
     def get_recent_blogs(self, default_days=10):
         """

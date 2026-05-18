@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}浏览量统计 | {{ site_name }}{% endblock %}
+{% block body_class %}manage-page view-stats-page{% endblock %}
+
+{% block content %}
+<section class="admin-hero">
+  <div>
+    <p class="section-label">View Console</p>
+    <h1>浏览量统计</h1>
+    <p class="admin-copy">查看文章被访问的次数、来源 IP 和最近阅读记录。</p>
+  </div>
+  <div class="admin-summary">
+    <span class="stat-label">总浏览量</span>
+    <strong>{{ view_dashboard.total_views }}</strong>
+    <span class="stat-note">{{ view_dashboard.unique_ip_count }} 个独立 IP</span>
+  </div>
+</section>
+
+<section class="table-shell analytics-shell">
+  <div class="table-toolbar">
+    <div>
+      <p class="section-label">Article Ranking</p>
+      <h2 class="panel-title">文章浏览排行</h2>
+    </div>
+    <a class="toolbar-button is-ghost" href="{{ url_for('main.blog_manage') }}">返回管理</a>
+  </div>
+
+  {% if view_dashboard.article_summaries %}
+    <div class="table-wrap">
+      <table class="manage_table analytics-table">
+        <thead>
+          <tr>
+            <th>排名</th>
+            <th>文章</th>
+            <th>浏览量</th>
+            <th>最近访问</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for article in view_dashboard.article_summaries %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                {% if article.path %}
+                  <a class="table-link" href="{{ article.path }}">{{ article.blog_title }}</a>
+                {% else %}
+                  {{ article.blog_title }}
+                {% endif %}
+              </td>
+              <td><strong>{{ article.views }}</strong></td>
+              <td>{{ article.last_viewed_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-stage compact">
+      <p class="section-label">No Views Yet</p>
+      <h2>还没有浏览记录</h2>
+      <p>当有人打开文章详情页后，这里会自动出现访问统计。</p>
+    </div>
+  {% endif %}
+</section>
+
+<section class="table-shell analytics-shell">
+  <div class="table-toolbar">
+    <div>
+      <p class="section-label">Recent Visits</p>
+      <h2 class="panel-title">最近访问明细</h2>
+    </div>
+  </div>
+
+  {% if view_dashboard.recent_views %}
+    <div class="table-wrap">
+      <table class="manage_table analytics-table recent-views-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>IP</th>
+            <th>文章</th>
+            <th>地址</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for view in view_dashboard.recent_views %}
+            <tr>
+              <td>{{ view.viewed_at }}</td>
+              <td><code>{{ view.ip }}</code></td>
+              <td>{{ view.blog_title }}</td>
+              <td>
+                {% if view.path %}
+                  <a class="table-link" href="{{ view.path }}">{{ view.path }}</a>
+                {% else %}
+                  <span class="muted-text">无地址</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-stage compact">
+      <p class="section-label">No Detail</p>
+      <h2>暂无访问明细</h2>
+      <p>最近 100 条文章访问记录会显示在这里。</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

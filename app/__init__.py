@@ -29,6 +29,11 @@ def create_app():
     app.config["BLOG_CONTENT_HISTORY_DIR"] = _get_content_history_dir(app)
     app.config["BLOG_COVER_UPLOAD_DIR"] = _get_cover_upload_dir(app)
     app.config["BLOG_COVER_MAX_BYTES"] = _get_cover_max_bytes(app)
+    app.config["BLOG_TRUST_PROXY_HEADERS"] = _get_bool_config_value(
+        app,
+        "BLOG_TRUST_PROXY_HEADERS",
+        False,
+    )
     app.config["BLOG_DB_PATH"] = db_path
     app.permanent_session_lifetime = timedelta(days=14)
 
@@ -65,6 +70,17 @@ def _local_config_path():
 
 def _get_config_value(app, key, default=None):
     return os.environ.get(key) or app.config.get(key, default)
+
+
+def _get_bool_config_value(app, key, default=False):
+    value = _get_config_value(app, key, default)
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+
+    return bool(value)
 
 
 def _is_development(app):

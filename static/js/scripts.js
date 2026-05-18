@@ -158,6 +158,10 @@ function navigateToManage() {
     window.location.href = '/manage';
 }
 
+function navigateToViews() {
+    window.location.href = '/manage/views';
+}
+
 class Modal {
     constructor() {
         this.modalOverlay = document.getElementById("myModalOverlay");
