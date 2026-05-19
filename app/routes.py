@@ -9,7 +9,7 @@ from flask import (
     url_for,
 )
 from app.database import DatabaseHelper, Blog, normalize_cover_url
-from app.auth import admin_logout, login_required, validate_csrf_token
+from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from datetime import datetime
 import json
 import os
@@ -264,6 +264,9 @@ def add_comment(blog_id, comment):
 
 
 def _record_article_view(blog):
+    if current_admin_authenticated():
+        return
+
     try:
         dbHelper.record_article_view(
             blog,

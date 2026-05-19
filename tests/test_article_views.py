@@ -147,6 +147,19 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertEqual(self.stub_db_helper.recorded_views[0]["ip"], "198.51.100.10")
         self.assertEqual(self.stub_db_helper.recorded_views[0]["path"], "/2026/5/hello")
 
+    def test_article_detail_skips_admin_view(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+
+            response = client.get(
+                "/2026/5/hello",
+                environ_overrides={"REMOTE_ADDR": "198.51.100.10"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
     def test_article_detail_uses_forwarded_ip_when_trusted(self):
         self.app.config["BLOG_TRUST_PROXY_HEADERS"] = True
 
