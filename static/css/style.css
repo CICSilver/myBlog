@@ -1841,6 +1841,10 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     background: var(--table-surface);
 }
 
+.mobile-markdown-editor {
+    display: none;
+}
+
 .editor-surface,
 .editor-stage .editormd {
     width: 100% !important;
@@ -1893,6 +1897,46 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 
 .editor-stage .CodeMirror-activeline-background {
     background: var(--ghost-hover);
+}
+
+.editor-stage.is-mobile-native-editor {
+    overflow: visible;
+}
+
+.editor-stage.is-mobile-native-editor .editormd {
+    height: auto !important;
+    min-height: 0;
+}
+
+.editor-stage.is-mobile-native-editor .editormd-toolbar,
+.editor-stage.is-mobile-native-editor .CodeMirror,
+.editor-stage.is-mobile-native-editor .editormd-preview,
+.editor-stage.is-mobile-native-editor .editormd-preview-container,
+.editor-stage.is-mobile-native-editor .editormd-html-preview {
+    display: none !important;
+}
+
+.editor-stage.is-mobile-native-editor .mobile-markdown-editor {
+    display: block;
+    width: 100%;
+    min-height: 420px;
+    padding: 18px;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    background: var(--editor-surface);
+    color: var(--ink);
+    font: 15px/1.72 var(--font-body);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+    touch-action: auto;
+}
+
+.editor-stage.is-mobile-native-editor .mobile-markdown-editor:focus {
+    box-shadow: var(--focus-ring);
 }
 
 .editor-note {

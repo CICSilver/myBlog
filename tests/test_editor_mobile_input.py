@@ -4,8 +4,11 @@ from pathlib import Path
 
 class EditorMobileInputTest(unittest.TestCase):
     def setUp(self):
-        self.template = Path(__file__).resolve().parents[1] / "templates" / "edit.html"
+        project_root = Path(__file__).resolve().parents[1]
+        self.template = project_root / "templates" / "edit.html"
+        self.stylesheet = project_root / "static" / "css" / "style.css"
         self.source = self.template.read_text(encoding="utf-8")
+        self.css_source = self.stylesheet.read_text(encoding="utf-8")
 
     def test_mobile_editor_forces_textarea_input_before_initialization(self):
         override_index = self.source.index("CodeMirror.defaults.inputStyle = 'textarea'")
@@ -37,6 +40,26 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("vendor/editor.md/lib/codemirror/codemirror.min.js", self.source)
         self.assertIn("vendor/editor.md/lib/codemirror/modes.min.js", self.source)
         self.assertIn("vendor/editor.md/lib/codemirror/addons.min.js", self.source)
+
+    def test_mobile_native_textarea_is_synced_to_existing_submit_path(self):
+        self.assertIn('id="mobile-markdown-editor"', self.source)
+        self.assertIn("class=\"mobile-markdown-editor\"", self.source)
+        self.assertIn("is-mobile-native-editor", self.source)
+        self.assertIn("shouldUseMobileNativeEditor", self.source)
+        self.assertIn("navigator.maxTouchPoints > 0", self.source)
+        self.assertIn("syncCodeMirrorFromMobileNativeEditor", self.source)
+        self.assertIn("hiddenTextarea.value = mobileMarkdownEditor.value", self.source)
+        self.assertIn("editor.cm.setValue(mobileMarkdownEditor.value)", self.source)
+        self.assertIn("wasNativeEditor && !useNativeEditor", self.source)
+
+    def test_mobile_native_textarea_keeps_system_text_selection_available(self):
+        self.assertIn(".editor-stage.is-mobile-native-editor .mobile-markdown-editor", self.css_source)
+        self.assertIn("-webkit-user-select: text", self.css_source)
+        self.assertIn("user-select: text", self.css_source)
+        self.assertIn("-webkit-touch-callout: default", self.css_source)
+        self.assertIn("touch-action: auto", self.css_source)
+        self.assertIn(".editor-stage.is-mobile-native-editor .CodeMirror", self.css_source)
+        self.assertIn("display: none !important", self.css_source)
 
 
 if __name__ == "__main__":

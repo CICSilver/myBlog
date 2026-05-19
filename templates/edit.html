@@ -149,6 +149,14 @@
       <div id="markdown-editor" class="editormd editor-surface">
         <textarea id="markdown-content" name="content" style="display: none;"></textarea>
       </div>
+      <textarea
+        id="mobile-markdown-editor"
+        class="mobile-markdown-editor"
+        aria-label="Markdown 内容"
+        spellcheck="false"
+        autocapitalize="off"
+        autocomplete="off"
+      ></textarea>
     </div>
 
     <div class="editor-footer writing-footer">
@@ -189,6 +197,8 @@
   const coverPlus = document.getElementById('cover-plus');
   const coverRemoveButton = document.getElementById('cover-remove-button');
   const coverUploadStatus = document.getElementById('cover-upload-status');
+  const editorStage = document.querySelector('.editor-stage');
+  const mobileMarkdownEditor = document.getElementById('mobile-markdown-editor');
   const defaultSaveAction = "{{ 'update' if blog else 'insert' }}";
   const CHINESE_PARAGRAPH_INDENT = '\u3000\u3000';
   const HIDDEN_EDITOR_TOOLBAR_ICONS = new Set([
@@ -202,6 +212,7 @@
   let isSubmitting = false;
   let isCoverUploading = false;
   let editorChangeBound = false;
+  let mobileEditorBound = false;
 
   function calculateEditorHeight() {
     const editorNode = document.getElementById('markdown-editor');
@@ -263,6 +274,7 @@
     onload: function () {
       editor = this;
       bindEditorEvents(this);
+      initializeMobileNativeEditor(this);
       updateCounter();
       resizeEditor(this);
     },
@@ -284,12 +296,32 @@
   }
 
   function syncEditorContent() {
+    if (isMobileNativeEditorActive() && mobileMarkdownEditor) {
+      const hiddenTextarea = document.getElementById('markdown-content');
+
+      if (editor && editor.cm && editor.cm.getValue() !== mobileMarkdownEditor.value) {
+        editor.cm.setValue(mobileMarkdownEditor.value);
+      }
+
+      if (editor && editor.cm && typeof editor.save === 'function') {
+        editor.save();
+      } else if (hiddenTextarea) {
+        hiddenTextarea.value = mobileMarkdownEditor.value;
+      }
+
+      return;
+    }
+
     if (editor && editor.cm && typeof editor.save === 'function') {
       editor.save();
     }
   }
 
   function getEditorMarkdown() {
+    if (isMobileNativeEditorActive() && mobileMarkdownEditor) {
+      return mobileMarkdownEditor.value;
+    }
+
     if (editor && editor.cm && typeof editor.getMarkdown === 'function') {
       return editor.getMarkdown();
     }
@@ -407,9 +439,84 @@
   }
 
   function resizeEditor(editorInstance = editor) {
+    if (isMobileNativeEditorActive()) {
+      return;
+    }
+
     if (editorInstance && typeof editorInstance.height === 'function' && !(editorInstance.state && editorInstance.state.fullscreen)) {
       editorInstance.height(calculateEditorHeight());
     }
+  }
+
+  function shouldUseMobileNativeEditor() {
+    return window.matchMedia('(max-width: 767px)').matches && navigator.maxTouchPoints > 0;
+  }
+
+  function isMobileNativeEditorActive() {
+    return Boolean(editorStage && editorStage.classList.contains('is-mobile-native-editor'));
+  }
+
+  function getCodeMirrorMarkdown(editorInstance = editor) {
+    if (editorInstance && editorInstance.cm && typeof editorInstance.cm.getValue === 'function') {
+      return editorInstance.cm.getValue();
+    }
+
+    const textarea = document.getElementById('markdown-content');
+    return textarea ? textarea.value : '';
+  }
+
+  function syncMobileNativeEditorFromCodeMirror(editorInstance = editor) {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    const markdown = getCodeMirrorMarkdown(editorInstance);
+    if (mobileMarkdownEditor.value !== markdown) {
+      mobileMarkdownEditor.value = markdown;
+    }
+  }
+
+  function syncCodeMirrorFromMobileNativeEditor() {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    const hiddenTextarea = document.getElementById('markdown-content');
+    if (hiddenTextarea) {
+      hiddenTextarea.value = mobileMarkdownEditor.value;
+    }
+  }
+
+  function initializeMobileNativeEditor(editorInstance = editor) {
+    if (!editorStage || !mobileMarkdownEditor) {
+      return;
+    }
+
+    const useNativeEditor = shouldUseMobileNativeEditor();
+    const wasNativeEditor = isMobileNativeEditorActive();
+
+    if (wasNativeEditor && !useNativeEditor) {
+      syncEditorContent();
+    }
+
+    editorStage.classList.toggle('is-mobile-native-editor', useNativeEditor);
+
+    if (useNativeEditor) {
+      syncMobileNativeEditorFromCodeMirror(editorInstance);
+    }
+  }
+
+  function bindMobileNativeEditorEvents() {
+    if (mobileEditorBound || !mobileMarkdownEditor) {
+      return;
+    }
+
+    mobileEditorBound = true;
+    mobileMarkdownEditor.addEventListener('input', function () {
+      syncCodeMirrorFromMobileNativeEditor();
+      markDirty();
+      updateCounter();
+    });
   }
 
   function missingChineseIndentPrefix(lineText) {
@@ -535,6 +642,10 @@
     }
 
     editorInstance.cm.on('change', function () {
+      if (!isMobileNativeEditorActive()) {
+        syncMobileNativeEditorFromCodeMirror(editorInstance);
+      }
+
       markDirty();
       updateCounter();
     });
@@ -747,10 +858,19 @@
     });
 
     bindEditorEvents(editor);
+    bindMobileNativeEditorEvents();
+    initializeMobileNativeEditor(editor);
     updateCounter();
     updateSaveButtonState();
-    window.setTimeout(resizeEditor, 80);
-    window.addEventListener('resize', debounce(resizeEditor, 160));
+    window.setTimeout(function () {
+      initializeMobileNativeEditor(editor);
+      resizeEditor(editor);
+    }, 80);
+    window.addEventListener('resize', debounce(function () {
+      initializeMobileNativeEditor(editor);
+      resizeEditor(editor);
+      updateCounter();
+    }, 160));
   });
 </script>
 {% endblock %}
