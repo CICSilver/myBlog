@@ -42,6 +42,8 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("vendor/editor.md/lib/codemirror/addons.min.js", self.source)
 
     def test_mobile_native_textarea_is_synced_to_existing_submit_path(self):
+        self.assertIn("class=\"mobile-editor-shell\"", self.source)
+        self.assertIn("class=\"mobile-editor-toolbar\"", self.source)
         self.assertIn('id="mobile-markdown-editor"', self.source)
         self.assertIn("class=\"mobile-markdown-editor\"", self.source)
         self.assertIn("is-mobile-native-editor", self.source)
@@ -52,7 +54,31 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("editor.cm.setValue(mobileMarkdownEditor.value)", self.source)
         self.assertIn("wasNativeEditor && !useNativeEditor", self.source)
 
+    def test_mobile_editor_shell_has_expected_toolbar_actions(self):
+        expected_actions = [
+            "bold",
+            "italic",
+            "quote",
+            "unordered-list",
+            "heading-2",
+            "chinese-indent",
+        ]
+
+        self.assertEqual(self.source.count("data-mobile-editor-action="), len(expected_actions))
+        for action in expected_actions:
+            self.assertIn(f'data-mobile-editor-action="{action}"', self.source)
+
+        self.assertIn("handleMobileEditorToolbarAction", self.source)
+        self.assertIn("applyMobileInlineMarkdown('**', '**', '加粗文本')", self.source)
+        self.assertIn("applyMobileInlineMarkdown('*', '*', '斜体文本')", self.source)
+        self.assertIn("applyMobileLinePrefix(action)", self.source)
+        self.assertIn("missingChineseIndentPrefix(lineText)", self.source)
+        self.assertIn("finishMobileNativeEdit", self.source)
+
     def test_mobile_native_textarea_keeps_system_text_selection_available(self):
+        self.assertIn(".mobile-editor-shell", self.css_source)
+        self.assertIn(".editor-stage.is-mobile-native-editor .mobile-editor-shell", self.css_source)
+        self.assertIn("display: flex", self.css_source)
         self.assertIn(".editor-stage.is-mobile-native-editor .mobile-markdown-editor", self.css_source)
         self.assertIn("-webkit-user-select: text", self.css_source)
         self.assertIn("user-select: text", self.css_source)

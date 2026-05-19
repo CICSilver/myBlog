@@ -149,14 +149,36 @@
       <div id="markdown-editor" class="editormd editor-surface">
         <textarea id="markdown-content" name="content" style="display: none;"></textarea>
       </div>
-      <textarea
-        id="mobile-markdown-editor"
-        class="mobile-markdown-editor"
-        aria-label="Markdown 内容"
-        spellcheck="false"
-        autocapitalize="off"
-        autocomplete="off"
-      ></textarea>
+      <div class="mobile-editor-shell" aria-label="移动端 Markdown 编辑器">
+        <div class="mobile-editor-toolbar" role="toolbar" aria-label="Markdown 工具栏">
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="bold" aria-label="加粗" title="加粗">
+            <strong aria-hidden="true">B</strong>
+          </button>
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="italic" aria-label="斜体" title="斜体">
+            <em aria-hidden="true">I</em>
+          </button>
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="quote" aria-label="引用" title="引用">
+            <span aria-hidden="true">"</span>
+          </button>
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="unordered-list" aria-label="无序列表" title="无序列表">
+            <span aria-hidden="true">•</span>
+          </button>
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="heading-2" aria-label="二级标题" title="二级标题">
+            <span aria-hidden="true">H2</span>
+          </button>
+          <button class="mobile-editor-tool" type="button" data-mobile-editor-action="chinese-indent" aria-label="中文段首缩进" title="中文段首缩进">
+            <span aria-hidden="true">缩</span>
+          </button>
+        </div>
+        <textarea
+          id="mobile-markdown-editor"
+          class="mobile-markdown-editor"
+          aria-label="Markdown 内容"
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+        ></textarea>
+      </div>
     </div>
 
     <div class="editor-footer writing-footer">
@@ -199,6 +221,7 @@
   const coverUploadStatus = document.getElementById('cover-upload-status');
   const editorStage = document.querySelector('.editor-stage');
   const mobileMarkdownEditor = document.getElementById('mobile-markdown-editor');
+  const mobileEditorTools = Array.from(document.querySelectorAll('[data-mobile-editor-action]'));
   const defaultSaveAction = "{{ 'update' if blog else 'insert' }}";
   const CHINESE_PARAGRAPH_INDENT = '\u3000\u3000';
   const HIDDEN_EDITOR_TOOLBAR_ICONS = new Set([
@@ -487,6 +510,116 @@
     }
   }
 
+  function finishMobileNativeEdit(selectStart = null, selectEnd = null) {
+    syncCodeMirrorFromMobileNativeEditor();
+    markDirty();
+    updateCounter();
+
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    mobileMarkdownEditor.focus();
+    if (Number.isInteger(selectStart) && Number.isInteger(selectEnd)) {
+      mobileMarkdownEditor.setSelectionRange(selectStart, selectEnd);
+    }
+  }
+
+  function applyMobileInlineMarkdown(prefix, suffix, placeholder) {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    const value = mobileMarkdownEditor.value;
+    const start = mobileMarkdownEditor.selectionStart || 0;
+    const end = mobileMarkdownEditor.selectionEnd || start;
+    const selectedText = value.slice(start, end);
+    const innerText = selectedText || placeholder;
+    const replacement = prefix + innerText + suffix;
+
+    mobileMarkdownEditor.value = value.slice(0, start) + replacement + value.slice(end);
+    const selectionStart = start + prefix.length;
+    const selectionEnd = selectionStart + innerText.length;
+    finishMobileNativeEdit(selectionStart, selectionEnd);
+  }
+
+  function getMobileLinePrefix(action, lineText) {
+    if (action === 'quote') {
+      return '> ';
+    }
+
+    if (action === 'unordered-list') {
+      return '- ';
+    }
+
+    if (action === 'heading-2') {
+      return '## ';
+    }
+
+    if (action === 'chinese-indent') {
+      return missingChineseIndentPrefix(lineText);
+    }
+
+    return '';
+  }
+
+  function applyMobileLinePrefix(action) {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    const value = mobileMarkdownEditor.value;
+    const start = mobileMarkdownEditor.selectionStart || 0;
+    const end = mobileMarkdownEditor.selectionEnd || start;
+    const normalizedEnd = end > start && value.charAt(end - 1) === '\n' ? end - 1 : end;
+    const lineStart = start === 0 ? 0 : value.lastIndexOf('\n', start - 1) + 1;
+    const nextLineBreak = value.indexOf('\n', normalizedEnd);
+    const lineEnd = nextLineBreak === -1 ? value.length : nextLineBreak;
+    const selectedBlock = value.slice(lineStart, lineEnd);
+    const lines = selectedBlock.split('\n');
+    let sourceOffset = 0;
+    let startDelta = 0;
+    let endDelta = 0;
+
+    const updatedLines = lines.map((lineText) => {
+      const prefix = getMobileLinePrefix(action, lineText);
+      const absoluteLineStart = lineStart + sourceOffset;
+
+      if (prefix && absoluteLineStart <= start) {
+        startDelta += prefix.length;
+      }
+
+      if (prefix && absoluteLineStart <= end) {
+        endDelta += prefix.length;
+      }
+
+      sourceOffset += lineText.length + 1;
+      return prefix + lineText;
+    });
+
+    const replacement = updatedLines.join('\n');
+    mobileMarkdownEditor.value = value.slice(0, lineStart) + replacement + value.slice(lineEnd);
+    finishMobileNativeEdit(start + startDelta, end + endDelta);
+  }
+
+  function handleMobileEditorToolbarAction(action) {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    if (action === 'bold') {
+      applyMobileInlineMarkdown('**', '**', '加粗文本');
+      return;
+    }
+
+    if (action === 'italic') {
+      applyMobileInlineMarkdown('*', '*', '斜体文本');
+      return;
+    }
+
+    applyMobileLinePrefix(action);
+  }
+
   function initializeMobileNativeEditor(editorInstance = editor) {
     if (!editorStage || !mobileMarkdownEditor) {
       return;
@@ -516,6 +649,12 @@
       syncCodeMirrorFromMobileNativeEditor();
       markDirty();
       updateCounter();
+    });
+
+    mobileEditorTools.forEach((button) => {
+      button.addEventListener('click', function () {
+        handleMobileEditorToolbarAction(button.dataset.mobileEditorAction);
+      });
     });
   }
 

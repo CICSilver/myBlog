@@ -1845,6 +1845,46 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     display: none;
 }
 
+.mobile-editor-shell {
+    display: none;
+}
+
+.mobile-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+    background: var(--editor-toolbar-surface);
+}
+
+.mobile-editor-tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: 700 14px/1 var(--font-body);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.mobile-editor-tool:hover,
+.mobile-editor-tool:focus-visible {
+    border-color: var(--line-strong);
+    background: var(--ghost-hover);
+    color: var(--accent-strong);
+    outline: none;
+}
+
+.mobile-editor-tool:active {
+    background: var(--accent-soft);
+}
+
 .editor-surface,
 .editor-stage .editormd {
     width: 100% !important;
@@ -1900,6 +1940,9 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .editor-stage.is-mobile-native-editor {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     overflow: visible;
 }
 
@@ -1914,6 +1957,16 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 .editor-stage.is-mobile-native-editor .editormd-preview-container,
 .editor-stage.is-mobile-native-editor .editormd-html-preview {
     display: none !important;
+}
+
+.editor-stage.is-mobile-native-editor .mobile-editor-shell {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--editor-surface);
 }
 
 .editor-stage.is-mobile-native-editor .mobile-markdown-editor {
