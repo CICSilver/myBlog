@@ -68,6 +68,39 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.assertEqual(dashboard["recent_views"][0]["ip"], "203.0.113.2")
         self.assertEqual(dashboard["recent_views"][1]["ip"], "203.0.113.1")
 
+    def test_record_article_view_stores_public_ipv4_location(self):
+        blog = self.make_blog()
+
+        view_record = self.helper.record_article_view(
+            blog,
+            "113.118.113.77",
+            "/2026/5/hello",
+            "2026-05-18 10:00:00",
+        )
+
+        self.assertEqual(view_record["ip_country"], "中国")
+        self.assertEqual(view_record["ip_region"], "广东省")
+        self.assertEqual(view_record["ip_city"], "深圳市")
+        self.assertEqual(view_record["ip_isp"], "电信")
+        self.assertEqual(view_record["ip_location"], "中国 / 广东省 / 深圳市 / 电信")
+
+    def test_recent_views_adds_unknown_location_for_legacy_records(self):
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "legacy",
+                "blog_title": "Legacy",
+                "ip": "203.0.113.1",
+                "viewed_at": "2026-05-18 10:00:00",
+                "path": "/2026/5/legacy",
+            }
+        )
+
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(dashboard["recent_views"][0]["ip_location"], "未知")
+
 
 class StubArticleViewHelper:
     def __init__(self):
@@ -197,8 +230,10 @@ class ArticleViewRouteTest(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn("浏览量统计", html)
+        self.assertIn("<th>地域</th>", html)
         self.assertIn("Hello", html)
         self.assertIn("203.0.113.8", html)
+        self.assertIn("未知", html)
         self.assertIn("/2026/5/hello", html)
 
 

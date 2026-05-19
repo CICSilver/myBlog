@@ -79,6 +79,7 @@
           <tr>
             <th>时间</th>
             <th>IP</th>
+            <th>地域</th>
             <th>文章</th>
             <th>地址</th>
           </tr>
@@ -88,6 +89,7 @@
             <tr>
               <td>{{ view.viewed_at }}</td>
               <td><code>{{ view.ip }}</code></td>
+              <td>{{ view.ip_location | default('未知') }}</td>
               <td>{{ view.blog_title }}</td>
               <td>
                 {% if view.path %}

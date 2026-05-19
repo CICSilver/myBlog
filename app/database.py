@@ -1,5 +1,6 @@
 from app import blog_db, db_path
 from app.content_history import snapshot_content_db
+from app.ip_location import resolve_ip_location, with_ip_location_defaults
 from flask import current_app, has_app_context
 from tinydb import Query
 from tinydb.table import Document
@@ -330,6 +331,7 @@ class DatabaseHelper:
             "viewed_at": viewed_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "path": path or "",
         }
+        view_record.update(resolve_ip_location(ip))
 
         with _write_lock:
             self.article_view_table.insert(view_record)
@@ -395,7 +397,10 @@ class DatabaseHelper:
         if limit == 0:
             return []
 
-        return list(reversed(views[-limit:]))
+        return [
+            with_ip_location_defaults(view)
+            for view in reversed(views[-limit:])
+        ]
 
     def get_recent_blogs(self, default_days=10):
         """
