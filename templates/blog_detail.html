@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
@@ -40,18 +40,32 @@
 
 {% block extra_scripts %}
 <script>
-  marked.setOptions({
-    breaks: true,
-    highlight: function (code, lang) {
-      if (lang && hljs.getLanguage(lang)) {
-        return hljs.highlight(code, { language: lang }).value;
-      }
-
-      return hljs.highlightAuto(code).value;
-    }
-  });
-
   const markdownContent = document.getElementById('markdown-content').value;
-  document.getElementById('markdown-preview').innerHTML = marked.parse(markdownContent);
+  const markdownPreview = document.getElementById('markdown-preview');
+
+  if (window.marked && typeof marked.parse === 'function') {
+    const markedOptions = {
+      breaks: true,
+    };
+
+    if (window.hljs) {
+      markedOptions.highlight = function (code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+
+        return hljs.highlightAuto(code).value;
+      }
+    }
+
+    marked.setOptions(markedOptions);
+    markdownPreview.innerHTML = marked.parse(markdownContent);
+  } else {
+    markdownPreview.textContent = markdownContent;
+  }
+
+  if (window.hljs && typeof hljs.highlightAll === 'function') {
+    hljs.highlightAll();
+  }
 </script>
 {% endblock %}

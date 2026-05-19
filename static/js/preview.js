@@ -44,6 +44,11 @@ function renderMarkdownPreview(markdownContentId, previewContainerId) {
     // 将提取的内容合并为 Markdown 文本
     const previewMarkdown = previewLines.join('\n');
 
+    if (!window.marked || typeof marked.parse !== 'function') {
+        previewElement.textContent = previewMarkdown;
+        return;
+    }
+
     // 使用 marked.js 渲染提取的 Markdown 为 HTML
     marked.setOptions({ breaks: true });
     previewElement.innerHTML = marked.parse(previewMarkdown);
