@@ -5,7 +5,7 @@ import unittest
 from tinydb import TinyDB
 
 from app import create_app
-from app.auth import ADMIN_SESSION_KEY
+from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
 from app.database import Blog, DatabaseHelper
 import app.routes as routes_module
 
@@ -84,6 +84,35 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.assertEqual(view_record["ip_isp"], "电信")
         self.assertEqual(view_record["ip_location"], "中国 / 广东省 / 深圳市 / 电信")
 
+    def test_article_view_session_updates_reading_time_without_duplicate_view(self):
+        blog = self.make_blog()
+
+        first_record = self.helper.record_or_update_article_view_session(
+            blog,
+            "113.118.113.77",
+            "/2026/5/hello",
+            "session-1",
+            15,
+            "2026-05-18 10:00:15",
+        )
+        second_record = self.helper.record_or_update_article_view_session(
+            blog,
+            "113.118.113.77",
+            "/2026/5/hello",
+            "session-1",
+            45,
+            "2026-05-18 10:00:45",
+        )
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(dashboard["total_views"], 1)
+        self.assertEqual(first_record["reading_seconds"], 15)
+        self.assertEqual(second_record["reading_seconds"], 45)
+        self.assertEqual(second_record["reading_time_label"], "45秒")
+        self.assertEqual(second_record["last_seen_at"], "2026-05-18 10:00:45")
+        self.assertEqual(dashboard["article_summaries"][0]["total_reading_seconds"], 45)
+        self.assertEqual(dashboard["article_summaries"][0]["reading_time_label"], "45秒")
+
     def test_recent_views_adds_unknown_location_for_legacy_records(self):
         self.helper.article_view_table.insert(
             {
@@ -153,6 +182,19 @@ class StubArticleViewHelper:
     def record_article_view(self, blog, ip, path):
         self.recorded_views.append({"blog": blog, "ip": ip, "path": path})
 
+    def record_or_update_article_view_session(self, blog, ip, path, view_session_id, reading_seconds):
+        self.recorded_views.append(
+            {
+                "blog": blog,
+                "ip": ip,
+                "path": path,
+                "view_session_id": view_session_id,
+                "reading_seconds": reading_seconds,
+                "reading_time_label": "{0}秒".format(reading_seconds),
+            }
+        )
+        return self.recorded_views[-1]
+
     def get_article_view_dashboard(self, recent_limit=100):
         return self.dashboard
 
@@ -168,7 +210,39 @@ class ArticleViewRouteTest(unittest.TestCase):
     def tearDown(self):
         routes_module.dbHelper = self.original_db_helper
 
-    def test_article_detail_records_view_with_remote_addr(self):
+    def post_article_view_ping(
+        self,
+        client,
+        csrf_token="csrf-token",
+        payload=None,
+        headers=None,
+        remote_addr="198.51.100.10",
+    ):
+        with client.session_transaction() as flask_session:
+            flask_session[CSRF_SESSION_KEY] = csrf_token
+
+        request_payload = {
+            "year": "2026",
+            "month": "5",
+            "html_title": "hello",
+            "view_session_id": "session-1",
+            "reading_seconds": 15,
+        }
+        if payload:
+            request_payload.update(payload)
+
+        request_headers = {"X-CSRF-Token": csrf_token}
+        if headers:
+            request_headers.update(headers)
+
+        return client.post(
+            "/track/article-view",
+            json=request_payload,
+            headers=request_headers,
+            environ_overrides={"REMOTE_ADDR": remote_addr},
+        )
+
+    def test_article_detail_waits_for_client_tracking_before_recording(self):
         with self.app.test_client() as client:
             response = client.get(
                 "/2026/5/hello",
@@ -176,9 +250,18 @@ class ArticleViewRouteTest(unittest.TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+        self.assertIn("BLOG_ARTICLE_VIEW_TRACKING", response.get_data(as_text=True))
+
+    def test_tracking_records_effective_view_with_remote_addr(self):
+        with self.app.test_client() as client:
+            response = self.post_article_view_ping(client)
+
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.stub_db_helper.recorded_views), 1)
         self.assertEqual(self.stub_db_helper.recorded_views[0]["ip"], "198.51.100.10")
         self.assertEqual(self.stub_db_helper.recorded_views[0]["path"], "/2026/5/hello")
+        self.assertEqual(self.stub_db_helper.recorded_views[0]["reading_seconds"], 15)
 
     def test_article_detail_skips_admin_view(self):
         with self.app.test_client() as client:
@@ -193,14 +276,58 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.stub_db_helper.recorded_views, [])
 
-    def test_article_detail_uses_forwarded_ip_when_trusted(self):
+    def test_tracking_skips_admin_view(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+                flask_session[CSRF_SESSION_KEY] = "csrf-token"
+
+            response = client.post(
+                "/track/article-view",
+                json={
+                    "year": "2026",
+                    "month": "5",
+                    "html_title": "hello",
+                    "view_session_id": "session-1",
+                    "reading_seconds": 15,
+                },
+                headers={"X-CSRF-Token": "csrf-token"},
+                environ_overrides={"REMOTE_ADDR": "198.51.100.10"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "admin")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
+    def test_tracking_skips_bingbot_user_agent(self):
+        with self.app.test_client() as client:
+            response = self.post_article_view_ping(
+                client,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; bingbot/2.0)"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "crawler")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
+    def test_tracking_skips_short_view(self):
+        with self.app.test_client() as client:
+            response = self.post_article_view_ping(
+                client,
+                payload={"reading_seconds": 14},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "short_view")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
+    def test_tracking_uses_forwarded_ip_when_trusted(self):
         self.app.config["BLOG_TRUST_PROXY_HEADERS"] = True
 
         with self.app.test_client() as client:
-            response = client.get(
-                "/2026/5/hello",
+            response = self.post_article_view_ping(
+                client,
                 headers={"X-Forwarded-For": "203.0.113.9, 198.51.100.10"},
-                environ_overrides={"REMOTE_ADDR": "198.51.100.10"},
             )
 
         self.assertEqual(response.status_code, 200)

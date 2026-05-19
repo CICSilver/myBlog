@@ -1,6 +1,7 @@
 from app import blog_db, db_path
 from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
+from app.view_filter import normalize_reading_seconds
 from flask import current_app, has_app_context
 from tinydb import Query
 from tinydb.table import Document
@@ -64,6 +65,41 @@ def _snapshot_history(reason):
         snapshot_content_db(db_path, reason, history_dir=history_dir)
     except Exception as exc:
         print("content history snapshot failed: {0}".format(exc))
+
+
+def format_reading_seconds(seconds):
+    seconds = normalize_reading_seconds(seconds)
+    if seconds <= 0:
+        return "未记录"
+
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+
+    if hours:
+        if minutes:
+            return "{0}小时{1}分".format(hours, minutes)
+        return "{0}小时".format(hours)
+
+    if minutes:
+        if seconds:
+            return "{0}分{1}秒".format(minutes, seconds)
+        return "{0}分".format(minutes)
+
+    return "{0}秒".format(seconds)
+
+
+def _with_article_view_defaults(view):
+    view_with_defaults = with_ip_location_defaults(view)
+    reading_seconds = normalize_reading_seconds(
+        view_with_defaults.get("reading_seconds")
+    )
+    view_with_defaults["reading_seconds"] = reading_seconds
+    view_with_defaults["reading_time_label"] = (
+        view_with_defaults.get("reading_time_label")
+        or format_reading_seconds(reading_seconds)
+    )
+    return view_with_defaults
+
 
 class Comment:
     def __init__(self, name=None, html_title=None, content=None, date=None, time=None):
@@ -317,26 +353,64 @@ class DatabaseHelper:
         """
         记录一次文章详情页访问。访问统计不参与内容历史快照。
         """
-        if blog is None:
-            raise ValueError("Blog cannot be None")
-        if not isinstance(blog, Blog):
-            raise TypeError("Expected a Blog instance")
-
-        view_record = {
-            "year": blog.year,
-            "month": blog.month,
-            "html_title": blog.html_title,
-            "blog_title": blog.title,
-            "ip": ip or "",
-            "viewed_at": viewed_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "path": path or "",
-        }
-        view_record.update(resolve_ip_location(ip))
+        view_record = self._build_article_view_record(blog, ip, path, viewed_at)
 
         with _write_lock:
             self.article_view_table.insert(view_record)
 
         return view_record
+
+    def record_or_update_article_view_session(
+        self,
+        blog: Blog,
+        ip,
+        path,
+        view_session_id,
+        reading_seconds,
+        viewed_at=None,
+    ):
+        """
+        记录一次有效阅读会话。相同 view_session_id 后续心跳只更新阅读时长。
+        """
+        if not view_session_id:
+            raise ValueError("view_session_id cannot be empty")
+
+        reading_seconds = normalize_reading_seconds(reading_seconds)
+        viewed_at = viewed_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self._validate_article_view_blog(blog)
+
+        with _write_lock:
+            query = Query()
+            existing = self.article_view_table.get(
+                (query.view_session_id == view_session_id)
+                & (query.path == (path or ""))
+            )
+
+            if existing:
+                updated_record = dict(existing)
+                updated_record["reading_seconds"] = max(
+                    normalize_reading_seconds(updated_record.get("reading_seconds")),
+                    reading_seconds,
+                )
+                updated_record["reading_time_label"] = format_reading_seconds(
+                    updated_record["reading_seconds"]
+                )
+                updated_record["last_seen_at"] = viewed_at
+                self.article_view_table.update(updated_record, doc_ids=[existing.doc_id])
+                return updated_record
+
+            view_record = self._build_article_view_record(
+                blog,
+                ip,
+                path,
+                viewed_at,
+                reading_seconds=reading_seconds,
+                view_session_id=view_session_id,
+                last_seen_at=viewed_at,
+            )
+            self.article_view_table.insert(view_record)
+            return view_record
 
     def get_article_view_dashboard(self, recent_limit=100):
         """
@@ -370,10 +444,17 @@ class DatabaseHelper:
                     "path": view.get("path") or "",
                     "views": 0,
                     "last_viewed_at": "",
+                    "total_reading_seconds": 0,
+                    "reading_time_label": "未记录",
+                    "average_reading_seconds": 0,
+                    "average_reading_time_label": "未记录",
                 },
             )
 
             summary["views"] += 1
+            summary["total_reading_seconds"] += normalize_reading_seconds(
+                view.get("reading_seconds")
+            )
 
             if view.get("blog_title"):
                 summary["blog_title"] = view.get("blog_title")
@@ -383,6 +464,18 @@ class DatabaseHelper:
                 summary["last_viewed_at"] = view.get("viewed_at")
 
         article_summaries = list(summaries.values())
+        for summary in article_summaries:
+            summary["reading_time_label"] = format_reading_seconds(
+                summary["total_reading_seconds"]
+            )
+            if summary["views"]:
+                summary["average_reading_seconds"] = (
+                    summary["total_reading_seconds"] // summary["views"]
+                )
+                summary["average_reading_time_label"] = format_reading_seconds(
+                    summary["average_reading_seconds"]
+                )
+
         article_summaries.sort(
             key=lambda summary: (summary["views"], summary.get("last_viewed_at") or ""),
             reverse=True,
@@ -398,9 +491,47 @@ class DatabaseHelper:
             return []
 
         return [
-            with_ip_location_defaults(view)
+            _with_article_view_defaults(view)
             for view in reversed(views[-limit:])
         ]
+
+    def _validate_article_view_blog(self, blog):
+        if blog is None:
+            raise ValueError("Blog cannot be None")
+        if not isinstance(blog, Blog):
+            raise TypeError("Expected a Blog instance")
+
+    def _build_article_view_record(
+        self,
+        blog,
+        ip,
+        path,
+        viewed_at=None,
+        reading_seconds=0,
+        view_session_id="",
+        last_seen_at="",
+    ):
+        self._validate_article_view_blog(blog)
+
+        reading_seconds = normalize_reading_seconds(reading_seconds)
+        view_record = {
+            "year": blog.year,
+            "month": blog.month,
+            "html_title": blog.html_title,
+            "blog_title": blog.title,
+            "ip": ip or "",
+            "viewed_at": viewed_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "path": path or "",
+            "reading_seconds": reading_seconds,
+            "reading_time_label": format_reading_seconds(reading_seconds),
+        }
+        if view_session_id:
+            view_record["view_session_id"] = view_session_id
+        if last_seen_at:
+            view_record["last_seen_at"] = last_seen_at
+
+        view_record.update(resolve_ip_location(ip))
+        return view_record
 
     def get_recent_blogs(self, default_days=10):
         """

@@ -10,6 +10,13 @@ from flask import (
 )
 from app.database import DatabaseHelper, Blog, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
+from app.view_filter import (
+    EFFECTIVE_VIEW_SECONDS,
+    READING_HEARTBEAT_SECONDS,
+    is_crawler_user_agent,
+    is_effective_reading_seconds,
+    normalize_reading_seconds,
+)
 from datetime import datetime
 import json
 import os
@@ -179,11 +186,70 @@ def blog_detail(year, month, html_title):
     # 根据年月和标题获取博客内容
     blog = dbHelper.get_specify_blog(str(year), str(month), html_title)
     
-    if blog:
-        _record_article_view(blog)
-        return render_template('blog_detail.html', blog=blog, **get_site_context())
-    else:
+    if not blog:
         return render_template('404.html', **get_site_context()), 404
+
+    article_view_tracking = _article_view_tracking_config(blog)
+    return render_template(
+        'blog_detail.html',
+        blog=blog,
+        article_view_tracking=article_view_tracking,
+        **get_site_context(),
+    )
+
+
+@main.route('/track/article-view', methods=['POST'])
+def track_article_view():
+    validate_csrf_token()
+
+    if current_admin_authenticated():
+        return jsonify({"status": "ignored", "reason": "admin"})
+
+    if is_crawler_user_agent(request.headers.get("User-Agent", "")):
+        return jsonify({"status": "ignored", "reason": "crawler"})
+
+    payload = request.get_json(silent=True) or {}
+    reading_seconds = normalize_reading_seconds(payload.get("reading_seconds"))
+    if not is_effective_reading_seconds(reading_seconds):
+        return jsonify({"status": "ignored", "reason": "short_view"})
+
+    view_session_id = str(payload.get("view_session_id") or "").strip()
+    if not view_session_id:
+        return jsonify({"status": "error", "message": "missing view_session_id"}), 400
+
+    year = str(payload.get("year") or "").strip()
+    month = str(payload.get("month") or "").strip()
+    html_title = str(payload.get("html_title") or "").strip()
+    blog = dbHelper.get_specify_blog(year, month, html_title)
+    if blog is None:
+        return jsonify({"status": "error", "message": "article not found"}), 404
+
+    path = url_for(
+        "main.blog_detail",
+        year=int(blog.year),
+        month=int(blog.month),
+        html_title=blog.html_title,
+    )
+
+    try:
+        view_record = dbHelper.record_or_update_article_view_session(
+            blog,
+            _get_client_ip(),
+            path,
+            view_session_id,
+            reading_seconds,
+        )
+    except Exception as exc:
+        print("article view record failed: {0}".format(exc))
+        return jsonify({"status": "error", "message": "record failed"}), 500
+
+    return jsonify(
+        {
+            "status": "recorded",
+            "reading_seconds": view_record.get("reading_seconds", 0),
+            "reading_time_label": view_record.get("reading_time_label", "未记录"),
+        }
+    )
 
 @main.route('/manage')
 @login_required
@@ -263,18 +329,21 @@ def add_comment(blog_id, comment):
     pass
 
 
-def _record_article_view(blog):
+def _article_view_tracking_config(blog):
     if current_admin_authenticated():
-        return
+        return None
 
-    try:
-        dbHelper.record_article_view(
-            blog,
-            _get_client_ip(),
-            request.path,
-        )
-    except Exception as exc:
-        print("article view record failed: {0}".format(exc))
+    if is_crawler_user_agent(request.headers.get("User-Agent", "")):
+        return None
+
+    return {
+        "endpoint": url_for("main.track_article_view"),
+        "year": blog.year,
+        "month": blog.month,
+        "html_title": blog.html_title,
+        "minimum_seconds": EFFECTIVE_VIEW_SECONDS,
+        "heartbeat_seconds": READING_HEARTBEAT_SECONDS,
+    }
 
 
 def _get_client_ip():

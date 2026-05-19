@@ -39,6 +39,12 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{% if article_view_tracking %}
+<script>
+  window.BLOG_ARTICLE_VIEW_TRACKING = {{ article_view_tracking | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/article_view_tracker.js') }}"></script>
+{% endif %}
 <script>
   const markdownContent = document.getElementById('markdown-content').value;
   const markdownPreview = document.getElementById('markdown-preview');
