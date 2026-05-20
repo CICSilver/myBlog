@@ -3,6 +3,8 @@ from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
 from app.view_filter import (
     ARTICLE_VIEW_MERGE_SECONDS,
+    get_excluded_article_view_ips,
+    is_excluded_article_view_ip,
     is_loopback_ip,
     is_verified_crawler_ip,
     normalize_reading_seconds,
@@ -327,21 +329,40 @@ def _effective_article_views(views):
 
 
 def is_ignored_article_view_ip(ip):
-    return is_loopback_ip(ip) or is_verified_crawler_ip(ip)
+    return (
+        is_excluded_article_view_ip(ip)
+        or is_loopback_ip(ip)
+        or is_verified_crawler_ip(ip)
+    )
 
 
 def _article_view_compaction_stats(original_views, compacted_views):
-    loopback_records = sum(1 for view in original_views if is_loopback_ip(view.get("ip")))
+    excluded_ip_records = sum(
+        1 for view in original_views if is_excluded_article_view_ip(view.get("ip"))
+    )
+    loopback_records = sum(
+        1
+        for view in original_views
+        if (
+            not is_excluded_article_view_ip(view.get("ip"))
+            and is_loopback_ip(view.get("ip"))
+        )
+    )
     crawler_ip_records = sum(
         1
         for view in original_views
-        if not is_loopback_ip(view.get("ip")) and is_verified_crawler_ip(view.get("ip"))
+        if (
+            not is_excluded_article_view_ip(view.get("ip"))
+            and not is_loopback_ip(view.get("ip"))
+            and is_verified_crawler_ip(view.get("ip"))
+        )
     )
-    filter_removed_records = loopback_records + crawler_ip_records
+    filter_removed_records = excluded_ip_records + loopback_records + crawler_ip_records
     merge_candidate_records = len(original_views) - filter_removed_records
 
     return {
         "total_records": len(original_views),
+        "excluded_ip_records": excluded_ip_records,
         "loopback_records": loopback_records,
         "crawler_ip_records": crawler_ip_records,
         "non_loopback_records": len(original_views) - loopback_records,
@@ -725,6 +746,7 @@ class DatabaseHelper:
             "unique_ip_count": len({view.get("ip") for view in views if view.get("ip")}),
             "article_summaries": self._summarize_article_views(views),
             "recent_views": self._recent_article_views(views, recent_limit),
+            "excluded_ips": get_excluded_article_view_ips(),
         }
 
     def compact_article_views(self, apply_changes=False):

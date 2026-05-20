@@ -8,6 +8,14 @@ READING_HEARTBEAT_SECONDS = 15
 MAX_READING_SECONDS = 30 * 60
 ARTICLE_VIEW_MERGE_SECONDS = 30
 
+EXCLUDED_ARTICLE_VIEW_IPS = (
+    ("114.221.164.47", "测试机"),
+)
+EXCLUDED_ARTICLE_VIEW_IP_SET = frozenset(
+    ip
+    for ip, _label in EXCLUDED_ARTICLE_VIEW_IPS
+)
+
 VERIFIED_CRAWLER_DNS_SUFFIXES = (
     ".search.msn.com",
 )
@@ -73,6 +81,29 @@ def is_loopback_ip(ip):
         return address.ipv4_mapped.is_loopback
 
     return False
+
+
+def is_excluded_article_view_ip(ip):
+    ip_text = str(ip or "").strip()
+    if not ip_text:
+        return False
+
+    try:
+        ip_text = str(ipaddress.ip_address(ip_text))
+    except ValueError:
+        return False
+
+    return ip_text in EXCLUDED_ARTICLE_VIEW_IP_SET
+
+
+def get_excluded_article_view_ips():
+    return [
+        {
+            "ip": ip,
+            "label": label,
+        }
+        for ip, label in EXCLUDED_ARTICLE_VIEW_IPS
+    ]
 
 
 @lru_cache(maxsize=2048)

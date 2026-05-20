@@ -20,6 +20,41 @@
 <section class="table-shell analytics-shell">
   <div class="table-toolbar">
     <div>
+      <p class="section-label">Excluded IPs</p>
+      <h2 class="panel-title">排除 IP 列表</h2>
+    </div>
+  </div>
+
+  {% if view_dashboard.excluded_ips %}
+    <div class="table-wrap">
+      <table class="manage_table analytics-table">
+        <thead>
+          <tr>
+            <th>IP</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for excluded_ip in view_dashboard.excluded_ips %}
+            <tr>
+              <td><code>{{ excluded_ip.ip }}</code></td>
+              <td>{{ excluded_ip.label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-stage compact">
+      <p class="section-label">No Excluded IP</p>
+      <h2>暂无排除 IP</h2>
+    </div>
+  {% endif %}
+</section>
+
+<section class="table-shell analytics-shell">
+  <div class="table-toolbar">
+    <div>
       <p class="section-label">Article Ranking</p>
       <h2 class="panel-title">文章浏览排行</h2>
     </div>

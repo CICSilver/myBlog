@@ -199,6 +199,7 @@ def _register_history_commands(app):
 
         click.echo("applied: {0}".format("yes" if stats["applied"] else "no"))
         click.echo("total_records: {0}".format(stats["total_records"]))
+        click.echo("excluded_ip_records: {0}".format(stats["excluded_ip_records"]))
         click.echo("loopback_records: {0}".format(stats["loopback_records"]))
         click.echo("crawler_ip_records: {0}".format(stats["crawler_ip_records"]))
         click.echo("merged_duplicate_records: {0}".format(stats["merged_duplicate_records"]))

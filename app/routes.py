@@ -14,6 +14,7 @@ from app.view_filter import (
     EFFECTIVE_VIEW_SECONDS,
     READING_HEARTBEAT_SECONDS,
     is_crawler_user_agent,
+    is_excluded_article_view_ip,
     is_effective_reading_seconds,
     is_loopback_ip,
     is_verified_crawler_ip,
@@ -208,6 +209,9 @@ def track_article_view():
         return jsonify({"status": "ignored", "reason": "admin"})
 
     client_ip = _get_client_ip()
+    if is_excluded_article_view_ip(client_ip):
+        return jsonify({"status": "ignored", "reason": "excluded_ip"})
+
     if (
         is_crawler_user_agent(request.headers.get("User-Agent", ""))
         or is_verified_crawler_ip(client_ip)
@@ -342,10 +346,15 @@ def _article_view_tracking_config(blog):
     if current_admin_authenticated():
         return None
 
+    client_ip = _get_client_ip()
     if is_crawler_user_agent(request.headers.get("User-Agent", "")):
         return None
 
-    if is_loopback_ip(_get_client_ip()):
+    if (
+        is_excluded_article_view_ip(client_ip)
+        or is_loopback_ip(client_ip)
+        or is_verified_crawler_ip(client_ip)
+    ):
         return None
 
     return {

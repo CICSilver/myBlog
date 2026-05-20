@@ -110,6 +110,32 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.assertEqual(dashboard["unique_ip_count"], 1)
         self.assertEqual(dashboard["recent_views"][0]["ip"], "203.0.113.9")
 
+    def test_dashboard_excludes_configured_article_view_ip(self):
+        blog = self.make_blog()
+
+        self.helper.record_article_view(
+            blog,
+            "114.221.164.47",
+            "/2026/5/hello",
+            "2026-05-18 10:00:00",
+        )
+        self.helper.record_article_view(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "2026-05-18 10:01:00",
+        )
+
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(dashboard["total_views"], 1)
+        self.assertEqual(dashboard["unique_ip_count"], 1)
+        self.assertEqual(dashboard["recent_views"][0]["ip"], "203.0.113.9")
+        self.assertIn(
+            {"ip": "114.221.164.47", "label": "测试机"},
+            dashboard["excluded_ips"],
+        )
+
     def test_dashboard_excludes_verified_crawler_ip_article_views(self):
         blog = self.make_blog()
 
@@ -268,6 +294,7 @@ class ArticleViewDatabaseTest(unittest.TestCase):
 
         self.assertFalse(stats["applied"])
         self.assertEqual(stats["total_records"], 3)
+        self.assertEqual(stats["excluded_ip_records"], 0)
         self.assertEqual(stats["loopback_records"], 1)
         self.assertEqual(stats["crawler_ip_records"], 0)
         self.assertEqual(stats["merged_duplicate_records"], 1)
@@ -299,6 +326,7 @@ class ArticleViewDatabaseTest(unittest.TestCase):
 
         self.assertTrue(stats["applied"])
         self.assertEqual(stats["total_records"], 4)
+        self.assertEqual(stats["excluded_ip_records"], 0)
         self.assertEqual(stats["loopback_records"], 1)
         self.assertEqual(stats["crawler_ip_records"], 0)
         self.assertEqual(stats["merged_duplicate_records"], 1)
@@ -336,6 +364,37 @@ class ArticleViewDatabaseTest(unittest.TestCase):
             stats = self.helper.compact_article_views(apply_changes=True)
 
         self.assertEqual(stats["crawler_ip_records"], 1)
+        self.assertEqual(stats["compacted_records"], 1)
+        self.assertEqual(len(self.helper.article_view_table.all()), 1)
+        self.assertEqual(self.helper.article_view_table.all()[0]["ip"], "203.0.113.9")
+
+    def test_article_view_compaction_apply_removes_configured_excluded_ip(self):
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "114.221.164.47",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:00:00",
+            }
+        )
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "203.0.113.9",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:01:00",
+            }
+        )
+
+        stats = self.helper.compact_article_views(apply_changes=True)
+
+        self.assertEqual(stats["excluded_ip_records"], 1)
         self.assertEqual(stats["compacted_records"], 1)
         self.assertEqual(len(self.helper.article_view_table.all()), 1)
         self.assertEqual(self.helper.article_view_table.all()[0]["ip"], "203.0.113.9")
@@ -385,6 +444,12 @@ class StubArticleViewHelper:
                     "ip": "203.0.113.8",
                     "viewed_at": "2026-05-18 10:02:00",
                     "path": "/2026/5/hello",
+                }
+            ],
+            "excluded_ips": [
+                {
+                    "ip": "114.221.164.47",
+                    "label": "测试机",
                 }
             ],
         }
@@ -491,6 +556,17 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertEqual(self.stub_db_helper.recorded_views, [])
         self.assertNotIn("BLOG_ARTICLE_VIEW_TRACKING", response.get_data(as_text=True))
 
+    def test_article_detail_skips_excluded_ip_tracking_config(self):
+        with self.app.test_client() as client:
+            response = client.get(
+                "/2026/5/hello",
+                environ_overrides={"REMOTE_ADDR": "114.221.164.47"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+        self.assertNotIn("BLOG_ARTICLE_VIEW_TRACKING", response.get_data(as_text=True))
+
     def test_tracking_records_effective_view_with_remote_addr(self):
         with self.app.test_client() as client:
             response = self.post_article_view_ping(client)
@@ -561,6 +637,17 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertEqual(response.get_json()["reason"], "crawler")
         self.assertEqual(self.stub_db_helper.recorded_views, [])
 
+    def test_tracking_skips_excluded_remote_addr(self):
+        with self.app.test_client() as client:
+            response = self.post_article_view_ping(
+                client,
+                remote_addr="114.221.164.47",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "excluded_ip")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
     def test_tracking_skips_loopback_remote_addr(self):
         with self.app.test_client() as client:
             response = self.post_article_view_ping(
@@ -619,6 +706,9 @@ class ArticleViewRouteTest(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn("浏览量统计", html)
+        self.assertIn("排除 IP 列表", html)
+        self.assertIn("114.221.164.47", html)
+        self.assertIn("测试机", html)
         self.assertIn("<th>地域</th>", html)
         self.assertIn("Hello", html)
         self.assertIn("203.0.113.8", html)

@@ -3,7 +3,9 @@ import unittest
 from unittest.mock import patch
 
 from app.view_filter import (
+    get_excluded_article_view_ips,
     is_crawler_user_agent,
+    is_excluded_article_view_ip,
     is_effective_reading_seconds,
     is_verified_crawler_ip,
     normalize_reading_seconds,
@@ -28,6 +30,14 @@ class ViewFilterTest(unittest.TestCase):
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0"
             )
+        )
+
+    def test_detects_configured_excluded_article_view_ip(self):
+        self.assertTrue(is_excluded_article_view_ip("114.221.164.47"))
+        self.assertFalse(is_excluded_article_view_ip("114.221.164.48"))
+        self.assertIn(
+            {"ip": "114.221.164.47", "label": "测试机"},
+            get_excluded_article_view_ips(),
         )
 
     def test_detects_verified_msnbot_ip(self):
