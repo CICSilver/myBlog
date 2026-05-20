@@ -3,10 +3,11 @@ from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
 from app.view_filter import (
     ARTICLE_VIEW_MERGE_SECONDS,
-    get_excluded_article_view_ips,
-    is_excluded_article_view_ip,
+    DEFAULT_EXCLUDED_ARTICLE_VIEW_IPS,
+    is_ip_in_set,
     is_loopback_ip,
     is_verified_crawler_ip,
+    normalize_ip_address,
     normalize_reading_seconds,
 )
 from flask import current_app, has_app_context
@@ -108,6 +109,8 @@ class _DatabaseWriteLock:
 
 _write_lock = _DatabaseWriteLock()
 _ARTICLE_VIEW_INSERT_ATTEMPTS = 8
+_EXCLUDED_ARTICLE_VIEW_IPS_SEEDED_KEY = "article_view_excluded_ips_seeded_v1"
+_DEFAULT_EXCLUDED_IP_LABEL = "手动排除"
 
 
 def _new_article_view_doc_id():
@@ -311,11 +314,11 @@ def _merge_article_view_data(base_view, incoming_view):
     return merged_view
 
 
-def _effective_article_views(views):
+def _effective_article_views(views, excluded_ip_set=None):
     effective_views = []
 
     for view in views:
-        if is_ignored_article_view_ip(view.get("ip")):
+        if is_ignored_article_view_ip(view.get("ip"), excluded_ip_set):
             continue
 
         for index, existing_view in enumerate(effective_views):
@@ -328,23 +331,24 @@ def _effective_article_views(views):
     return effective_views
 
 
-def is_ignored_article_view_ip(ip):
+def is_ignored_article_view_ip(ip, excluded_ip_set=None):
     return (
-        is_excluded_article_view_ip(ip)
+        is_ip_in_set(ip, excluded_ip_set or set())
         or is_loopback_ip(ip)
         or is_verified_crawler_ip(ip)
     )
 
 
-def _article_view_compaction_stats(original_views, compacted_views):
+def _article_view_compaction_stats(original_views, compacted_views, excluded_ip_set=None):
+    excluded_ip_set = excluded_ip_set or set()
     excluded_ip_records = sum(
-        1 for view in original_views if is_excluded_article_view_ip(view.get("ip"))
+        1 for view in original_views if is_ip_in_set(view.get("ip"), excluded_ip_set)
     )
     loopback_records = sum(
         1
         for view in original_views
         if (
-            not is_excluded_article_view_ip(view.get("ip"))
+            not is_ip_in_set(view.get("ip"), excluded_ip_set)
             and is_loopback_ip(view.get("ip"))
         )
     )
@@ -352,7 +356,7 @@ def _article_view_compaction_stats(original_views, compacted_views):
         1
         for view in original_views
         if (
-            not is_excluded_article_view_ip(view.get("ip"))
+            not is_ip_in_set(view.get("ip"), excluded_ip_set)
             and not is_loopback_ip(view.get("ip"))
             and is_verified_crawler_ip(view.get("ip"))
         )
@@ -517,6 +521,163 @@ class DatabaseHelper:
         self.blog_table = blog_db.table('blogs')
         # 文章访问记录表，存储每一次文章详情页访问
         self.article_view_table = blog_db.table('article_views')
+        # 浏览量排除 IP 表，存储后台手动维护的测试机/异常 IP
+        self.excluded_article_view_ip_table = blog_db.table('article_view_excluded_ips')
+        # 设置表，存储一次性迁移标记
+        self.settings_table = blog_db.table('settings')
+
+    def get_excluded_article_view_ips(self):
+        """
+        获取后台维护的浏览量排除 IP 列表。
+        """
+        self._ensure_default_excluded_article_view_ips()
+        excluded_ips = []
+
+        for record in self.excluded_article_view_ip_table.all():
+            ip = normalize_ip_address(record.get("ip"))
+            if not ip:
+                continue
+
+            excluded_ips.append(
+                {
+                    "ip": ip,
+                    "label": self._normalize_excluded_article_view_ip_label(
+                        record.get("label")
+                    ),
+                }
+            )
+
+        excluded_ips.sort(key=lambda record: (record["ip"], record["label"]))
+        return excluded_ips
+
+    def is_excluded_article_view_ip(self, ip):
+        """
+        判断 IP 是否在后台维护的浏览量排除列表中。
+        """
+        return is_ip_in_set(ip, self._excluded_article_view_ip_set())
+
+    def add_excluded_article_view_ip(self, ip, label):
+        """
+        新增排除 IP；如果 IP 已存在，则更新说明。
+        """
+        ip = self._validate_excluded_article_view_ip(ip)
+        label = self._normalize_excluded_article_view_ip_label(label)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = Query()
+
+        with _write_lock:
+            self._ensure_default_excluded_article_view_ips_locked()
+            existing = self.excluded_article_view_ip_table.get(query.ip == ip)
+            if existing:
+                updated_record = dict(existing)
+                updated_record["label"] = label
+                updated_record["updated_at"] = now
+                self.excluded_article_view_ip_table.update(
+                    updated_record,
+                    doc_ids=[existing.doc_id],
+                )
+                return updated_record
+
+            record = {
+                "ip": ip,
+                "label": label,
+                "created_at": now,
+                "updated_at": now,
+            }
+            self.excluded_article_view_ip_table.insert(record)
+            return record
+
+    def update_excluded_article_view_ip(self, original_ip, ip, label):
+        """
+        修改排除 IP 及说明。
+        """
+        original_ip = self._validate_excluded_article_view_ip(original_ip)
+        ip = self._validate_excluded_article_view_ip(ip)
+        label = self._normalize_excluded_article_view_ip_label(label)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = Query()
+
+        with _write_lock:
+            self._ensure_default_excluded_article_view_ips_locked()
+            existing = self.excluded_article_view_ip_table.get(query.ip == original_ip)
+            if not existing:
+                raise ValueError("要修改的排除 IP 不存在。")
+
+            duplicate = self.excluded_article_view_ip_table.get(query.ip == ip)
+            if duplicate and duplicate.doc_id != existing.doc_id:
+                raise ValueError("排除 IP 已存在。")
+
+            updated_record = dict(existing)
+            updated_record["ip"] = ip
+            updated_record["label"] = label
+            updated_record["updated_at"] = now
+            self.excluded_article_view_ip_table.update(
+                updated_record,
+                doc_ids=[existing.doc_id],
+            )
+            return updated_record
+
+    def delete_excluded_article_view_ip(self, ip):
+        """
+        删除排除 IP。不存在时视为已删除。
+        """
+        ip = self._validate_excluded_article_view_ip(ip)
+        query = Query()
+
+        with _write_lock:
+            self._ensure_default_excluded_article_view_ips_locked()
+            return self.excluded_article_view_ip_table.remove(query.ip == ip)
+
+    def _excluded_article_view_ip_set(self):
+        return {
+            excluded_ip["ip"]
+            for excluded_ip in self.get_excluded_article_view_ips()
+        }
+
+    def _ensure_default_excluded_article_view_ips(self):
+        with _write_lock:
+            self._ensure_default_excluded_article_view_ips_locked()
+
+    def _ensure_default_excluded_article_view_ips_locked(self):
+        query = Query()
+        if self.settings_table.get(query.key == _EXCLUDED_ARTICLE_VIEW_IPS_SEEDED_KEY):
+            return
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for ip, label in DEFAULT_EXCLUDED_ARTICLE_VIEW_IPS:
+            ip = normalize_ip_address(ip)
+            if not ip:
+                continue
+
+            if self.excluded_article_view_ip_table.get(query.ip == ip):
+                continue
+
+            self.excluded_article_view_ip_table.insert(
+                {
+                    "ip": ip,
+                    "label": self._normalize_excluded_article_view_ip_label(label),
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            )
+
+        self.settings_table.insert(
+            {
+                "key": _EXCLUDED_ARTICLE_VIEW_IPS_SEEDED_KEY,
+                "value": True,
+                "updated_at": now,
+            }
+        )
+
+    def _validate_excluded_article_view_ip(self, ip):
+        ip = normalize_ip_address(ip)
+        if not ip:
+            raise ValueError("请输入有效的 IP 地址。")
+        return ip
+
+    def _normalize_excluded_article_view_ip_label(self, label):
+        label = str(label or "").strip()
+        return label or _DEFAULT_EXCLUDED_IP_LABEL
 
     def get_all_categories(self):
         """
@@ -739,14 +900,19 @@ class DatabaseHelper:
         """
         获取后台浏览量统计所需的汇总数据。
         """
-        views = _effective_article_views(self.article_view_table.all())
+        excluded_ips = self.get_excluded_article_view_ips()
+        excluded_ip_set = {
+            excluded_ip["ip"]
+            for excluded_ip in excluded_ips
+        }
+        views = _effective_article_views(self.article_view_table.all(), excluded_ip_set)
 
         return {
             "total_views": len(views),
             "unique_ip_count": len({view.get("ip") for view in views if view.get("ip")}),
             "article_summaries": self._summarize_article_views(views),
             "recent_views": self._recent_article_views(views, recent_limit),
-            "excluded_ips": get_excluded_article_view_ips(),
+            "excluded_ips": excluded_ips,
         }
 
     def compact_article_views(self, apply_changes=False):
@@ -754,9 +920,14 @@ class DatabaseHelper:
         按当前统计规则预览或重写历史访问记录。
         """
         with _write_lock:
+            excluded_ip_set = self._excluded_article_view_ip_set()
             original_views = self.article_view_table.all()
-            compacted_views = _effective_article_views(original_views)
-            stats = _article_view_compaction_stats(original_views, compacted_views)
+            compacted_views = _effective_article_views(original_views, excluded_ip_set)
+            stats = _article_view_compaction_stats(
+                original_views,
+                compacted_views,
+                excluded_ip_set,
+            )
 
             if not apply_changes:
                 stats["applied"] = False

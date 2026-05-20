@@ -1501,6 +1501,34 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     min-width: 820px;
 }
 
+.excluded-ip-add-form {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) minmax(180px, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.excluded-ip-table {
+    min-width: 720px;
+}
+
+.excluded-ip-table .form-input {
+    min-height: 42px;
+}
+
+.excluded-ip-input {
+    max-width: 220px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.excluded-ip-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .recent-views-table {
     min-width: 920px;
 }
@@ -2807,6 +2835,14 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 
     .field-grid {
         gap: 14px;
+    }
+
+    .excluded-ip-add-form {
+        grid-template-columns: 1fr;
+    }
+
+    .excluded-ip-input {
+        max-width: none;
     }
 
     .manage_table {

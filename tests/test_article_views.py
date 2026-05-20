@@ -22,6 +22,10 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.helper.category_table = self.db.table("categories")
         self.helper.blog_table = self.db.table("blogs")
         self.helper.article_view_table = self.db.table("article_views")
+        self.helper.excluded_article_view_ip_table = self.db.table(
+            "article_view_excluded_ips"
+        )
+        self.helper.settings_table = self.db.table("settings")
 
     def tearDown(self):
         self.db.close()
@@ -135,6 +139,57 @@ class ArticleViewDatabaseTest(unittest.TestCase):
             {"ip": "114.221.164.47", "label": "测试机"},
             dashboard["excluded_ips"],
         )
+
+    def test_excluded_article_view_ip_defaults_are_seeded_once(self):
+        excluded_ips = self.helper.get_excluded_article_view_ips()
+
+        self.assertIn(
+            {"ip": "114.221.164.47", "label": "测试机"},
+            [
+                {"ip": excluded_ip["ip"], "label": excluded_ip["label"]}
+                for excluded_ip in excluded_ips
+            ],
+        )
+
+        self.helper.delete_excluded_article_view_ip("114.221.164.47")
+
+        self.assertFalse(self.helper.is_excluded_article_view_ip("114.221.164.47"))
+        self.assertNotIn(
+            "114.221.164.47",
+            [excluded_ip["ip"] for excluded_ip in self.helper.get_excluded_article_view_ips()],
+        )
+
+    def test_add_update_and_delete_excluded_article_view_ip(self):
+        self.helper.add_excluded_article_view_ip("203.0.113.9", "办公室")
+
+        self.assertTrue(self.helper.is_excluded_article_view_ip("203.0.113.9"))
+        self.assertIn(
+            {"ip": "203.0.113.9", "label": "办公室"},
+            [
+                {"ip": excluded_ip["ip"], "label": excluded_ip["label"]}
+                for excluded_ip in self.helper.get_excluded_article_view_ips()
+            ],
+        )
+
+        self.helper.update_excluded_article_view_ip(
+            "203.0.113.9",
+            "203.0.113.10",
+            "新办公室",
+        )
+
+        self.assertFalse(self.helper.is_excluded_article_view_ip("203.0.113.9"))
+        self.assertTrue(self.helper.is_excluded_article_view_ip("203.0.113.10"))
+        self.assertIn(
+            {"ip": "203.0.113.10", "label": "新办公室"},
+            [
+                {"ip": excluded_ip["ip"], "label": excluded_ip["label"]}
+                for excluded_ip in self.helper.get_excluded_article_view_ips()
+            ],
+        )
+
+        self.helper.delete_excluded_article_view_ip("203.0.113.10")
+
+        self.assertFalse(self.helper.is_excluded_article_view_ip("203.0.113.10"))
 
     def test_dashboard_excludes_verified_crawler_ip_article_views(self):
         blog = self.make_blog()
@@ -490,6 +545,29 @@ class StubArticleViewHelper:
     def get_article_view_dashboard(self, recent_limit=100):
         return self.dashboard
 
+    def is_excluded_article_view_ip(self, ip):
+        return any(excluded_ip["ip"] == ip for excluded_ip in self.dashboard["excluded_ips"])
+
+    def add_excluded_article_view_ip(self, ip, label):
+        excluded_ip = {"ip": ip, "label": label or "手动排除"}
+        self.dashboard["excluded_ips"].append(excluded_ip)
+        return excluded_ip
+
+    def update_excluded_article_view_ip(self, original_ip, ip, label):
+        for excluded_ip in self.dashboard["excluded_ips"]:
+            if excluded_ip["ip"] == original_ip:
+                excluded_ip["ip"] = ip
+                excluded_ip["label"] = label or "手动排除"
+                return excluded_ip
+        raise ValueError("要修改的排除 IP 不存在。")
+
+    def delete_excluded_article_view_ip(self, original_ip):
+        self.dashboard["excluded_ips"] = [
+            excluded_ip
+            for excluded_ip in self.dashboard["excluded_ips"]
+            if excluded_ip["ip"] != original_ip
+        ]
+
 
 class ArticleViewRouteTest(unittest.TestCase):
     def setUp(self):
@@ -709,11 +787,70 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertIn("排除 IP 列表", html)
         self.assertIn("114.221.164.47", html)
         self.assertIn("测试机", html)
+        self.assertIn('action="/manage/views/excluded-ips"', html)
+        self.assertIn('name="original_ip"', html)
+        self.assertIn("保存", html)
+        self.assertIn("删除", html)
         self.assertIn("<th>地域</th>", html)
         self.assertIn("Hello", html)
         self.assertIn("203.0.113.8", html)
         self.assertIn("未知", html)
         self.assertIn("/2026/5/hello", html)
+
+    def test_add_excluded_ip_from_view_stats_page(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+                flask_session[CSRF_SESSION_KEY] = "csrf-token"
+
+            response = client.post(
+                "/manage/views/excluded-ips",
+                data={
+                    "csrf_token": "csrf-token",
+                    "ip": "203.0.113.9",
+                    "label": "办公室",
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            {"ip": "203.0.113.9", "label": "办公室"},
+            self.stub_db_helper.dashboard["excluded_ips"],
+        )
+
+    def test_update_and_delete_excluded_ip_from_view_stats_page(self):
+        with self.app.test_client() as client:
+            with client.session_transaction() as flask_session:
+                flask_session[ADMIN_SESSION_KEY] = True
+                flask_session[CSRF_SESSION_KEY] = "csrf-token"
+
+            update_response = client.post(
+                "/manage/views/excluded-ips/update",
+                data={
+                    "csrf_token": "csrf-token",
+                    "original_ip": "114.221.164.47",
+                    "ip": "114.221.164.48",
+                    "label": "新测试机",
+                },
+                follow_redirects=False,
+            )
+
+            delete_response = client.post(
+                "/manage/views/excluded-ips/delete",
+                data={
+                    "csrf_token": "csrf-token",
+                    "original_ip": "114.221.164.48",
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertNotIn(
+            "114.221.164.48",
+            [excluded_ip["ip"] for excluded_ip in self.stub_db_helper.dashboard["excluded_ips"]],
+        )
 
 
 if __name__ == "__main__":

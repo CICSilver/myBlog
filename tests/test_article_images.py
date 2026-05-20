@@ -13,6 +13,9 @@ class StubDatabaseHelper:
     def get_specify_blog(self, year, month, html_title):
         return self.blog
 
+    def is_excluded_article_view_ip(self, ip):
+        return False
+
 
 class ArticleImageRenderingTest(unittest.TestCase):
     def setUp(self):

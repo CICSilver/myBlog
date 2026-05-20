@@ -14,7 +14,6 @@ from app.view_filter import (
     EFFECTIVE_VIEW_SECONDS,
     READING_HEARTBEAT_SECONDS,
     is_crawler_user_agent,
-    is_excluded_article_view_ip,
     is_effective_reading_seconds,
     is_loopback_ip,
     is_verified_crawler_ip,
@@ -209,7 +208,7 @@ def track_article_view():
         return jsonify({"status": "ignored", "reason": "admin"})
 
     client_ip = _get_client_ip()
-    if is_excluded_article_view_ip(client_ip):
+    if dbHelper.is_excluded_article_view_ip(client_ip):
         return jsonify({"status": "ignored", "reason": "excluded_ip"})
 
     if (
@@ -283,8 +282,52 @@ def article_view_manage():
     return render_template(
         'view_stats.html',
         view_dashboard=view_dashboard,
+        excluded_ip_error=None,
         **get_site_context(),
     )
+
+
+@main.route('/manage/views/excluded-ips', methods=['POST'])
+@login_required
+def add_excluded_article_view_ip():
+    validate_csrf_token()
+    try:
+        dbHelper.add_excluded_article_view_ip(
+            request.form.get("ip"),
+            request.form.get("label"),
+        )
+    except ValueError as exc:
+        return _render_article_view_manage(excluded_ip_error=str(exc), status_code=400)
+
+    return redirect(url_for('main.article_view_manage'))
+
+
+@main.route('/manage/views/excluded-ips/update', methods=['POST'])
+@login_required
+def update_excluded_article_view_ip():
+    validate_csrf_token()
+    try:
+        dbHelper.update_excluded_article_view_ip(
+            request.form.get("original_ip"),
+            request.form.get("ip"),
+            request.form.get("label"),
+        )
+    except ValueError as exc:
+        return _render_article_view_manage(excluded_ip_error=str(exc), status_code=400)
+
+    return redirect(url_for('main.article_view_manage'))
+
+
+@main.route('/manage/views/excluded-ips/delete', methods=['POST'])
+@login_required
+def delete_excluded_article_view_ip():
+    validate_csrf_token()
+    try:
+        dbHelper.delete_excluded_article_view_ip(request.form.get("original_ip"))
+    except ValueError as exc:
+        return _render_article_view_manage(excluded_ip_error=str(exc), status_code=400)
+
+    return redirect(url_for('main.article_view_manage'))
 
 @main.route('/edit/<string:year>/<string:month>/<string:html_title>')
 @login_required
@@ -351,7 +394,7 @@ def _article_view_tracking_config(blog):
         return None
 
     if (
-        is_excluded_article_view_ip(client_ip)
+        dbHelper.is_excluded_article_view_ip(client_ip)
         or is_loopback_ip(client_ip)
         or is_verified_crawler_ip(client_ip)
     ):
@@ -379,3 +422,16 @@ def _get_client_ip():
             return real_ip
 
     return request.remote_addr or ""
+
+
+def _render_article_view_manage(excluded_ip_error=None, status_code=200):
+    view_dashboard = dbHelper.get_article_view_dashboard(recent_limit=100)
+    return (
+        render_template(
+            'view_stats.html',
+            view_dashboard=view_dashboard,
+            excluded_ip_error=excluded_ip_error,
+            **get_site_context(),
+        ),
+        status_code,
+    )

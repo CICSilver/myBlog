@@ -25,20 +25,111 @@
     </div>
   </div>
 
+  <form
+    class="excluded-ip-add-form"
+    method="POST"
+    action="{{ url_for('main.add_excluded_article_view_ip') }}"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field-block" for="excluded-ip-input">
+      IP
+      <input
+        class="form-input"
+        id="excluded-ip-input"
+        name="ip"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        placeholder="203.0.113.10"
+        required
+      >
+    </label>
+    <label class="field-block" for="excluded-ip-label-input">
+      说明
+      <input
+        class="form-input"
+        id="excluded-ip-label-input"
+        name="label"
+        type="text"
+        autocomplete="off"
+        placeholder="测试机"
+      >
+    </label>
+    <button class="toolbar-button" type="submit">添加</button>
+  </form>
+
+  {% if excluded_ip_error %}
+    <p class="form-error">{{ excluded_ip_error }}</p>
+  {% endif %}
+
   {% if view_dashboard.excluded_ips %}
+    {% for excluded_ip in view_dashboard.excluded_ips %}
+      <form
+        id="excluded-ip-form-{{ loop.index }}"
+        method="POST"
+        action="{{ url_for('main.update_excluded_article_view_ip') }}"
+        hidden
+      ></form>
+    {% endfor %}
     <div class="table-wrap">
-      <table class="manage_table analytics-table">
+      <table class="manage_table analytics-table excluded-ip-table">
         <thead>
           <tr>
             <th>IP</th>
             <th>说明</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           {% for excluded_ip in view_dashboard.excluded_ips %}
             <tr>
-              <td><code>{{ excluded_ip.ip }}</code></td>
-              <td>{{ excluded_ip.label }}</td>
+              <td>
+                <input
+                  form="excluded-ip-form-{{ loop.index }}"
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ csrf_token() }}"
+                >
+                <input
+                  form="excluded-ip-form-{{ loop.index }}"
+                  type="hidden"
+                  name="original_ip"
+                  value="{{ excluded_ip.ip }}"
+                >
+                <input
+                  form="excluded-ip-form-{{ loop.index }}"
+                  class="form-input excluded-ip-input"
+                  name="ip"
+                  type="text"
+                  value="{{ excluded_ip.ip }}"
+                  required
+                >
+              </td>
+              <td>
+                <input
+                  form="excluded-ip-form-{{ loop.index }}"
+                  class="form-input excluded-ip-label"
+                  name="label"
+                  type="text"
+                  value="{{ excluded_ip.label }}"
+                >
+              </td>
+              <td>
+                <div class="excluded-ip-actions">
+                  <button
+                    form="excluded-ip-form-{{ loop.index }}"
+                    class="table-action"
+                    type="submit"
+                  >保存</button>
+                  <button
+                    form="excluded-ip-form-{{ loop.index }}"
+                    class="table-action is-danger"
+                    type="submit"
+                    formaction="{{ url_for('main.delete_excluded_article_view_ip') }}"
+                    onclick="return confirm('确定删除这个排除 IP 吗？')"
+                  >删除</button>
+                </div>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

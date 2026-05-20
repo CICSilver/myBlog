@@ -8,12 +8,8 @@ READING_HEARTBEAT_SECONDS = 15
 MAX_READING_SECONDS = 30 * 60
 ARTICLE_VIEW_MERGE_SECONDS = 30
 
-EXCLUDED_ARTICLE_VIEW_IPS = (
+DEFAULT_EXCLUDED_ARTICLE_VIEW_IPS = (
     ("114.221.164.47", "测试机"),
-)
-EXCLUDED_ARTICLE_VIEW_IP_SET = frozenset(
-    ip
-    for ip, _label in EXCLUDED_ARTICLE_VIEW_IPS
 )
 
 VERIFIED_CRAWLER_DNS_SUFFIXES = (
@@ -83,27 +79,20 @@ def is_loopback_ip(ip):
     return False
 
 
-def is_excluded_article_view_ip(ip):
+def normalize_ip_address(ip):
     ip_text = str(ip or "").strip()
     if not ip_text:
-        return False
+        return ""
 
     try:
-        ip_text = str(ipaddress.ip_address(ip_text))
+        return str(ipaddress.ip_address(ip_text))
     except ValueError:
-        return False
-
-    return ip_text in EXCLUDED_ARTICLE_VIEW_IP_SET
+        return ""
 
 
-def get_excluded_article_view_ips():
-    return [
-        {
-            "ip": ip,
-            "label": label,
-        }
-        for ip, label in EXCLUDED_ARTICLE_VIEW_IPS
-    ]
+def is_ip_in_set(ip, ip_set):
+    ip_text = normalize_ip_address(ip)
+    return bool(ip_text and ip_text in ip_set)
 
 
 @lru_cache(maxsize=2048)
