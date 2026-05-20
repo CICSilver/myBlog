@@ -15,6 +15,8 @@ from app.view_filter import (
     READING_HEARTBEAT_SECONDS,
     is_crawler_user_agent,
     is_effective_reading_seconds,
+    is_loopback_ip,
+    is_verified_crawler_ip,
     normalize_reading_seconds,
 )
 from datetime import datetime
@@ -205,8 +207,15 @@ def track_article_view():
     if current_admin_authenticated():
         return jsonify({"status": "ignored", "reason": "admin"})
 
-    if is_crawler_user_agent(request.headers.get("User-Agent", "")):
+    client_ip = _get_client_ip()
+    if (
+        is_crawler_user_agent(request.headers.get("User-Agent", ""))
+        or is_verified_crawler_ip(client_ip)
+    ):
         return jsonify({"status": "ignored", "reason": "crawler"})
+
+    if is_loopback_ip(client_ip):
+        return jsonify({"status": "ignored", "reason": "local_test"})
 
     payload = request.get_json(silent=True) or {}
     reading_seconds = normalize_reading_seconds(payload.get("reading_seconds"))
@@ -234,7 +243,7 @@ def track_article_view():
     try:
         view_record = dbHelper.record_or_update_article_view_session(
             blog,
-            _get_client_ip(),
+            client_ip,
             path,
             view_session_id,
             reading_seconds,
@@ -334,6 +343,9 @@ def _article_view_tracking_config(blog):
         return None
 
     if is_crawler_user_agent(request.headers.get("User-Agent", "")):
+        return None
+
+    if is_loopback_ip(_get_client_ip()):
         return None
 
     return {

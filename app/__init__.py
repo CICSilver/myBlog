@@ -169,3 +169,38 @@ def _register_history_commands(app):
             history_dir=app.config["BLOG_CONTENT_HISTORY_DIR"],
         )
         click.echo("Restored {0}".format(snapshot_path))
+
+    @app.cli.command("article-views-compact")
+    @click.option(
+        "--apply",
+        "apply_changes",
+        is_flag=True,
+        help="Rewrite article_views after creating history snapshots.",
+    )
+    def article_views_compact(apply_changes):
+        from app.database import DatabaseHelper
+
+        helper = DatabaseHelper()
+        if apply_changes:
+            snapshot_content_db(
+                app.config["BLOG_DB_PATH"],
+                "pre-compact-article-views",
+                history_dir=app.config["BLOG_CONTENT_HISTORY_DIR"],
+            )
+
+        stats = helper.compact_article_views(apply_changes=apply_changes)
+
+        if apply_changes:
+            snapshot_content_db(
+                app.config["BLOG_DB_PATH"],
+                "post-compact-article-views",
+                history_dir=app.config["BLOG_CONTENT_HISTORY_DIR"],
+            )
+
+        click.echo("applied: {0}".format("yes" if stats["applied"] else "no"))
+        click.echo("total_records: {0}".format(stats["total_records"]))
+        click.echo("loopback_records: {0}".format(stats["loopback_records"]))
+        click.echo("crawler_ip_records: {0}".format(stats["crawler_ip_records"]))
+        click.echo("merged_duplicate_records: {0}".format(stats["merged_duplicate_records"]))
+        click.echo("compacted_records: {0}".format(stats["compacted_records"]))
+        click.echo("removed_records: {0}".format(stats["removed_records"]))

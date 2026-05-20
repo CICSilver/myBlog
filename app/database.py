@@ -1,7 +1,12 @@
 from app import blog_db, db_path
 from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
-from app.view_filter import normalize_reading_seconds
+from app.view_filter import (
+    ARTICLE_VIEW_MERGE_SECONDS,
+    is_loopback_ip,
+    is_verified_crawler_ip,
+    normalize_reading_seconds,
+)
 from flask import current_app, has_app_context
 from tinydb import Query
 from tinydb.table import Document
@@ -9,10 +14,102 @@ from datetime import datetime
 from pypinyin import lazy_pinyin
 from threading import RLock
 from urllib.parse import urlparse
+import os
 import re
+import secrets
+import time
 
 
-_write_lock = RLock()
+class _DatabaseWriteLock:
+    def __init__(self, timeout_seconds=15, stale_seconds=120):
+        self._thread_lock = RLock()
+        self._depth = 0
+        self._fd = None
+        self._lock_path = None
+        self._timeout_seconds = timeout_seconds
+        self._stale_seconds = stale_seconds
+
+    def __enter__(self):
+        self._thread_lock.acquire()
+        try:
+            if self._depth == 0:
+                self._acquire_process_lock()
+            self._depth += 1
+            return self
+        except Exception:
+            self._thread_lock.release()
+            raise
+
+    def __exit__(self, exc_type, exc, traceback):
+        self._depth -= 1
+        if self._depth == 0:
+            self._release_process_lock()
+        self._thread_lock.release()
+
+    def _acquire_process_lock(self):
+        lock_path = "{0}.lock".format(db_path)
+        os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+        deadline = time.monotonic() + self._timeout_seconds
+
+        while True:
+            try:
+                fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                os.write(
+                    fd,
+                    "{0} {1}\n".format(os.getpid(), datetime.now().isoformat()).encode(
+                        "utf-8"
+                    ),
+                )
+                self._fd = fd
+                self._lock_path = lock_path
+                return
+            except FileExistsError:
+                self._remove_stale_lock(lock_path)
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "Timed out waiting for database write lock: {0}".format(lock_path)
+                    )
+                time.sleep(0.05)
+
+    def _remove_stale_lock(self, lock_path):
+        try:
+            age_seconds = time.time() - os.path.getmtime(lock_path)
+        except OSError:
+            return
+
+        if age_seconds < self._stale_seconds:
+            return
+
+        try:
+            os.unlink(lock_path)
+        except OSError:
+            return
+
+    def _release_process_lock(self):
+        lock_path = self._lock_path
+        fd = self._fd
+        self._fd = None
+        self._lock_path = None
+
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        if lock_path:
+            try:
+                os.unlink(lock_path)
+            except FileNotFoundError:
+                pass
+
+
+_write_lock = _DatabaseWriteLock()
+_ARTICLE_VIEW_INSERT_ATTEMPTS = 8
+
+
+def _new_article_view_doc_id():
+    return secrets.randbits(63) or 1
 
 
 def normalize_html_title(value, fallback="post"):
@@ -99,6 +196,162 @@ def _with_article_view_defaults(view):
         or format_reading_seconds(reading_seconds)
     )
     return view_with_defaults
+
+
+def _parse_article_view_time(value):
+    if not value:
+        return None
+
+    if isinstance(value, datetime):
+        return value
+
+    try:
+        return datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+
+
+def _latest_article_view_time(view):
+    parsed_times = [
+        parsed_time
+        for parsed_time in (
+            _parse_article_view_time(view.get("viewed_at")),
+            _parse_article_view_time(view.get("last_seen_at")),
+        )
+        if parsed_time is not None
+    ]
+
+    if not parsed_times:
+        return None
+
+    return max(parsed_times)
+
+
+def _latest_article_view_time_value(*values):
+    latest_time = None
+    latest_value = ""
+
+    for value in values:
+        parsed_time = _parse_article_view_time(value)
+        if parsed_time is None:
+            if not latest_value and value:
+                latest_value = value
+            continue
+
+        if latest_time is None or parsed_time > latest_time:
+            latest_time = parsed_time
+            latest_value = value
+
+    return latest_value
+
+
+def _article_view_merge_key(view):
+    ip = view.get("ip") or ""
+    path = view.get("path") or ""
+    if ip and path:
+        return (ip, path)
+
+    return (
+        ip,
+        view.get("year") or "",
+        view.get("month") or "",
+        view.get("html_title") or "",
+    )
+
+
+def _article_views_are_mergeable(base_view, incoming_view):
+    if _article_view_merge_key(base_view) != _article_view_merge_key(incoming_view):
+        return False
+
+    base_time = _latest_article_view_time(base_view)
+    incoming_time = _parse_article_view_time(
+        incoming_view.get("last_seen_at") or incoming_view.get("viewed_at")
+    )
+    if base_time is None or incoming_time is None:
+        return False
+
+    return abs((incoming_time - base_time).total_seconds()) <= ARTICLE_VIEW_MERGE_SECONDS
+
+
+def _merge_article_view_data(base_view, incoming_view):
+    merged_view = dict(base_view)
+    reading_seconds = max(
+        normalize_reading_seconds(merged_view.get("reading_seconds")),
+        normalize_reading_seconds(incoming_view.get("reading_seconds")),
+    )
+    merged_view["reading_seconds"] = reading_seconds
+    merged_view["reading_time_label"] = format_reading_seconds(reading_seconds)
+    merged_view["last_seen_at"] = _latest_article_view_time_value(
+        merged_view.get("last_seen_at") or merged_view.get("viewed_at"),
+        incoming_view.get("last_seen_at") or incoming_view.get("viewed_at"),
+    )
+
+    for key in (
+        "year",
+        "month",
+        "html_title",
+        "blog_title",
+        "path",
+        "ip",
+        "ip_location",
+        "ip_country",
+        "ip_region",
+        "ip_city",
+        "ip_isp",
+        "ip_country_code",
+    ):
+        if not merged_view.get(key) and incoming_view.get(key):
+            merged_view[key] = incoming_view.get(key)
+
+    if not merged_view.get("view_session_id") and incoming_view.get("view_session_id"):
+        merged_view["view_session_id"] = incoming_view.get("view_session_id")
+
+    return merged_view
+
+
+def _effective_article_views(views):
+    effective_views = []
+
+    for view in views:
+        if is_ignored_article_view_ip(view.get("ip")):
+            continue
+
+        for index, existing_view in enumerate(effective_views):
+            if _article_views_are_mergeable(existing_view, view):
+                effective_views[index] = _merge_article_view_data(existing_view, view)
+                break
+        else:
+            effective_views.append(view)
+
+    return effective_views
+
+
+def is_ignored_article_view_ip(ip):
+    return is_loopback_ip(ip) or is_verified_crawler_ip(ip)
+
+
+def _article_view_compaction_stats(original_views, compacted_views):
+    loopback_records = sum(1 for view in original_views if is_loopback_ip(view.get("ip")))
+    crawler_ip_records = sum(
+        1
+        for view in original_views
+        if not is_loopback_ip(view.get("ip")) and is_verified_crawler_ip(view.get("ip"))
+    )
+    filter_removed_records = loopback_records + crawler_ip_records
+    merge_candidate_records = len(original_views) - filter_removed_records
+
+    return {
+        "total_records": len(original_views),
+        "loopback_records": loopback_records,
+        "crawler_ip_records": crawler_ip_records,
+        "non_loopback_records": len(original_views) - loopback_records,
+        "compacted_records": len(compacted_views),
+        "merged_duplicate_records": max(
+            merge_candidate_records - len(compacted_views),
+            0,
+        ),
+        "removed_records": len(original_views) - len(compacted_views),
+    }
 
 
 class Comment:
@@ -356,9 +609,7 @@ class DatabaseHelper:
         view_record = self._build_article_view_record(blog, ip, path, viewed_at)
 
         with _write_lock:
-            self.article_view_table.insert(view_record)
-
-        return view_record
+            return self._merge_or_insert_article_view_record(view_record)
 
     def record_or_update_article_view_session(
         self,
@@ -388,14 +639,16 @@ class DatabaseHelper:
             )
 
             if existing:
-                updated_record = dict(existing)
-                updated_record["reading_seconds"] = max(
-                    normalize_reading_seconds(updated_record.get("reading_seconds")),
-                    reading_seconds,
+                incoming_record = self._build_article_view_record(
+                    blog,
+                    ip,
+                    path,
+                    viewed_at,
+                    reading_seconds=reading_seconds,
+                    view_session_id=view_session_id,
+                    last_seen_at=viewed_at,
                 )
-                updated_record["reading_time_label"] = format_reading_seconds(
-                    updated_record["reading_seconds"]
-                )
+                updated_record = _merge_article_view_data(existing, incoming_record)
                 updated_record["last_seen_at"] = viewed_at
                 self.article_view_table.update(updated_record, doc_ids=[existing.doc_id])
                 return updated_record
@@ -409,14 +662,63 @@ class DatabaseHelper:
                 view_session_id=view_session_id,
                 last_seen_at=viewed_at,
             )
-            self.article_view_table.insert(view_record)
-            return view_record
+            return self._merge_or_insert_article_view_record(view_record)
+
+    def _merge_or_insert_article_view_record(self, view_record):
+        existing = self._find_recent_article_view_record(view_record)
+        if existing:
+            updated_record = _merge_article_view_data(existing, view_record)
+            self.article_view_table.update(updated_record, doc_ids=[existing.doc_id])
+            return updated_record
+
+        self._insert_article_view_record(view_record)
+        return view_record
+
+    def _find_recent_article_view_record(self, view_record):
+        latest_match = None
+        latest_match_time = None
+
+        for existing in self.article_view_table.all():
+            if not _article_views_are_mergeable(existing, view_record):
+                continue
+
+            existing_time = _latest_article_view_time(existing)
+            if existing_time is None:
+                continue
+
+            if latest_match_time is None or existing_time > latest_match_time:
+                latest_match = existing
+                latest_match_time = existing_time
+
+        return latest_match
+
+    def _insert_article_view_record(self, view_record):
+        """
+        TinyDB caches the next sequential doc_id per process. Gunicorn workers can
+        otherwise race and reuse the same ID, so view rows use random explicit IDs.
+        """
+        last_error = None
+
+        for _ in range(_ARTICLE_VIEW_INSERT_ATTEMPTS):
+            try:
+                return self.article_view_table.insert(
+                    Document(view_record, doc_id=_new_article_view_doc_id())
+                )
+            except ValueError as exc:
+                if "Document with ID" not in str(exc):
+                    raise
+                last_error = exc
+
+        if last_error:
+            raise last_error
+
+        raise RuntimeError("article view insert failed")
 
     def get_article_view_dashboard(self, recent_limit=100):
         """
         获取后台浏览量统计所需的汇总数据。
         """
-        views = self.article_view_table.all()
+        views = _effective_article_views(self.article_view_table.all())
 
         return {
             "total_views": len(views),
@@ -424,6 +726,26 @@ class DatabaseHelper:
             "article_summaries": self._summarize_article_views(views),
             "recent_views": self._recent_article_views(views, recent_limit),
         }
+
+    def compact_article_views(self, apply_changes=False):
+        """
+        按当前统计规则预览或重写历史访问记录。
+        """
+        with _write_lock:
+            original_views = self.article_view_table.all()
+            compacted_views = _effective_article_views(original_views)
+            stats = _article_view_compaction_stats(original_views, compacted_views)
+
+            if not apply_changes:
+                stats["applied"] = False
+                return stats
+
+            self.article_view_table.truncate()
+            for view_record in compacted_views:
+                self._insert_article_view_record(view_record)
+
+            stats["applied"] = True
+            return stats
 
     def _summarize_article_views(self, views):
         summaries = {}
@@ -460,8 +782,12 @@ class DatabaseHelper:
                 summary["blog_title"] = view.get("blog_title")
             if view.get("path"):
                 summary["path"] = view.get("path")
-            if view.get("viewed_at") and view.get("viewed_at") > summary["last_viewed_at"]:
-                summary["last_viewed_at"] = view.get("viewed_at")
+            view_seen_at = _latest_article_view_time_value(
+                view.get("viewed_at"),
+                view.get("last_seen_at"),
+            )
+            if view_seen_at and view_seen_at > summary["last_viewed_at"]:
+                summary["last_viewed_at"] = view_seen_at
 
         article_summaries = list(summaries.values())
         for summary in article_summaries:

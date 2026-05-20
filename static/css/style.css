@@ -1382,6 +1382,40 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     line-height: 1.95;
 }
 
+.markdown-fallback {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.reading-cover {
+    margin: 0;
+    padding: 0 clamp(24px, 4vw, 40px) clamp(24px, 4vw, 40px);
+}
+
+.reading-cover-button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--table-surface);
+    cursor: zoom-in;
+    box-shadow: var(--panel-shadow);
+}
+
+.reading-cover-button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring), var(--panel-shadow);
+}
+
+.reading-cover img {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+}
+
 .back-link {
     justify-self: start;
 }
@@ -2074,6 +2108,90 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     opacity: 1;
 }
 
+.article-image-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    place-items: center;
+    padding: clamp(12px, 3vw, 32px);
+}
+
+.article-image-viewer.is-visible {
+    display: grid;
+}
+
+.article-image-viewer-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: var(--modal-overlay-surface);
+    backdrop-filter: blur(12px);
+    cursor: zoom-out;
+}
+
+.article-image-viewer-panel {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 10px;
+    max-width: min(1120px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    margin: 0;
+}
+
+.article-image-viewer-panel img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 92px);
+    object-fit: contain;
+    border-radius: 14px;
+    background: var(--table-surface);
+    box-shadow: var(--modal-shadow);
+}
+
+.article-image-viewer-panel figcaption {
+    justify-self: center;
+    max-width: min(720px, 100%);
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--modal-surface);
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.article-image-viewer-panel figcaption[hidden] {
+    display: none;
+}
+
+.article-image-viewer-close {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--modal-surface);
+    color: var(--ink);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--modal-shadow);
+}
+
+.article-image-viewer-close:hover,
+.article-image-viewer-close:focus-visible {
+    outline: none;
+    background: var(--ghost-hover);
+}
+
 .modal {
     width: min(460px, calc(100vw - 32px));
     position: fixed;
@@ -2186,6 +2304,23 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 
 .markdown-body a {
     color: var(--accent-strong);
+}
+
+.markdown-body img.article-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.6rem auto;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--table-surface);
+    box-shadow: var(--panel-shadow);
+    cursor: zoom-in;
+}
+
+.markdown-body img.article-image:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring), var(--panel-shadow);
 }
 
 .markdown-body h1,

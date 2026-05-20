@@ -15,10 +15,10 @@
 {% endblock %}
 
 {% block extra_head %}
-<script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+<script defer src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -33,9 +33,28 @@
     <a class="toolbar-link back-link" href="{{ url_for('main.index') }}">返回档案首页</a>
   </header>
 
-  <article class="reading-article markdown-body" id="markdown-preview"></article>
-  <textarea id="markdown-content" hidden>{{ blog.content | safe }}</textarea>
+  {% if blog.cover_url %}
+  <figure class="reading-cover">
+    <button class="reading-cover-button" type="button" data-article-image-trigger>
+      <img src="{{ blog.cover_url }}" alt="{{ blog.title }} 封面">
+    </button>
+  </figure>
+  {% endif %}
+
+  <article class="reading-article markdown-body" id="markdown-preview">
+    <div class="markdown-fallback" data-markdown-fallback>{{ blog.content }}</div>
+  </article>
+  <textarea id="markdown-content" hidden>{{ blog.content }}</textarea>
 </section>
+
+<div class="article-image-viewer" id="article-image-viewer" aria-hidden="true">
+  <button class="article-image-viewer-backdrop" type="button" data-article-image-close aria-label="关闭图片查看"></button>
+  <figure class="article-image-viewer-panel" role="dialog" aria-modal="true" aria-label="图片查看">
+    <button class="article-image-viewer-close" type="button" data-article-image-close aria-label="关闭图片查看">×</button>
+    <img id="article-image-viewer-img" src="" alt="">
+    <figcaption id="article-image-viewer-caption"></figcaption>
+  </figure>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -46,32 +65,140 @@
 <script src="{{ url_for('static', filename='js/article_view_tracker.js') }}"></script>
 {% endif %}
 <script>
-  const markdownContent = document.getElementById('markdown-content').value;
-  const markdownPreview = document.getElementById('markdown-preview');
+  (function () {
+    const markdownSource = document.getElementById('markdown-content');
+    const markdownPreview = document.getElementById('markdown-preview');
+    const imageViewer = document.getElementById('article-image-viewer');
+    const imageViewerImage = document.getElementById('article-image-viewer-img');
+    const imageViewerCaption = document.getElementById('article-image-viewer-caption');
 
-  if (window.marked && typeof marked.parse === 'function') {
-    const markedOptions = {
-      breaks: true,
-    };
+    function renderArticleMarkdown() {
+      if (!markdownSource || !markdownPreview) {
+        return;
+      }
 
-    if (window.hljs) {
-      markedOptions.highlight = function (code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          return hljs.highlight(code, { language: lang }).value;
+      const markdownContent = markdownSource.value;
+
+      if (window.marked && typeof marked.parse === 'function') {
+        const markedOptions = {
+          breaks: true,
+        };
+
+        if (window.hljs) {
+          markedOptions.highlight = function (code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+              return hljs.highlight(code, { language: lang }).value;
+            }
+
+            return hljs.highlightAuto(code).value;
+          }
         }
 
-        return hljs.highlightAuto(code).value;
+        marked.setOptions(markedOptions);
+        markdownPreview.innerHTML = marked.parse(markdownContent);
+      } else {
+        markdownPreview.textContent = markdownContent;
+      }
+
+      enhanceArticleImages(markdownPreview);
+
+      if (window.hljs && typeof hljs.highlightAll === 'function') {
+        hljs.highlightAll();
       }
     }
 
-    marked.setOptions(markedOptions);
-    markdownPreview.innerHTML = marked.parse(markdownContent);
-  } else {
-    markdownPreview.textContent = markdownContent;
-  }
+    function openArticleImageViewer(imageSource, imageAlt = '') {
+      if (!imageViewer || !imageViewerImage || !imageSource) {
+        return;
+      }
 
-  if (window.hljs && typeof hljs.highlightAll === 'function') {
-    hljs.highlightAll();
-  }
+      imageViewerImage.src = imageSource;
+      imageViewerImage.alt = imageAlt;
+
+      if (imageViewerCaption) {
+        imageViewerCaption.textContent = imageAlt;
+        imageViewerCaption.hidden = imageAlt === '';
+      }
+
+      imageViewer.classList.add('is-visible');
+      imageViewer.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeArticleImageViewer() {
+      if (!imageViewer || !imageViewerImage) {
+        return;
+      }
+
+      imageViewer.classList.remove('is-visible');
+      imageViewer.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      imageViewerImage.src = '';
+    }
+
+    function enhanceArticleImages(container) {
+      if (!container) {
+        return;
+      }
+
+      const images = Array.from(container.querySelectorAll('img'));
+      images.forEach((image) => {
+        image.classList.add('article-image');
+        if (!image.hasAttribute('loading')) {
+          image.setAttribute('loading', 'lazy');
+        }
+        if (!image.hasAttribute('decoding')) {
+          image.setAttribute('decoding', 'async');
+        }
+        image.tabIndex = 0;
+        image.setAttribute('role', 'button');
+        image.setAttribute('aria-label', '单独查看图片');
+
+        image.addEventListener('click', function (event) {
+          event.preventDefault();
+          openArticleImageViewer(image.currentSrc || image.src, image.getAttribute('alt') || '');
+        });
+
+        image.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openArticleImageViewer(image.currentSrc || image.src, image.getAttribute('alt') || '');
+          }
+        });
+      });
+    }
+
+    function initArticleImageViewer() {
+      document.querySelectorAll('[data-article-image-trigger]').forEach((button) => {
+        button.addEventListener('click', function () {
+          const image = button.querySelector('img');
+          if (image) {
+            openArticleImageViewer(image.currentSrc || image.src, image.getAttribute('alt') || '');
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-article-image-close]').forEach((button) => {
+        button.addEventListener('click', closeArticleImageViewer);
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && imageViewer && imageViewer.classList.contains('is-visible')) {
+          closeArticleImageViewer();
+        }
+      });
+    }
+
+    function initArticleDetail() {
+      renderArticleMarkdown();
+      initArticleImageViewer();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initArticleDetail);
+    } else {
+      initArticleDetail();
+    }
+  })();
 </script>
 {% endblock %}

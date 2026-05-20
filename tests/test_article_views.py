@@ -1,12 +1,15 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tinydb import TinyDB
+from tinydb.table import Document
 
 from app import create_app
 from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
 from app.database import Blog, DatabaseHelper
+import app.database as database_module
 import app.routes as routes_module
 
 
@@ -84,6 +87,77 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.assertEqual(view_record["ip_isp"], "电信")
         self.assertEqual(view_record["ip_location"], "中国 / 广东省 / 深圳市 / 电信")
 
+    def test_dashboard_excludes_loopback_article_views(self):
+        blog = self.make_blog()
+
+        self.helper.record_article_view(
+            blog,
+            "127.0.0.1",
+            "/2026/5/hello",
+            "2026-05-18 10:00:00",
+        )
+        self.helper.record_article_view(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "2026-05-18 10:01:00",
+        )
+
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(len(self.helper.article_view_table.all()), 2)
+        self.assertEqual(dashboard["total_views"], 1)
+        self.assertEqual(dashboard["unique_ip_count"], 1)
+        self.assertEqual(dashboard["recent_views"][0]["ip"], "203.0.113.9")
+
+    def test_dashboard_excludes_verified_crawler_ip_article_views(self):
+        blog = self.make_blog()
+
+        self.helper.record_article_view(
+            blog,
+            "40.77.167.4",
+            "/2026/5/hello",
+            "2026-05-18 10:00:00",
+        )
+        self.helper.record_article_view(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "2026-05-18 10:01:00",
+        )
+
+        with patch("app.database.is_verified_crawler_ip") as is_crawler_ip:
+            is_crawler_ip.side_effect = lambda ip: ip == "40.77.167.4"
+            dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(dashboard["total_views"], 1)
+        self.assertEqual(dashboard["unique_ip_count"], 1)
+        self.assertEqual(dashboard["recent_views"][0]["ip"], "203.0.113.9")
+
+    def test_article_view_insert_retries_when_doc_id_collides(self):
+        blog = self.make_blog()
+        self.helper.article_view_table.insert(
+            Document({"existing": True}, doc_id=4242)
+        )
+        generated_ids = iter([4242, 4243])
+        original_new_doc_id = database_module._new_article_view_doc_id
+        database_module._new_article_view_doc_id = lambda: next(generated_ids)
+
+        try:
+            self.helper.record_article_view(
+                blog,
+                "203.0.113.9",
+                "/2026/5/hello",
+                "2026-05-18 10:00:00",
+            )
+        finally:
+            database_module._new_article_view_doc_id = original_new_doc_id
+
+        inserted = self.helper.article_view_table.get(doc_id=4243)
+        self.assertIsNotNone(inserted)
+        self.assertEqual(inserted["ip"], "203.0.113.9")
+        self.assertEqual(len(self.helper.article_view_table.all()), 2)
+
     def test_article_view_session_updates_reading_time_without_duplicate_view(self):
         blog = self.make_blog()
 
@@ -112,6 +186,159 @@ class ArticleViewDatabaseTest(unittest.TestCase):
         self.assertEqual(second_record["last_seen_at"], "2026-05-18 10:00:45")
         self.assertEqual(dashboard["article_summaries"][0]["total_reading_seconds"], 45)
         self.assertEqual(dashboard["article_summaries"][0]["reading_time_label"], "45秒")
+
+    def test_article_view_session_merges_same_ip_path_within_thirty_seconds(self):
+        blog = self.make_blog()
+
+        self.helper.record_or_update_article_view_session(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "session-1",
+            15,
+            "2026-05-18 10:00:15",
+        )
+        merged_record = self.helper.record_or_update_article_view_session(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "session-2",
+            25,
+            "2026-05-18 10:00:40",
+        )
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(len(self.helper.article_view_table.all()), 1)
+        self.assertEqual(dashboard["total_views"], 1)
+        self.assertEqual(dashboard["article_summaries"][0]["views"], 1)
+        self.assertEqual(merged_record["reading_seconds"], 25)
+        self.assertEqual(merged_record["last_seen_at"], "2026-05-18 10:00:40")
+
+    def test_article_view_session_counts_same_ip_path_after_thirty_seconds(self):
+        blog = self.make_blog()
+
+        self.helper.record_or_update_article_view_session(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "session-1",
+            15,
+            "2026-05-18 10:00:15",
+        )
+        self.helper.record_or_update_article_view_session(
+            blog,
+            "203.0.113.9",
+            "/2026/5/hello",
+            "session-2",
+            20,
+            "2026-05-18 10:00:46",
+        )
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertEqual(len(self.helper.article_view_table.all()), 2)
+        self.assertEqual(dashboard["total_views"], 2)
+        self.assertEqual(dashboard["article_summaries"][0]["views"], 2)
+
+    def test_article_view_compaction_preview_does_not_rewrite_table(self):
+        self.helper.article_view_table.insert({"ip": "127.0.0.1"})
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "203.0.113.9",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:00:00",
+            }
+        )
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "203.0.113.9",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:00:25",
+            }
+        )
+
+        stats = self.helper.compact_article_views()
+
+        self.assertFalse(stats["applied"])
+        self.assertEqual(stats["total_records"], 3)
+        self.assertEqual(stats["loopback_records"], 1)
+        self.assertEqual(stats["crawler_ip_records"], 0)
+        self.assertEqual(stats["merged_duplicate_records"], 1)
+        self.assertEqual(stats["compacted_records"], 1)
+        self.assertEqual(len(self.helper.article_view_table.all()), 3)
+
+    def test_article_view_compaction_apply_removes_loopback_and_merges_duplicates(self):
+        self.helper.article_view_table.insert({"ip": "127.0.0.1"})
+        for viewed_at in (
+            "2026-05-18 10:00:00",
+            "2026-05-18 10:00:25",
+            "2026-05-18 10:01:00",
+        ):
+            self.helper.article_view_table.insert(
+                {
+                    "year": "2026",
+                    "month": "5",
+                    "html_title": "hello",
+                    "blog_title": "Hello",
+                    "ip": "203.0.113.9",
+                    "path": "/2026/5/hello",
+                    "viewed_at": viewed_at,
+                    "reading_seconds": 15,
+                }
+            )
+
+        stats = self.helper.compact_article_views(apply_changes=True)
+        dashboard = self.helper.get_article_view_dashboard()
+
+        self.assertTrue(stats["applied"])
+        self.assertEqual(stats["total_records"], 4)
+        self.assertEqual(stats["loopback_records"], 1)
+        self.assertEqual(stats["crawler_ip_records"], 0)
+        self.assertEqual(stats["merged_duplicate_records"], 1)
+        self.assertEqual(stats["compacted_records"], 2)
+        self.assertEqual(stats["removed_records"], 2)
+        self.assertEqual(len(self.helper.article_view_table.all()), 2)
+        self.assertEqual(dashboard["total_views"], 2)
+
+    def test_article_view_compaction_apply_removes_verified_crawler_ip(self):
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "40.77.167.4",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:00:00",
+            }
+        )
+        self.helper.article_view_table.insert(
+            {
+                "year": "2026",
+                "month": "5",
+                "html_title": "hello",
+                "blog_title": "Hello",
+                "ip": "203.0.113.9",
+                "path": "/2026/5/hello",
+                "viewed_at": "2026-05-18 10:01:00",
+            }
+        )
+
+        with patch("app.database.is_verified_crawler_ip") as is_crawler_ip:
+            is_crawler_ip.side_effect = lambda ip: ip == "40.77.167.4"
+            stats = self.helper.compact_article_views(apply_changes=True)
+
+        self.assertEqual(stats["crawler_ip_records"], 1)
+        self.assertEqual(stats["compacted_records"], 1)
+        self.assertEqual(len(self.helper.article_view_table.all()), 1)
+        self.assertEqual(self.helper.article_view_table.all()[0]["ip"], "203.0.113.9")
 
     def test_recent_views_adds_unknown_location_for_legacy_records(self):
         self.helper.article_view_table.insert(
@@ -253,6 +480,17 @@ class ArticleViewRouteTest(unittest.TestCase):
         self.assertEqual(self.stub_db_helper.recorded_views, [])
         self.assertIn("BLOG_ARTICLE_VIEW_TRACKING", response.get_data(as_text=True))
 
+    def test_article_detail_skips_loopback_tracking_config(self):
+        with self.app.test_client() as client:
+            response = client.get(
+                "/2026/5/hello",
+                environ_overrides={"REMOTE_ADDR": "127.0.0.1"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+        self.assertNotIn("BLOG_ARTICLE_VIEW_TRACKING", response.get_data(as_text=True))
+
     def test_tracking_records_effective_view_with_remote_addr(self):
         with self.app.test_client() as client:
             response = self.post_article_view_ping(client)
@@ -308,6 +546,30 @@ class ArticleViewRouteTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["reason"], "crawler")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
+    def test_tracking_skips_verified_crawler_ip(self):
+        with patch("app.routes.is_verified_crawler_ip") as is_crawler_ip:
+            is_crawler_ip.side_effect = lambda ip: ip == "40.77.167.4"
+            with self.app.test_client() as client:
+                response = self.post_article_view_ping(
+                    client,
+                    remote_addr="40.77.167.4",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "crawler")
+        self.assertEqual(self.stub_db_helper.recorded_views, [])
+
+    def test_tracking_skips_loopback_remote_addr(self):
+        with self.app.test_client() as client:
+            response = self.post_article_view_ping(
+                client,
+                remote_addr="127.0.0.1",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["reason"], "local_test")
         self.assertEqual(self.stub_db_helper.recorded_views, [])
 
     def test_tracking_skips_short_view(self):
