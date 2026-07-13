@@ -62,6 +62,7 @@ class EditorMobileInputTest(unittest.TestCase):
             "unordered-list",
             "heading-2",
             "chinese-indent",
+            "image",
         ]
 
         self.assertEqual(self.source.count("data-mobile-editor-action="), len(expected_actions))
@@ -74,6 +75,19 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("applyMobileLinePrefix(action)", self.source)
         self.assertIn("missingChineseIndentPrefix(lineText)", self.source)
         self.assertIn("finishMobileNativeEdit", self.source)
+
+    def test_mobile_image_button_uploads_and_inserts_at_saved_caret(self):
+        self.assertIn('id="mobile-image-button"', self.source)
+        self.assertIn('data-mobile-editor-action="image"', self.source)
+        self.assertIn('id="mobile-article-image-file"', self.source)
+        self.assertIn('accept="image/*"', self.source)
+        self.assertIn("articleImageSelectionStart = mobileMarkdownEditor.selectionStart", self.source)
+        self.assertIn("formData.append('article-image', file)", self.source)
+        self.assertIn("url_for('main.upload_article_image')", self.source)
+        self.assertIn("insertArticleImageMarkdown(data.image_url, file.name)", self.source)
+        self.assertIn("mobileMarkdownEditor.value = before + replacement + after", self.source)
+        self.assertIn("finishMobileNativeEdit(caret, caret)", self.source)
+        self.assertIn("isArticleImageUploading", self.source)
 
     def test_mobile_native_textarea_keeps_system_text_selection_available(self):
         self.assertIn(".mobile-editor-shell", self.css_source)

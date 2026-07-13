@@ -28,7 +28,7 @@ main = Blueprint('main', __name__)
 dbHelper = DatabaseHelper()
 SITE_NAME = "Silver's Blog"
 PERSONAL_INTRO = "人事匆匆，或许有些可以留在这里。"
-SUPPORTED_COVER_EXTENSIONS = {
+SUPPORTED_IMAGE_EXTENSIONS = {
     ".jpg": "jpg",
     ".jpeg": "jpg",
     ".png": "png",
@@ -52,11 +52,11 @@ def init_index_with_blogs(_blogs):
         **get_site_context(),
     )
 
-def _cover_upload_error(message, status_code=400):
+def _image_upload_error(message, status_code=400):
     return jsonify({"status": "error", "message": message}), status_code
 
 
-def _detect_cover_image_type(payload):
+def _detect_image_type(payload):
     if payload.startswith(b"\xff\xd8\xff"):
         return "jpg"
 
@@ -69,13 +69,49 @@ def _detect_cover_image_type(payload):
     return None
 
 
-def _allowed_cover_extension(filename):
+def _allowed_image_extension(filename):
     _, extension = os.path.splitext(filename or "")
-    return SUPPORTED_COVER_EXTENSIONS.get(extension.lower())
+    return SUPPORTED_IMAGE_EXTENSIONS.get(extension.lower())
 
 
-def _cover_size_message(max_bytes):
-    return "封面图片不能超过 {0}MB。".format(max_bytes // (1024 * 1024))
+def _image_size_message(image_label, max_bytes):
+    return "{0}不能超过 {1}MB。".format(image_label, max_bytes // (1024 * 1024))
+
+
+def _store_uploaded_image(uploaded_file, upload_dir, max_bytes, image_label):
+    if uploaded_file is None:
+        return None, _image_upload_error("请选择要上传的{0}。".format(image_label))
+
+    expected_type = _allowed_image_extension(uploaded_file.filename)
+    if expected_type is None:
+        return None, _image_upload_error("{0}仅支持 JPG、PNG 或 WebP。".format(image_label))
+
+    payload = uploaded_file.stream.read(max_bytes + 1)
+    if len(payload) > max_bytes:
+        return None, _image_upload_error(_image_size_message(image_label, max_bytes), 413)
+
+    if not payload:
+        return None, _image_upload_error("{0}不能为空。".format(image_label))
+
+    detected_type = _detect_image_type(payload)
+    if detected_type is None:
+        return None, _image_upload_error("{0}格式无法识别。".format(image_label))
+
+    if detected_type != expected_type:
+        return None, _image_upload_error("{0}扩展名与实际格式不一致。".format(image_label))
+
+    now = datetime.now()
+    year = now.strftime("%Y")
+    month = now.strftime("%m")
+    filename = "{0}.{1}".format(secrets.token_urlsafe(16), detected_type)
+    relative_path = os.path.join(year, month, filename)
+    target_path = os.path.join(upload_dir, relative_path)
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+    with open(target_path, "wb") as image_file:
+        image_file.write(payload)
+
+    return "/".join((year, month, filename)), None
 
 
 # =========================== 路由 ===========================
@@ -87,49 +123,49 @@ def index():
 def media_cover(filename):
     return send_from_directory(current_app.config["BLOG_COVER_UPLOAD_DIR"], filename)
 
+
+@main.route('/media/articles/<path:filename>')
+def media_article_image(filename):
+    return send_from_directory(current_app.config["BLOG_ARTICLE_IMAGE_UPLOAD_DIR"], filename)
+
 @main.route('/edit/cover', methods=['POST'])
 @login_required
 def upload_cover_image():
     validate_csrf_token()
 
-    cover_file = request.files.get("cover-image")
-    if cover_file is None:
-        return _cover_upload_error("请选择要上传的封面图片。")
-
-    expected_type = _allowed_cover_extension(cover_file.filename)
-    if expected_type is None:
-        return _cover_upload_error("封面图片仅支持 JPG、PNG 或 WebP。")
-
     max_bytes = int(current_app.config.get("BLOG_COVER_MAX_BYTES", 5 * 1024 * 1024))
-    payload = cover_file.stream.read(max_bytes + 1)
+    relative_path, error_response = _store_uploaded_image(
+        request.files.get("cover-image"),
+        current_app.config["BLOG_COVER_UPLOAD_DIR"],
+        max_bytes,
+        "封面图片",
+    )
+    if error_response:
+        return error_response
 
-    if len(payload) > max_bytes:
-        return _cover_upload_error(_cover_size_message(max_bytes), 413)
-
-    if not payload:
-        return _cover_upload_error("封面图片不能为空。")
-
-    detected_type = _detect_cover_image_type(payload)
-    if detected_type is None:
-        return _cover_upload_error("封面图片格式无法识别。")
-
-    if detected_type != expected_type:
-        return _cover_upload_error("封面图片扩展名与实际格式不一致。")
-
-    now = datetime.now()
-    year = now.strftime("%Y")
-    month = now.strftime("%m")
-    filename = "{0}.{1}".format(secrets.token_urlsafe(16), detected_type)
-    upload_dir = current_app.config["BLOG_COVER_UPLOAD_DIR"]
-    target_dir = os.path.join(upload_dir, year, month)
-    os.makedirs(target_dir, exist_ok=True)
-
-    target_path = os.path.join(target_dir, filename)
-    with open(target_path, "wb") as image_file:
-        image_file.write(payload)
-
-    cover_url = "/media/covers/{0}/{1}/{2}".format(year, month, filename)
+    cover_url = "/media/covers/{0}".format(relative_path)
     return jsonify({"status": "success", "cover_url": cover_url})
+
+
+@main.route('/edit/article-image', methods=['POST'])
+@login_required
+def upload_article_image():
+    validate_csrf_token()
+
+    max_bytes = int(
+        current_app.config.get("BLOG_ARTICLE_IMAGE_MAX_BYTES", 10 * 1024 * 1024)
+    )
+    relative_path, error_response = _store_uploaded_image(
+        request.files.get("article-image"),
+        current_app.config["BLOG_ARTICLE_IMAGE_UPLOAD_DIR"],
+        max_bytes,
+        "正文图片",
+    )
+    if error_response:
+        return error_response
+
+    image_url = "/media/articles/{0}".format(relative_path)
+    return jsonify({"status": "success", "image_url": image_url})
 
 @main.route('/edit', methods=['GET', 'POST'])
 @login_required

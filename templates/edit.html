@@ -169,7 +169,12 @@
           <button class="mobile-editor-tool" type="button" data-mobile-editor-action="chinese-indent" aria-label="中文段首缩进" title="中文段首缩进">
             <span aria-hidden="true">缩</span>
           </button>
+          <button class="mobile-editor-tool" id="mobile-image-button" type="button" data-mobile-editor-action="image" aria-label="插入图片" title="插入图片">
+            <i class="fa fa-picture-o" aria-hidden="true"></i>
+          </button>
+          <span id="mobile-image-upload-status" class="mobile-image-upload-status" aria-live="polite" hidden></span>
         </div>
+        <input id="mobile-article-image-file" type="file" name="article-image" accept="image/*" hidden>
         <textarea
           id="mobile-markdown-editor"
           class="mobile-markdown-editor"
@@ -222,6 +227,9 @@
   const editorStage = document.querySelector('.editor-stage');
   const mobileMarkdownEditor = document.getElementById('mobile-markdown-editor');
   const mobileEditorTools = Array.from(document.querySelectorAll('[data-mobile-editor-action]'));
+  const mobileImageButton = document.getElementById('mobile-image-button');
+  const mobileImageFileInput = document.getElementById('mobile-article-image-file');
+  const mobileImageUploadStatus = document.getElementById('mobile-image-upload-status');
   const defaultSaveAction = "{{ 'update' if blog else 'insert' }}";
   const CHINESE_PARAGRAPH_INDENT = '\u3000\u3000';
   const HIDDEN_EDITOR_TOOLBAR_ICONS = new Set([
@@ -234,6 +242,9 @@
   ]);
   let isSubmitting = false;
   let isCoverUploading = false;
+  let isArticleImageUploading = false;
+  let articleImageSelectionStart = 0;
+  let articleImageStatusTimer = null;
   let editorChangeBound = false;
   let mobileEditorBound = false;
 
@@ -309,7 +320,7 @@
   }
 
   function updateSaveButtonState() {
-    saveButton.disabled = isSubmitting || isCoverUploading;
+    saveButton.disabled = isSubmitting || isCoverUploading || isArticleImageUploading;
   }
 
   function markDirty() {
@@ -525,6 +536,113 @@
     }
   }
 
+  function setArticleImageStatus(text, state, autoHide = false) {
+    if (!mobileImageUploadStatus) {
+      return;
+    }
+
+    window.clearTimeout(articleImageStatusTimer);
+    mobileImageUploadStatus.textContent = text;
+    mobileImageUploadStatus.className = `mobile-image-upload-status is-${state}`;
+    mobileImageUploadStatus.hidden = !text;
+
+    if (autoHide) {
+      articleImageStatusTimer = window.setTimeout(function () {
+        mobileImageUploadStatus.hidden = true;
+      }, 2400);
+    }
+  }
+
+  function setArticleImageUploading(uploading) {
+    isArticleImageUploading = uploading;
+
+    if (mobileImageButton) {
+      mobileImageButton.disabled = uploading;
+      mobileImageButton.classList.toggle('is-uploading', uploading);
+      const icon = mobileImageButton.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-picture-o', !uploading);
+        icon.classList.toggle('fa-spinner', uploading);
+        icon.classList.toggle('fa-spin', uploading);
+      }
+    }
+
+    if (mobileImageFileInput) {
+      mobileImageFileInput.disabled = uploading;
+    }
+
+    updateSaveButtonState();
+  }
+
+  function articleImageAltText(filename) {
+    const name = (filename || '')
+      .replace(/\.[^.]+$/, '')
+      .replace(/[\[\]\r\n]/g, ' ')
+      .trim();
+    return name || '图片';
+  }
+
+  function insertArticleImageMarkdown(imageUrl, filename) {
+    if (!mobileMarkdownEditor) {
+      return;
+    }
+
+    const value = mobileMarkdownEditor.value;
+    const start = Math.max(0, Math.min(articleImageSelectionStart, value.length));
+    const before = value.slice(0, start);
+    const after = value.slice(start);
+    const prefix = before && !before.endsWith('\n\n')
+      ? (before.endsWith('\n') ? '\n' : '\n\n')
+      : '';
+    const suffix = after && !after.startsWith('\n\n')
+      ? (after.startsWith('\n') ? '\n' : '\n\n')
+      : '';
+    const markdown = `![${articleImageAltText(filename)}](${imageUrl})`;
+    const replacement = prefix + markdown + suffix;
+
+    mobileMarkdownEditor.value = before + replacement + after;
+    const caret = start + replacement.length;
+    finishMobileNativeEdit(caret, caret);
+  }
+
+  async function uploadArticleImage(file) {
+    if (!file || isArticleImageUploading) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('article-image', file);
+    setArticleImageUploading(true);
+    setArticleImageStatus('图片上传中...', 'uploading');
+
+    try {
+      const response = await fetch("{{ url_for('main.upload_article_image') }}", {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': window.BLOG_CSRF_TOKEN || '',
+        },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || data.status !== 'success' || !data.image_url) {
+        throw new Error(data.message || '图片上传失败。');
+      }
+
+      insertArticleImageMarkdown(data.image_url, file.name);
+      setArticleImageStatus('图片已插入', 'saved', true);
+    } catch (error) {
+      setArticleImageStatus(error.message || '图片上传失败。', 'error');
+      mobileMarkdownEditor.focus();
+      mobileMarkdownEditor.setSelectionRange(articleImageSelectionStart, articleImageSelectionStart);
+    } finally {
+      if (mobileImageFileInput) {
+        mobileImageFileInput.value = '';
+      }
+      setArticleImageUploading(false);
+    }
+  }
+
   function applyMobileInlineMarkdown(prefix, suffix, placeholder) {
     if (!mobileMarkdownEditor) {
       return;
@@ -617,6 +735,14 @@
       return;
     }
 
+    if (action === 'image') {
+      articleImageSelectionStart = mobileMarkdownEditor.selectionStart || 0;
+      if (mobileImageFileInput && !isArticleImageUploading) {
+        mobileImageFileInput.click();
+      }
+      return;
+    }
+
     applyMobileLinePrefix(action);
   }
 
@@ -656,6 +782,15 @@
         handleMobileEditorToolbarAction(button.dataset.mobileEditorAction);
       });
     });
+
+    if (mobileImageFileInput) {
+      mobileImageFileInput.addEventListener('change', function (event) {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+          uploadArticleImage(files[0]);
+        }
+      });
+    }
   }
 
   function missingChineseIndentPrefix(lineText) {
@@ -807,6 +942,14 @@
       modal.setTitle('封面上传中');
       modal.clearButtons();
       modal.show('封面图片仍在上传，请稍后保存。');
+      modal.addButton('关闭', () => modal.close(), 'secondary');
+      return;
+    }
+
+    if (isArticleImageUploading) {
+      modal.setTitle('图片上传中');
+      modal.clearButtons();
+      modal.show('正文图片仍在上传，请稍后保存。');
       modal.addButton('关闭', () => modal.close(), 'secondary');
       return;
     }

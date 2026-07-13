@@ -29,6 +29,8 @@ def create_app():
     app.config["BLOG_CONTENT_HISTORY_DIR"] = _get_content_history_dir(app)
     app.config["BLOG_COVER_UPLOAD_DIR"] = _get_cover_upload_dir(app)
     app.config["BLOG_COVER_MAX_BYTES"] = _get_cover_max_bytes(app)
+    app.config["BLOG_ARTICLE_IMAGE_UPLOAD_DIR"] = _get_article_image_upload_dir(app)
+    app.config["BLOG_ARTICLE_IMAGE_MAX_BYTES"] = _get_article_image_max_bytes(app)
     app.config["BLOG_TRUST_PROXY_HEADERS"] = _get_bool_config_value(
         app,
         "BLOG_TRUST_PROXY_HEADERS",
@@ -120,6 +122,19 @@ def _get_cover_upload_dir(app):
 
 def _get_cover_max_bytes(app):
     return int(_get_config_value(app, "BLOG_COVER_MAX_BYTES", 5 * 1024 * 1024))
+
+
+def _get_article_image_upload_dir(app):
+    return _get_config_value(app, "BLOG_ARTICLE_IMAGE_UPLOAD_DIR") or os.path.join(
+        project_root,
+        "instance",
+        "uploads",
+        "articles",
+    )
+
+
+def _get_article_image_max_bytes(app):
+    return int(_get_config_value(app, "BLOG_ARTICLE_IMAGE_MAX_BYTES", 10 * 1024 * 1024))
 
 
 def _register_history_commands(app):
