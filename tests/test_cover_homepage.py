@@ -147,7 +147,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertIn('name="cover-image"', html)
         self.assertIn('class="cover-dropzone"', html)
         self.assertIn('id="cover-plus"', html)
-        self.assertIn('>+</span>', html)
+        self.assertNotIn('>+</span>', html)
         self.assertIn("dragenter", html)
         self.assertIn("dragover", html)
         self.assertIn("drop", html)
@@ -280,6 +280,41 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertIn("z-index: 25;", writing_topbar.group("body"))
         self.assertIn(".cover-plus[hidden]", css)
         self.assertIn(".cover-remove-button[hidden]", css)
+
+    def test_homepage_cover_images_preserve_the_full_image(self):
+        css = (Path(__file__).resolve().parents[1] / "static" / "css" / "style.css").read_text(
+            encoding="utf-8"
+        )
+
+        cover_images = re.search(
+            r"\.feature-cover img,\s*\.entry-cover img\s*\{(?P<body>[^}]*)\}",
+            css,
+            re.S,
+        )
+
+        self.assertIsNotNone(cover_images)
+        self.assertIn("object-fit: contain;", cover_images.group("body"))
+        self.assertNotIn("object-fit: cover;", cover_images.group("body"))
+        self.assertNotIn(".feature-cover:hover img", css)
+
+    def test_cover_upload_plus_uses_centered_strokes(self):
+        css = (Path(__file__).resolve().parents[1] / "static" / "css" / "style.css").read_text(
+            encoding="utf-8"
+        )
+
+        cover_plus = re.search(r"\.cover-plus\s*\{(?P<body>[^}]*)\}", css, re.S)
+        cover_plus_strokes = re.search(
+            r"\.cover-plus::before,\s*\.cover-plus::after\s*\{(?P<body>[^}]*)\}",
+            css,
+            re.S,
+        )
+
+        self.assertIsNotNone(cover_plus)
+        self.assertIsNotNone(cover_plus_strokes)
+        self.assertIn("position: relative;", cover_plus.group("body"))
+        self.assertIn("top: 50%;", cover_plus_strokes.group("body"))
+        self.assertIn("left: 50%;", cover_plus_strokes.group("body"))
+        self.assertIn("transform: translate(-50%, -50%);", cover_plus_strokes.group("body"))
 
 
 if __name__ == "__main__":

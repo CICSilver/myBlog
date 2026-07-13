@@ -1136,13 +1136,7 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform 0.24s ease;
-}
-
-.feature-cover:hover img,
-.entry-cover:hover img {
-    transform: scale(1.035);
+    object-fit: contain;
 }
 
 .feature-cover::after {
@@ -1411,9 +1405,12 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 
 .reading-cover img {
     display: block;
-    width: 100%;
-    max-height: 520px;
-    object-fit: cover;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: min(75vh, 720px);
+    margin: 0 auto;
+    object-fit: contain;
 }
 
 .back-link {
@@ -1731,15 +1728,33 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .cover-plus {
-    display: grid;
-    place-items: center;
+    position: relative;
+    display: block;
     width: 56px;
     height: 56px;
     border: 1px solid var(--cover-upload-line);
     border-radius: 50%;
-    font-size: 2.4rem;
-    line-height: 1;
-    font-weight: 300;
+}
+
+.cover-plus::before,
+.cover-plus::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 999px;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+}
+
+.cover-plus::before {
+    width: 22px;
+    height: 2px;
+}
+
+.cover-plus::after {
+    width: 2px;
+    height: 22px;
 }
 
 .cover-preview-image {

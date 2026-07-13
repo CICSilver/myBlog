@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -92,6 +93,16 @@ class ArticleImageRenderingTest(unittest.TestCase):
         self.assertIn(".article-image-viewer.is-visible", self.stylesheet)
         self.assertIn(".article-image-viewer-backdrop", self.stylesheet)
         self.assertIn(".article-image-viewer-close", self.stylesheet)
+
+        reading_cover_image = re.search(
+            r"\.reading-cover img\s*\{(?P<body>[^}]*)\}",
+            self.stylesheet,
+            re.S,
+        )
+        self.assertIsNotNone(reading_cover_image)
+        self.assertIn("object-fit: contain;", reading_cover_image.group("body"))
+        self.assertIn("height: auto;", reading_cover_image.group("body"))
+        self.assertNotIn("object-fit: cover;", reading_cover_image.group("body"))
 
 
 if __name__ == "__main__":
