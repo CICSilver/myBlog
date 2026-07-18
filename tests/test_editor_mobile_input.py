@@ -10,6 +10,11 @@ class EditorMobileInputTest(unittest.TestCase):
         self.source = self.template.read_text(encoding="utf-8")
         self.css_source = self.stylesheet.read_text(encoding="utf-8")
 
+    def function_source(self, function_name):
+        start = self.source.index(f"  function {function_name}(")
+        next_function = self.source.find("\n  function ", start + 1)
+        return self.source[start:] if next_function == -1 else self.source[start:next_function]
+
     def test_mobile_editor_forces_textarea_input_before_initialization(self):
         override_index = self.source.index("CodeMirror.defaults.inputStyle = 'textarea'")
         editor_index = self.source.index("editor = editormd")
@@ -53,6 +58,16 @@ class EditorMobileInputTest(unittest.TestCase):
         self.assertIn("hiddenTextarea.value = mobileMarkdownEditor.value", self.source)
         self.assertIn("editor.cm.setValue(mobileMarkdownEditor.value)", self.source)
         self.assertIn("wasNativeEditor && !useNativeEditor", self.source)
+
+    def test_mobile_input_survives_keyboard_resize(self):
+        sync_source = self.function_source("syncCodeMirrorFromMobileNativeEditor")
+        initialize_source = self.function_source("initializeMobileNativeEditor")
+
+        self.assertIn("const markdown = mobileMarkdownEditor.value", sync_source)
+        self.assertIn("hiddenTextarea.value = markdown", sync_source)
+        self.assertIn("editorInstance.cm.getValue() !== markdown", sync_source)
+        self.assertIn("editorInstance.cm.setValue(markdown)", sync_source)
+        self.assertIn("if (useNativeEditor && !wasNativeEditor)", initialize_source)
 
     def test_mobile_editor_shell_has_expected_toolbar_actions(self):
         expected_actions = [

@@ -510,14 +510,25 @@
     }
   }
 
-  function syncCodeMirrorFromMobileNativeEditor() {
+  function syncCodeMirrorFromMobileNativeEditor(editorInstance = editor) {
     if (!mobileMarkdownEditor) {
       return;
     }
 
+    const markdown = mobileMarkdownEditor.value;
     const hiddenTextarea = document.getElementById('markdown-content');
     if (hiddenTextarea) {
-      hiddenTextarea.value = mobileMarkdownEditor.value;
+      hiddenTextarea.value = markdown;
+    }
+
+    if (
+      editorInstance &&
+      editorInstance.cm &&
+      typeof editorInstance.cm.getValue === 'function' &&
+      typeof editorInstance.cm.setValue === 'function' &&
+      editorInstance.cm.getValue() !== markdown
+    ) {
+      editorInstance.cm.setValue(markdown);
     }
   }
 
@@ -760,7 +771,7 @@
 
     editorStage.classList.toggle('is-mobile-native-editor', useNativeEditor);
 
-    if (useNativeEditor) {
+    if (useNativeEditor && !wasNativeEditor) {
       syncMobileNativeEditorFromCodeMirror(editorInstance);
     }
   }
