@@ -128,7 +128,8 @@ class DiaryFrontendTest(unittest.TestCase):
         diary_styles = self.stylesheet.split("/* Diary */", 1)[1]
 
         self.assertIn(".diary-composer {", self.stylesheet)
-        self.assertIn("grid-template-columns: 186px minmax(0, 1fr)", self.stylesheet)
+        self.assertIn("grid-template-columns: minmax(0, 1fr)", self.stylesheet)
+        self.assertIn("min-height: 200px", self.stylesheet)
         self.assertIn(".diary-entry.has-image", self.stylesheet)
         self.assertIn("grid-template-columns: 160px minmax(0, 1fr) 176px", self.stylesheet)
         self.assertIn("@media (max-width: 767px)", self.stylesheet)
@@ -137,9 +138,10 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("--diary-line-step: 2rem", self.stylesheet)
         self.assertIn("line-height: var(--diary-line-step)", self.stylesheet)
         self.assertIn("background-size: 100% var(--diary-line-step)", self.stylesheet)
-        self.assertIn("min-height: calc(var(--diary-line-step) * 12)", self.stylesheet)
+        self.assertIn("min-height: calc(var(--diary-line-step) * 7)", self.stylesheet)
         self.assertIn("background-attachment: local", self.stylesheet)
         self.assertIn("font-size: 16px", self.stylesheet)
+        self.assertIn("font-size: 2.6rem", diary_styles)
         self.assertIn("font-size: 5.6rem", diary_styles)
         self.assertIn("font-size: 3.2rem", diary_styles)
         self.assertNotIn("font-size: clamp(", diary_styles)
@@ -195,6 +197,31 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn('{% from "_diary_icons.html" import diary_icon %}', self.diary_template)
         self.assertIn('{% from "_diary_icons.html" import diary_icon %}', self.detail_template)
         self.assertIn('name == "clock"', self.icons_template)
+
+    def test_visual_layout_keeps_desktop_compact_and_restores_mobile_writing_flow(self):
+        mobile_styles = self.stylesheet.split("@media (max-width: 767px)", 1)[1]
+
+        self.assertIn("Daily Notes", self.diary_template)
+        self.assertIn("写下此刻", self.diary_template)
+        self.assertIn("{{ today_date }} · {{ today_weekday }}", self.diary_template)
+        self.assertIn(".diary-week-strip {\n    display: none", self.stylesheet)
+        self.assertIn(".diary-week-strip {\n        display: grid", mobile_styles)
+        self.assertIn(".diary-date-display {\n        display: none", mobile_styles)
+        self.assertIn(".diary-month-form > label {\n        display: none", mobile_styles)
+        self.assertIn(".diary-composer-date {\n    display: none", self.stylesheet)
+        self.assertIn(".diary-composer-date {\n        display: flex", mobile_styles)
+        self.assertIn("order: 1", mobile_styles)
+        self.assertIn("order: 2", mobile_styles)
+        self.assertIn("order: 4", mobile_styles)
+        self.assertIn("border: 0", mobile_styles)
+        self.assertIn("background: transparent", mobile_styles)
+
+    def test_hidden_image_remove_control_is_not_rendered_visually(self):
+        self.assertIn(
+            ".diary-image-remove[hidden] {\n    display: none",
+            self.stylesheet,
+        )
+        self.assertIn("{% if not existing_image %}hidden{% endif %}", self.diary_template)
 
 
 if __name__ == "__main__":

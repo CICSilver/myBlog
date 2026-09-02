@@ -2975,7 +2975,15 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     gap: 5px;
 }
 
-.diary-date-display h2,
+.diary-date-display h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
 .diary-detail-heading h1 {
     margin: 0;
     font-family: var(--font-display);
@@ -3070,7 +3078,7 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .diary-week-strip {
-    display: grid;
+    display: none;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -3129,21 +3137,17 @@ a.diary-week-day:focus-visible {
 
 .diary-composer {
     display: grid;
-    grid-template-columns: 186px minmax(0, 1fr);
-    gap: 28px;
-    padding: clamp(22px, 4vw, 34px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 18px 22px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
-    box-shadow: var(--shadow);
+    box-shadow: none;
 }
 
 .diary-composer-date {
-    display: grid;
-    align-content: start;
-    gap: 6px;
-    padding-top: 6px;
-    border-top: 2px solid var(--accent);
+    display: none;
 }
 
 .diary-composer-date p {
@@ -3197,6 +3201,10 @@ a.diary-week-day:focus-visible {
     color: var(--danger);
 }
 
+.diary-image-remove[hidden] {
+    display: none;
+}
+
 .diary-image-preview-panel {
     overflow: hidden;
     max-height: 280px;
@@ -3219,7 +3227,7 @@ a.diary-week-day:focus-visible {
 #diary-content {
     display: block;
     width: 100%;
-    min-height: 300px;
+    min-height: 200px;
     padding: 18px;
     resize: vertical;
     border: 1px solid var(--line-strong);
@@ -3672,7 +3680,12 @@ a.diary-week-day:focus-visible {
         gap: 16px;
     }
 
-    .diary-overview,
+    .diary-overview {
+        display: block;
+        padding: 0;
+        border-bottom: 0;
+    }
+
     .diary-detail-lead {
         align-items: stretch;
         flex-direction: column;
@@ -3680,13 +3693,25 @@ a.diary-week-day:focus-visible {
         padding-bottom: 16px;
     }
 
-    .diary-date-display h2,
+    .diary-date-display {
+        display: none;
+    }
+
     .diary-detail-heading h1 {
         font-size: 3.2rem;
     }
 
     .diary-month-form {
         grid-template-columns: minmax(0, 1fr) 42px;
+        width: 100%;
+    }
+
+    .diary-month-form > label {
+        display: none;
+    }
+
+    .diary-week-strip {
+        display: grid;
     }
 
     .diary-week-day {
@@ -3703,16 +3728,21 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-composer {
-        grid-template-columns: 1fr;
-        gap: 16px;
-        padding: 16px;
+        display: block;
+        padding: 10px 0 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .diary-composer-date {
-        grid-template-columns: auto 1fr auto;
+        display: flex;
         align-items: baseline;
         gap: 8px;
-        padding-top: 9px;
+        margin-bottom: 10px;
+        padding: 0;
+        border: 0;
     }
 
     .diary-composer-date strong {
@@ -3720,13 +3750,27 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-editor-toolbar {
-        padding-bottom: 10px;
+        order: 2;
+        padding: 10px 0 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+    }
+
+    .diary-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .diary-image-preview-panel {
+        order: 3;
     }
 
     #diary-content {
         --diary-line-step: 2rem;
-        min-height: 24rem;
-        min-height: calc(var(--diary-line-step) * 12);
+        order: 1;
+        min-height: 14rem;
+        min-height: calc(var(--diary-line-step) * 7);
         padding: 8px 14px;
         border-radius: 6px;
         background-attachment: local;
@@ -3739,6 +3783,7 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-form-footer {
+        order: 4;
         align-items: stretch;
         flex-direction: column;
     }

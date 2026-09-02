@@ -17,17 +17,21 @@
   <main class="diary-shell" aria-labelledby="diary-page-title">
     <section class="diary-overview">
       <div class="diary-date-display">
-        <p class="section-label">Private Diary</p>
+        {% if is_current_month %}
+          <p class="section-label">Daily Notes</p>
+        {% else %}
+          <p class="section-label">Month Archive</p>
+        {% endif %}
         <h2 id="diary-page-title">
           {% if is_current_month %}
-            <time datetime="{{ today_date }}">{{ today_date }}</time>
+            写下此刻
           {% else %}
             {{ archive_year }}.{{ archive_month }}
           {% endif %}
         </h2>
         <p class="diary-date-note">
           {% if is_current_month %}
-            {{ today_weekday }}
+            {{ today_date }} · {{ today_weekday }}
           {% else %}
             {{ archive_count }} 篇记录
           {% endif %}
@@ -74,7 +78,7 @@
       {% set needs_location = not today_diary or not today_diary.location or not today_diary.location.latitude or not today_diary.location.longitude %}
       <section class="diary-composer" id="diary-editor" aria-labelledby="diary-editor-title">
         <div class="diary-composer-date">
-          <p id="diary-editor-title">今天</p>
+          <p id="diary-editor-title">写下此刻</p>
           <strong>{{ today_date }}</strong>
           <span>{{ today_weekday }}</span>
         </div>
