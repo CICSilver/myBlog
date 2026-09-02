@@ -2,3 +2,4 @@ flask
 py-ip2region==3.0.4
 pypinyin
 tinydb
+tzdata
