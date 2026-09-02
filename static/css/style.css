@@ -773,9 +773,8 @@ html[data-theme="light"] .pull-light-cord::after {
     box-shadow: var(--focus-ring);
 }
 
-.admin-bookmark-trigger.is-inert {
-    cursor: default;
-    pointer-events: none;
+.admin-bookmark-trigger.is-login {
+    text-decoration: none;
 }
 
 .bookmark-icon {
@@ -796,12 +795,14 @@ html[data-theme="light"] .bookmark-icon {
 }
 
 .has-menu .admin-bookmark-trigger:hover .bookmark-icon,
+.admin-bookmark-trigger.is-login:hover .bookmark-icon,
 .has-menu .admin-bookmark-trigger[aria-expanded="true"] .bookmark-icon {
     filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.34));
     transform: translateY(2px);
 }
 
 html[data-theme="light"] .has-menu .admin-bookmark-trigger:hover .bookmark-icon,
+html[data-theme="light"] .admin-bookmark-trigger.is-login:hover .bookmark-icon,
 html[data-theme="light"] .has-menu .admin-bookmark-trigger[aria-expanded="true"] .bookmark-icon {
     filter: drop-shadow(0 12px 14px rgba(126, 77, 38, 0.28));
 }

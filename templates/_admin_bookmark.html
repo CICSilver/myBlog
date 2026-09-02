@@ -27,8 +27,13 @@
       <button type="button" role="menuitem" onclick="logout()">退出</button>
     </div>
   {% else %}
-    <span class="admin-bookmark-trigger is-inert" aria-hidden="true">
+    <a
+      class="admin-bookmark-trigger is-login"
+      href="{{ url_for('admin_login') }}"
+      title="管理员登录"
+    >
       <span class="bookmark-icon" aria-hidden="true"></span>
-    </span>
+      <span class="visually-hidden">管理员登录</span>
+    </a>
   {% endif %}
 </div>
