@@ -37,10 +37,43 @@
     let previewObjectUrl = "";
     let isComposing = false;
 
+    const SAVE_STATUS_KEY = "diarySaveStatus";
+
     function setStatus(message, tone) {
         status.textContent = message;
         status.dataset.tone = tone || "";
     }
+
+    function rememberStatus(message, tone) {
+        try {
+            window.sessionStorage.setItem(SAVE_STATUS_KEY, JSON.stringify({ message: message, tone: tone }));
+        } catch (error) {
+            // sessionStorage 不可用时忽略，刷新后只是看不到提示。
+        }
+    }
+
+    function restoreStatus() {
+        let saved = null;
+        try {
+            saved = window.sessionStorage.getItem(SAVE_STATUS_KEY);
+            window.sessionStorage.removeItem(SAVE_STATUS_KEY);
+        } catch (error) {
+            return;
+        }
+
+        if (!saved) {
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(saved);
+            setStatus(parsed.message || "", parsed.tone || "");
+        } catch (error) {
+            // 忽略损坏的记录。
+        }
+    }
+
+    restoreStatus();
 
     function describeGeolocationError(error) {
         const reasons = {
@@ -182,14 +215,10 @@
                         throw new Error(message);
                     }
 
-                    setStatus(message, warnings.length || locationNote ? "warning" : "success");
-
-                    if (result.data.detail_url) {
-                        const redirectDelay = locationNote ? 4000 : 0;
-                        window.setTimeout(function () {
-                            window.location.assign(result.data.detail_url);
-                        }, redirectDelay);
-                    }
+                    const tone = warnings.length || locationNote ? "warning" : "success";
+                    setStatus(message, tone);
+                    rememberStatus(message, tone);
+                    window.location.reload();
                 })
                 .catch(function (error) {
                     submitButton.disabled = false;

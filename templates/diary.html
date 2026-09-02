@@ -151,6 +151,7 @@
       {% for diary in diaries %}
         {% set detail_url = url_for('main.diary_detail', year=diary.entry_date[0:4], month=diary.entry_date[5:7], day=diary.entry_date[8:10]) %}
         <article class="diary-entry{% if diary.image_url %} has-image{% endif %}">
+          <a class="diary-entry-link" href="{{ detail_url }}" aria-label="查看 {{ diary.entry_date }} 的日记"></a>
           <time class="diary-entry-date" datetime="{{ diary.entry_date }}">
             <strong>{{ diary.entry_date[8:10] }}</strong>
             <span class="diary-entry-weekday">{{ diary.weekday_label }}</span>

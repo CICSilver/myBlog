@@ -3335,11 +3335,34 @@ a.diary-week-day:focus-visible {
 }
 
 .diary-entry {
+    position: relative;
     display: grid;
     grid-template-columns: 160px minmax(0, 1fr);
     gap: 22px;
     padding: 26px 0;
     border-bottom: 1px solid var(--line);
+}
+
+.diary-entry-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 12px;
+}
+
+.diary-entry-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.diary-entry:has(.diary-entry-link:hover) .diary-entry-date strong {
+    color: var(--accent-strong);
+}
+
+.diary-entry .diary-read-more,
+.diary-entry .diary-entry-image {
+    position: relative;
+    z-index: 2;
 }
 
 .diary-entry.has-image {

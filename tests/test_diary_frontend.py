@@ -107,6 +107,14 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn('"X-CSRF-Token": window.BLOG_CSRF_TOKEN || ""', self.javascript)
         self.assertNotIn("apiKey", self.javascript)
 
+    def test_save_stays_on_diary_page_and_entries_link_to_detail(self):
+        self.assertIn("window.location.reload();", self.javascript)
+        self.assertNotIn("window.location.assign(result.data.detail_url)", self.javascript)
+        self.assertIn("rememberStatus(message, tone)", self.javascript)
+        self.assertIn("restoreStatus();", self.javascript)
+        self.assertIn('<a class="diary-entry-link" href="{{ detail_url }}"', self.diary_template)
+        self.assertIn(".diary-entry-link {", self.stylesheet)
+
     def test_complete_today_location_skips_a_second_geolocation_request(self):
         self.assertIn("{% set needs_location =", self.diary_template)
         self.assertIn("today_diary.location.latitude", self.diary_template)
