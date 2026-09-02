@@ -88,6 +88,38 @@
         return "定位失败原因：" + reason + "（code " + code + (detail ? "，" + detail : "") + "）";
     }
 
+    const PARAGRAPH_INDENT = "　　";
+
+    function ensureLeadingIndent(value) {
+        if (!value) {
+            return value;
+        }
+
+        const firstLineEnd = value.indexOf("\n");
+        const firstLine = firstLineEnd === -1 ? value : value.slice(0, firstLineEnd);
+
+        if (firstLine.trim() === "" || firstLine.startsWith(PARAGRAPH_INDENT)) {
+            return value;
+        }
+
+        return PARAGRAPH_INDENT + value.replace(/^[ \u3000]+/, "");
+    }
+
+    textarea.addEventListener("focus", function () {
+        if (textarea.value !== "") {
+            return;
+        }
+
+        textarea.value = PARAGRAPH_INDENT;
+        textarea.setSelectionRange(PARAGRAPH_INDENT.length, PARAGRAPH_INDENT.length);
+    });
+
+    textarea.addEventListener("blur", function () {
+        if (textarea.value.trim() === "") {
+            textarea.value = "";
+        }
+    });
+
     function insertChineseParagraphBreak() {
         const selectionStart = textarea.selectionStart;
         const selectionEnd = textarea.selectionEnd;
@@ -184,6 +216,8 @@
         if (submitButton.disabled) {
             return;
         }
+
+        textarea.value = ensureLeadingIndent(textarea.value);
 
         submitButton.disabled = true;
         setStatus("正在保存日记。", "pending");

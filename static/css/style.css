@@ -2894,6 +2894,99 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     .modal {
         width: calc(100vw - 20px);
     }
+
+    .detail-page .home-cover-note {
+        display: none;
+    }
+
+    .detail-page .home-cover-main {
+        grid-template-columns: minmax(0, 1fr) 76px;
+        grid-template-areas: "brand controls";
+        min-height: auto;
+        gap: 10px;
+    }
+
+    .detail-page .reading-shell {
+        gap: 10px;
+    }
+
+    .detail-page .reading-lead,
+    .detail-page .reading-article {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+    }
+
+    .detail-page .reading-lead {
+        gap: 10px;
+        padding: 18px 10px 10px;
+    }
+
+    .detail-page .reading-title {
+        font-size: 2.1rem;
+        line-height: 1.15;
+    }
+
+    .detail-page .reading-meta {
+        gap: 6px 10px;
+        font-size: 0.84rem;
+    }
+
+    .detail-page .back-link {
+        margin-top: 2px;
+        font-size: 0.95rem;
+    }
+
+    .detail-page .reading-cover {
+        padding: 0 8px 4px;
+    }
+
+    .detail-page .reading-cover-button {
+        border-radius: 8px;
+        box-shadow: none;
+    }
+
+    .detail-page .reading-article {
+        padding: 18px 8px 32px;
+        font-size: 1rem;
+        line-height: 1.9;
+    }
+
+    .detail-page .reading-article.markdown-body p,
+    .detail-page .reading-article.markdown-body li,
+    .detail-page .reading-article.markdown-body blockquote {
+        line-height: 1.9;
+    }
+
+    .detail-page .reading-article.markdown-body blockquote {
+        margin: 1rem 0;
+        padding-left: 0.9rem;
+    }
+
+    .detail-page .reading-article.markdown-body ul,
+    .detail-page .reading-article.markdown-body ol {
+        padding-left: 1.35rem;
+    }
+
+    .detail-page .reading-article.markdown-body pre {
+        overflow-x: auto;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .detail-page .reading-article.markdown-body table {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .detail-page .reading-article.markdown-body img.article-image {
+        max-width: 100%;
+        margin: 1.2rem auto;
+        border-radius: 8px;
+        box-shadow: none;
+    }
 }
 
 @media (max-width: 360px) {
@@ -3183,8 +3276,7 @@ a.diary-week-day:focus-visible {
 }
 
 .diary-editor-toolbar {
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
+    min-height: 36px;
 }
 
 .diary-image-name {
@@ -3773,26 +3865,14 @@ a.diary-week-day:focus-visible {
         font-size: 1.56rem;
     }
 
-    .diary-editor-toolbar {
-        order: 2;
-        padding: 10px 0 0;
-        border-top: 1px solid var(--line);
-        border-bottom: 0;
-    }
-
     .diary-form {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
 
-    .diary-image-preview-panel {
-        order: 3;
-    }
-
     #diary-content {
         --diary-line-step: 2rem;
-        order: 1;
         min-height: 14rem;
         min-height: calc(var(--diary-line-step) * 7);
         padding: 8px 14px;
@@ -3807,7 +3887,6 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-form-footer {
-        order: 4;
         align-items: stretch;
         flex-direction: column;
     }

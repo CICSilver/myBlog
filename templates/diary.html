@@ -96,6 +96,10 @@
           <input id="diary-longitude" type="hidden" name="longitude" value="">
           <input id="diary-accuracy" type="hidden" name="accuracy" value="">
 
+
+          <label class="visually-hidden" for="diary-content">日记内容</label>
+          <textarea id="diary-content" name="content" rows="10" placeholder="写下今天。">{{ today_diary.content if today_diary else '' }}</textarea>
+
           <div class="diary-editor-toolbar" aria-label="图片工具">
             <button id="diary-image-select" class="diary-icon-button" type="button" aria-label="添加或替换图片" title="添加或替换图片">
               {{ diary_icon("image") }}
@@ -123,9 +127,6 @@
               alt="日记图片预览"
             >
           </div>
-
-          <label class="visually-hidden" for="diary-content">日记内容</label>
-          <textarea id="diary-content" name="content" rows="10" placeholder="写下今天。">{{ today_diary.content if today_diary else '' }}</textarea>
 
           <div class="diary-form-footer">
             <p id="diary-status" class="diary-status" role="status" aria-live="polite"></p>
