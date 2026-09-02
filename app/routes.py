@@ -1,5 +1,6 @@
 from flask import (
     Blueprint,
+    abort,
     current_app,
     jsonify,
     redirect,
@@ -8,8 +9,9 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from app.database import DatabaseHelper, Blog, normalize_cover_url
+from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
+from app.diary_metadata import fetch_diary_metadata
 from app.view_filter import (
     EFFECTIVE_VIEW_SECONDS,
     READING_HEARTBEAT_SECONDS,
@@ -19,10 +21,13 @@ from app.view_filter import (
     is_verified_crawler_ip,
     normalize_reading_seconds,
 )
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
+import math
 import os
+import re
 import secrets
+from zoneinfo import ZoneInfo
 
 main = Blueprint('main', __name__)
 dbHelper = DatabaseHelper()
@@ -34,6 +39,7 @@ SUPPORTED_IMAGE_EXTENSIONS = {
     ".png": "png",
     ".webp": "webp",
 }
+DIARY_WEEKDAY_LABELS = ("周一", "周二", "周三", "周四", "周五", "周六", "周日")
 # ========================= 辅助函数 =========================
 def get_site_context():
     return {
@@ -114,6 +120,37 @@ def _store_uploaded_image(uploaded_file, upload_dir, max_bytes, image_label):
     return "/".join((year, month, filename)), None
 
 
+def _parse_diary_coordinates(latitude, longitude, accuracy):
+    latitude = "" if latitude is None else str(latitude).strip()
+    longitude = "" if longitude is None else str(longitude).strip()
+    accuracy = "" if accuracy is None else str(accuracy).strip()
+
+    if not latitude and not longitude and not accuracy:
+        return None
+
+    if not latitude or not longitude:
+        raise ValueError("定位坐标不完整。")
+
+    try:
+        latitude_value = float(latitude)
+        longitude_value = float(longitude)
+        accuracy_value = float(accuracy) if accuracy else None
+    except ValueError:
+        raise ValueError("定位坐标格式无效。")
+
+    numeric_values = [latitude_value, longitude_value]
+    if accuracy_value is not None:
+        numeric_values.append(accuracy_value)
+    if not all(math.isfinite(value) for value in numeric_values):
+        raise ValueError("定位坐标必须是有限数字。")
+    if not -90 <= latitude_value <= 90 or not -180 <= longitude_value <= 180:
+        raise ValueError("定位坐标超出有效范围。")
+    if accuracy_value is not None and accuracy_value < 0:
+        raise ValueError("定位精度不能小于零。")
+
+    return latitude_value, longitude_value, accuracy_value
+
+
 # =========================== 路由 ===========================
 @main.route('/')
 def index():
@@ -127,6 +164,268 @@ def media_cover(filename):
 @main.route('/media/articles/<path:filename>')
 def media_article_image(filename):
     return send_from_directory(current_app.config["BLOG_ARTICLE_IMAGE_UPLOAD_DIR"], filename)
+
+
+@main.route('/media/diaries/<path:filename>')
+@login_required
+def media_diary_image(filename):
+    return send_from_directory(current_app.config["BLOG_DIARY_IMAGE_UPLOAD_DIR"], filename)
+
+
+@main.route('/diary', methods=['GET'])
+@login_required
+def diary():
+    timezone = ZoneInfo(current_app.config["BLOG_TIMEZONE"])
+    now = datetime.now(timezone)
+    today = now.date()
+    today_date = today.isoformat()
+
+    month_value = request.args.get("month", today.strftime("%Y-%m"))
+    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month_value):
+        abort(400)
+
+    archive_year = int(month_value[:4])
+    archive_month = int(month_value[5:])
+    try:
+        datetime(archive_year, archive_month, 1)
+    except ValueError:
+        abort(400)
+    if (archive_year, archive_month) > (today.year, today.month):
+        abort(400)
+
+    diaries = dbHelper.get_diaries_by_month(str(archive_year), archive_month)
+    for diary_entry in diaries:
+        diary_entry.weekday_label = DIARY_WEEKDAY_LABELS[
+            datetime.strptime(diary_entry.entry_date, "%Y-%m-%d").weekday()
+        ]
+
+    is_current_month = (archive_year, archive_month) == (today.year, today.month)
+    today_diary = dbHelper.get_diary_by_date(today_date) if is_current_month else None
+    current_week = []
+    diary_dates = {diary_entry.entry_date for diary_entry in dbHelper.get_all_diaries()}
+    week_start = today - timedelta(days=today.weekday())
+    for day_offset in range(7):
+        week_day = week_start + timedelta(days=day_offset)
+        week_day_date = week_day.isoformat()
+        current_week.append(
+            {
+                "date": week_day_date,
+                "weekday": DIARY_WEEKDAY_LABELS[week_day.weekday()],
+                "day": week_day.day,
+                "is_today": week_day == today,
+                "detail_url": (
+                    url_for(
+                        "main.diary_detail",
+                        year=week_day.year,
+                        month=week_day.month,
+                        day=week_day.day,
+                    )
+                    if week_day_date in diary_dates
+                    else None
+                ),
+            }
+        )
+
+    return render_template(
+        'diary.html',
+        diaries=diaries,
+        today_diary=today_diary,
+        today_date=today_date,
+        today_weekday=DIARY_WEEKDAY_LABELS[today.weekday()],
+        current_week=current_week,
+        is_current_month=is_current_month,
+        archive_year=archive_year,
+        archive_month=archive_month,
+        archive_count=len(diaries),
+        month_value=month_value,
+        **get_site_context(),
+    )
+
+
+@main.route('/diary', methods=['POST'])
+@login_required
+def save_diary():
+    validate_csrf_token()
+
+    content = request.form.get("content", "")
+    if not content.strip():
+        return jsonify({"status": "error", "message": "日记正文不能为空。"}), 400
+
+    uploaded_files = [
+        uploaded_file
+        for uploaded_file in request.files.getlist("diary-image")
+        if uploaded_file is not None and uploaded_file.filename
+    ]
+    if len(uploaded_files) > 1:
+        return _image_upload_error("日记仅支持上传一张图片。")
+
+    timezone = ZoneInfo(current_app.config["BLOG_TIMEZONE"])
+    now = datetime.now(timezone)
+    today = now.date()
+    today_date = today.isoformat()
+    existing_diary = dbHelper.get_diary_by_date(today_date)
+    old_location = existing_diary.location if existing_diary else {}
+    old_weather = existing_diary.weather if existing_diary else {}
+
+    try:
+        submitted_coordinates = _parse_diary_coordinates(
+            request.form.get("latitude"),
+            request.form.get("longitude"),
+            request.form.get("accuracy"),
+        )
+
+        stored_coordinates = None
+        if (
+            old_location.get("latitude") not in (None, "")
+            and old_location.get("longitude") not in (None, "")
+        ):
+            stored_coordinates = _parse_diary_coordinates(
+                old_location.get("latitude"),
+                old_location.get("longitude"),
+                old_location.get("accuracy_m"),
+            )
+    except ValueError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+
+    location_needs_metadata = (
+        not old_location
+        or old_location.get("formatted_address") in (None, "")
+    )
+    weather_needs_metadata = (
+        not old_weather
+        or old_weather.get("condition") in (None, "")
+        or old_weather.get("temperature_c") in (None, "")
+    )
+    location = old_location
+    weather = old_weather
+    warnings = []
+    if location_needs_metadata or weather_needs_metadata:
+        coordinates = stored_coordinates or submitted_coordinates
+        if coordinates is None:
+            warnings.append("当前连接未提供定位，天气和位置未记录。")
+        else:
+            latitude, longitude, accuracy = coordinates
+            metadata = fetch_diary_metadata(
+                latitude,
+                longitude,
+                accuracy,
+                current_app.config["BLOG_AMAP_WEB_SERVICE_KEY"],
+            )
+            location = metadata["location"]
+            weather = metadata["weather"]
+            warnings.extend(metadata["warnings"])
+
+    new_image_path = None
+    new_image_disk_path = None
+    if uploaded_files:
+        new_image_path, error_response = _store_uploaded_image(
+            uploaded_files[0],
+            current_app.config["BLOG_DIARY_IMAGE_UPLOAD_DIR"],
+            int(current_app.config["BLOG_DIARY_IMAGE_MAX_BYTES"]),
+            "日记图片",
+        )
+        if error_response:
+            return error_response
+        new_image_disk_path = os.path.join(
+            current_app.config["BLOG_DIARY_IMAGE_UPLOAD_DIR"],
+            *new_image_path.split("/"),
+        )
+
+    if new_image_path:
+        image_url = new_image_path
+    elif request.form.get("remove-image") == "1":
+        image_url = ""
+    elif existing_diary:
+        image_url = existing_diary.image_url
+    else:
+        image_url = ""
+
+    timestamp = now.isoformat(timespec="seconds")
+    diary_entry = Diary(
+        entry_date=today_date,
+        content=content,
+        image_url=image_url,
+        created_at=(
+            existing_diary.created_at
+            if existing_diary and existing_diary.created_at
+            else timestamp
+        ),
+        updated_at=timestamp,
+        location=location,
+        weather=weather,
+    )
+
+    try:
+        result = dbHelper.save_today_diary(diary_entry, today_date)
+    except ValueError as exc:
+        if new_image_disk_path:
+            try:
+                os.remove(new_image_disk_path)
+            except FileNotFoundError:
+                pass
+        return jsonify({"status": "error", "message": str(exc)}), 400
+    except Exception:
+        if new_image_disk_path:
+            try:
+                os.remove(new_image_disk_path)
+            except OSError:
+                pass
+        raise
+
+    return jsonify(
+        {
+            "status": "success",
+            "operation": result["operation"],
+            "message": result["message"],
+            "detail_url": url_for(
+                "main.diary_detail",
+                year=today.year,
+                month=today.month,
+                day=today.day,
+            ),
+            "warnings": warnings,
+        }
+    )
+
+
+@main.route('/diary/<int:year>/<int:month>/<int:day>')
+@login_required
+def diary_detail(year, month, day):
+    try:
+        entry_date = datetime(year, month, day).date()
+    except ValueError:
+        return render_template('404.html', **get_site_context()), 404
+
+    diary_entry = dbHelper.get_diary_by_date(entry_date.isoformat())
+    if diary_entry is None:
+        return render_template('404.html', **get_site_context()), 404
+
+    diary_entry.weekday_label = DIARY_WEEKDAY_LABELS[entry_date.weekday()]
+    all_diaries = dbHelper.get_all_diaries()
+    all_diaries.sort(key=lambda item: item.entry_date)
+    for item in all_diaries:
+        item.weekday_label = DIARY_WEEKDAY_LABELS[
+            datetime.strptime(item.entry_date, "%Y-%m-%d").weekday()
+        ]
+
+    entry_dates = [item.entry_date for item in all_diaries]
+    diary_index = entry_dates.index(diary_entry.entry_date)
+    previous_diary = all_diaries[diary_index - 1] if diary_index > 0 else None
+    next_diary = (
+        all_diaries[diary_index + 1]
+        if diary_index + 1 < len(all_diaries)
+        else None
+    )
+    today = datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])).date()
+
+    return render_template(
+        'diary_detail.html',
+        diary=diary_entry,
+        is_today=entry_date == today,
+        previous_diary=previous_diary,
+        next_diary=next_diary,
+        **get_site_context(),
+    )
 
 @main.route('/edit/cover', methods=['POST'])
 @login_required

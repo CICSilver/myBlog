@@ -154,6 +154,10 @@ function navigateToWriting() {
     window.location.href = '/edit';
 }
 
+function navigateToDiary() {
+    window.location.href = '/diary';
+}
+
 function navigateToManage() {
     window.location.href = '/manage';
 }
