@@ -42,6 +42,19 @@
         status.dataset.tone = tone || "";
     }
 
+    function describeGeolocationError(error) {
+        const reasons = {
+            1: "权限被拒绝",
+            2: "位置不可用",
+            3: "定位超时",
+        };
+        const code = error && typeof error.code === "number" ? error.code : 0;
+        const reason = reasons[code] || "未知错误";
+        const detail = error && error.message ? error.message : "";
+
+        return "定位失败原因：" + reason + "（code " + code + (detail ? "，" + detail : "") + "）";
+    }
+
     function insertChineseParagraphBreak() {
         const selectionStart = textarea.selectionStart;
         const selectionEnd = textarea.selectionEnd;
@@ -142,6 +155,8 @@
         submitButton.disabled = true;
         setStatus("正在保存日记。", "pending");
 
+        let locationNote = "";
+
         const sendForm = function () {
             fetch(form.action, {
                 method: "POST",
@@ -158,18 +173,22 @@
                 })
                 .then(function (result) {
                     const warnings = Array.isArray(result.data.warnings) ? result.data.warnings : [];
-                    const message = warnings.length
+                    const baseMessage = warnings.length
                         ? warnings.join(" ")
                         : (result.data.message || "日记已保存。");
+                    const message = locationNote ? locationNote + " " + baseMessage : baseMessage;
 
                     if (!result.ok || result.data.status !== "success") {
                         throw new Error(message);
                     }
 
-                    setStatus(message, warnings.length ? "warning" : "success");
+                    setStatus(message, warnings.length || locationNote ? "warning" : "success");
 
                     if (result.data.detail_url) {
-                        window.location.assign(result.data.detail_url);
+                        const redirectDelay = locationNote ? 4000 : 0;
+                        window.setTimeout(function () {
+                            window.location.assign(result.data.detail_url);
+                        }, redirectDelay);
                     }
                 })
                 .catch(function (error) {
@@ -191,8 +210,10 @@
                     accuracy.value = position.coords.accuracy;
                     sendForm();
                 },
-                function () {
-                    setStatus("未取得定位，仍会保存日记。", "warning");
+                function (error) {
+                    locationNote = "未取得定位，仍会保存日记。" + describeGeolocationError(error);
+                    console.warn("diary geolocation failed", error);
+                    setStatus(locationNote, "warning");
                     sendForm();
                 },
                 {
