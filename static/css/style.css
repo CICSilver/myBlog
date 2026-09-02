@@ -3267,31 +3267,94 @@ a.diary-week-day:focus-visible {
     gap: 12px;
 }
 
-.diary-editor-toolbar,
 .diary-form-footer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 10px 14px;
     min-height: 42px;
 }
 
 .diary-editor-toolbar {
-    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.diary-image-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 12px 0 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    line-height: 1;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.diary-image-button .diary-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.diary-image-button:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.diary-image-button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .diary-image-name {
+    max-width: 200px;
     min-width: 0;
     overflow: hidden;
     color: var(--ink-soft);
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     line-height: 1.4;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+.diary-image-name:empty {
+    display: none;
+}
+
 .diary-image-remove {
-    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.diary-image-remove .diary-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.diary-image-remove:hover {
+    background: var(--accent-soft);
     color: var(--danger);
+}
+
+.diary-image-remove:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .diary-image-remove[hidden] {
@@ -3342,16 +3405,15 @@ a.diary-week-day:focus-visible {
     box-shadow: var(--focus-ring);
 }
 
-.diary-form-footer {
-    justify-content: space-between;
-}
-
 .diary-status {
+    flex: 1 1 160px;
+    min-width: 0;
     min-height: 1.4em;
-    margin-right: auto;
+    margin: 0;
     color: var(--ink-soft);
     font-size: 0.9rem;
     line-height: 1.4;
+    text-align: right;
 }
 
 .diary-status[data-tone="warning"] {
@@ -3887,16 +3949,27 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-form-footer {
-        align-items: stretch;
-        flex-direction: column;
+        gap: 10px;
     }
 
     .diary-status {
-        margin-right: 0;
+        flex-basis: 100%;
+        order: -1;
+        min-height: 0;
+        text-align: left;
+    }
+
+    .diary-status:empty {
+        display: none;
+    }
+
+    .diary-image-name {
+        max-width: 110px;
     }
 
     .diary-save-button {
-        width: 100%;
+        flex: 1 1 auto;
+        margin-left: auto;
     }
 
     .diary-list-heading {

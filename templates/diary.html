@@ -100,26 +100,6 @@
           <label class="visually-hidden" for="diary-content">日记内容</label>
           <textarea id="diary-content" name="content" rows="10" placeholder="写下今天。">{{ today_diary.content if today_diary else '' }}</textarea>
 
-          <div class="diary-editor-toolbar" aria-label="图片工具">
-            <button id="diary-image-select" class="diary-icon-button" type="button" aria-label="添加或替换图片" title="添加或替换图片">
-              {{ diary_icon("image") }}
-              <span class="visually-hidden">添加或替换图片</span>
-            </button>
-            <input id="diary-image-input" class="visually-hidden" type="file" name="diary-image" accept="image/png,image/jpeg,image/webp">
-            <span id="diary-image-name" class="diary-image-name">{% if existing_image %}已保留图片{% endif %}</span>
-            <button
-              id="diary-image-remove"
-              class="diary-icon-button diary-image-remove"
-              type="button"
-              aria-label="移除图片"
-              title="移除图片"
-              {% if not existing_image %}hidden{% endif %}
-            >
-              {{ diary_icon("trash") }}
-              <span class="visually-hidden">移除图片</span>
-            </button>
-          </div>
-
           <div id="diary-image-preview-panel" class="diary-image-preview-panel" {% if not existing_image %}hidden{% endif %}>
             <img
               id="diary-image-preview"
@@ -129,6 +109,25 @@
           </div>
 
           <div class="diary-form-footer">
+            <div class="diary-editor-toolbar" aria-label="图片工具">
+              <button id="diary-image-select" class="diary-image-button" type="button" title="添加或替换图片">
+                {{ diary_icon("image") }}
+                <span id="diary-image-select-label">{% if existing_image %}替换图片{% else %}添加图片{% endif %}</span>
+              </button>
+              <input id="diary-image-input" class="visually-hidden" type="file" name="diary-image" accept="image/png,image/jpeg,image/webp">
+              <span id="diary-image-name" class="diary-image-name">{% if existing_image %}已保留图片{% endif %}</span>
+              <button
+                id="diary-image-remove"
+                class="diary-image-remove"
+                type="button"
+                aria-label="移除图片"
+                title="移除图片"
+                {% if not existing_image %}hidden{% endif %}
+              >
+                {{ diary_icon("trash") }}
+                <span class="visually-hidden">移除图片</span>
+              </button>
+            </div>
             <p id="diary-status" class="diary-status" role="status" aria-live="polite"></p>
             <button id="diary-submit" class="diary-save-button" type="submit" title="{% if today_diary %}更新日记{% else %}存入日记{% endif %}">
               {% if today_diary %}更新日记{% else %}存入日记{% endif %}

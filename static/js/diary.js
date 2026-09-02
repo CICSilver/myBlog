@@ -27,6 +27,7 @@
     const imagePreview = document.getElementById("diary-image-preview");
     const imagePreviewPanel = document.getElementById("diary-image-preview-panel");
     const imageName = document.getElementById("diary-image-name");
+    const imageSelectLabel = document.getElementById("diary-image-select-label");
     const removeImage = document.getElementById("diary-remove-image");
     const latitude = document.getElementById("diary-latitude");
     const longitude = document.getElementById("diary-longitude");
@@ -193,6 +194,7 @@
         imagePreviewPanel.hidden = false;
         imageRemove.hidden = false;
         imageName.textContent = file.name;
+        imageSelectLabel.textContent = "替换图片";
         removeImage.value = "0";
     });
 
@@ -207,6 +209,7 @@
         imagePreviewPanel.hidden = true;
         imageRemove.hidden = true;
         imageName.textContent = "";
+        imageSelectLabel.textContent = "添加图片";
         removeImage.value = "1";
     });
 
