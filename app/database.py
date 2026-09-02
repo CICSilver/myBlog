@@ -889,10 +889,16 @@ class DatabaseHelper:
             if existing:
                 updated_data = diary.to_dict()
                 updated_data["created_at"] = existing.get("created_at")
-                if existing.get("location"):
-                    updated_data["location"] = existing.get("location")
-                if existing.get("weather"):
-                    updated_data["weather"] = existing.get("weather")
+                for field in ("location", "weather"):
+                    merged_data = dict(existing.get(field) or {})
+                    for key, value in updated_data[field].items():
+                        if (
+                            key not in merged_data
+                            or merged_data[key] is None
+                            or merged_data[key] == ""
+                        ) and value is not None and value != "":
+                            merged_data[key] = value
+                    updated_data[field] = merged_data
 
                 _snapshot_history("pre-update-diary")
                 self.diary_table.update(updated_data, doc_ids=[existing.doc_id])

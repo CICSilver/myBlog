@@ -136,8 +136,8 @@ class DiaryDatabaseTest(unittest.TestCase):
         self.helper.save_today_diary(
             self.make_diary(
                 "2026-05-18",
-                location={"city": "南京"},
-                weather={"condition": "晴"},
+                location={"longitude": 118.7, "latitude": 32.0},
+                weather={"condition": "晴", "temperature_c": ""},
             ),
             "2026-05-18",
         )
@@ -145,8 +145,13 @@ class DiaryDatabaseTest(unittest.TestCase):
             self.make_diary(
                 "2026-05-18",
                 content="更新正文",
-                location={"city": "苏州"},
-                weather={"condition": "雨"},
+                location={
+                    "longitude": 120.6,
+                    "latitude": 31.3,
+                    "formatted_address": "江苏省南京市玄武区",
+                    "adcode": "320102",
+                },
+                weather={"condition": "雨", "temperature_c": "26"},
             ),
             "2026-05-18",
         )
@@ -166,8 +171,19 @@ class DiaryDatabaseTest(unittest.TestCase):
         )
         filled = self.helper.get_diary_by_date("2026-05-19")
 
-        self.assertEqual(preserved.location, {"city": "南京"})
-        self.assertEqual(preserved.weather, {"condition": "晴"})
+        self.assertEqual(
+            preserved.location,
+            {
+                "longitude": 118.7,
+                "latitude": 32.0,
+                "formatted_address": "江苏省南京市玄武区",
+                "adcode": "320102",
+            },
+        )
+        self.assertEqual(
+            preserved.weather,
+            {"condition": "晴", "temperature_c": "26"},
+        )
         self.assertEqual(filled.location, {"city": "无锡"})
         self.assertEqual(filled.weather, {"condition": "多云"})
 
