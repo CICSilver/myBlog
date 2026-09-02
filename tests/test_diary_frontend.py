@@ -107,6 +107,23 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn('"X-CSRF-Token": window.BLOG_CSRF_TOKEN || ""', self.javascript)
         self.assertNotIn("apiKey", self.javascript)
 
+    def test_complete_today_location_skips_a_second_geolocation_request(self):
+        self.assertIn("{% set needs_location =", self.diary_template)
+        self.assertIn("today_diary.location.latitude", self.diary_template)
+        self.assertIn("today_diary.location.longitude", self.diary_template)
+        self.assertIn('data-needs-location="{{ \'true\' if needs_location else \'false\' }}"', self.diary_template)
+        self.assertIn('form.dataset.needsLocation !== "true"', self.javascript)
+
+        skip_index = self.javascript.index('form.dataset.needsLocation !== "true"')
+        geolocation_index = self.javascript.index("navigator.geolocation.getCurrentPosition")
+        self.assertLess(skip_index, geolocation_index)
+
+    def test_missing_original_coordinates_still_request_geolocation(self):
+        self.assertIn("not today_diary.location.latitude", self.diary_template)
+        self.assertIn("not today_diary.location.longitude", self.diary_template)
+        self.assertIn("if (window.isSecureContext && navigator.geolocation)", self.javascript)
+        self.assertIn("navigator.geolocation.getCurrentPosition", self.javascript)
+
     def test_diary_css_has_desktop_and_mobile_layout_rules(self):
         diary_styles = self.stylesheet.split("/* Diary */", 1)[1]
 

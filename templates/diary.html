@@ -71,6 +71,7 @@
 
     {% if is_current_month %}
       {% set existing_image = today_diary.image_url if today_diary and today_diary.image_url else none %}
+      {% set needs_location = not today_diary or not today_diary.location or not today_diary.location.latitude or not today_diary.location.longitude %}
       <section class="diary-composer" id="diary-editor" aria-labelledby="diary-editor-title">
         <div class="diary-composer-date">
           <p id="diary-editor-title">今天</p>
@@ -84,6 +85,7 @@
           method="post"
           action="{{ url_for('main.diary') }}"
           enctype="multipart/form-data"
+          data-needs-location="{{ 'true' if needs_location else 'false' }}"
         >
           <input id="diary-remove-image" type="hidden" name="remove-image" value="0">
           <input id="diary-latitude" type="hidden" name="latitude" value="">

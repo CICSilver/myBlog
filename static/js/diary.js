@@ -178,6 +178,11 @@
                 });
         };
 
+        if (form.dataset.needsLocation !== "true") {
+            sendForm();
+            return;
+        }
+
         if (window.isSecureContext && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 function (position) {
