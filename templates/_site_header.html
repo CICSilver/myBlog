@@ -1,5 +1,6 @@
 {% set cover_title_id = site_cover_title_id | default("site-cover-title") %}
 {% set cover_title_tag = site_cover_title_tag | default("span") %}
+{% set cover_section_title = site_cover_section_title | default("") %}
 {% set archive_note = site_cover_note | default("泥留鸿爪，旧游成文。") %}
 {% set admin_bookmark_menu_id = site_cover_menu_id | default("site-admin-bookmark-menu") %}
 <header class="home-cover" aria-labelledby="{{ cover_title_id }}">
@@ -11,6 +12,9 @@
         <h1 class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</h1>
       {% else %}
         <span class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</span>
+      {% endif %}
+      {% if cover_section_title %}
+        <span class="home-cover-section-title">{{ cover_section_title }}</span>
       {% endif %}
     </a>
 

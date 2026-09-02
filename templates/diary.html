@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% from "_diary_icons.html" import diary_icon %}
+
+{% block title %}日记 | {{ site_name }}{% endblock %}
+{% block body_class %}diary-page{% endblock %}
+
+{% block site_header %}
+  {% set site_cover_title_id = "diary-cover-title" %}
+  {% set site_cover_title_tag = "h1" %}
+  {% set site_cover_section_title = "日记" %}
+  {% set site_cover_note = "把今天留在这里。" %}
+  {% set site_cover_menu_id = "diary-admin-bookmark-menu" %}
+  {% include "_site_header.html" %}
+{% endblock %}
+
+{% block content %}
+  <main class="diary-shell" aria-labelledby="diary-page-title">
+    <section class="diary-overview">
+      <div class="diary-date-display">
+        <p class="section-label">Private Diary</p>
+        <h2 id="diary-page-title">
+          {% if is_current_month %}
+            <time datetime="{{ today_date }}">{{ today_date }}</time>
+          {% else %}
+            {{ archive_year }}.{{ archive_month }}
+          {% endif %}
+        </h2>
+        <p class="diary-date-note">
+          {% if is_current_month %}
+            {{ today_weekday }}
+          {% else %}
+            {{ archive_count }} 篇记录
+          {% endif %}
+        </p>
+      </div>
+
+      <form class="diary-month-form" method="get" action="{{ url_for('main.diary') }}">
+        <label for="diary-month">查看月份</label>
+        <div class="diary-month-control">
+          {{ diary_icon("calendar") }}
+          <input id="diary-month" type="month" name="month" value="{{ month_value }}">
+        </div>
+        <button class="diary-month-submit" type="submit" aria-label="查看所选月份" title="查看所选月份">
+          {{ diary_icon("arrow") }}
+          <span class="visually-hidden">查看所选月份</span>
+        </button>
+      </form>
+    </section>
+
+    {% if is_current_month %}
+      <nav class="diary-week-strip" aria-label="本周日记">
+        {% for week_day in current_week %}
+          {% if week_day.detail_url %}
+            <a
+              class="diary-week-day{% if week_day.is_today %} is-today{% endif %}"
+              href="{{ week_day.detail_url }}"
+              {% if week_day.is_today %}aria-current="date"{% endif %}
+            >
+              <span>{{ week_day.weekday }}</span>
+              <strong>{{ week_day.day }}</strong>
+            </a>
+          {% else %}
+            <span class="diary-week-day is-empty{% if week_day.is_today %} is-today{% endif %}">
+              <span>{{ week_day.weekday }}</span>
+              <strong>{{ week_day.day }}</strong>
+            </span>
+          {% endif %}
+        {% endfor %}
+      </nav>
+    {% endif %}
+
+    {% if is_current_month %}
+      {% set existing_image = today_diary.image_url if today_diary and today_diary.image_url else none %}
+      <section class="diary-composer" id="diary-editor" aria-labelledby="diary-editor-title">
+        <div class="diary-composer-date">
+          <p id="diary-editor-title">今天</p>
+          <strong>{{ today_date }}</strong>
+          <span>{{ today_weekday }}</span>
+        </div>
+
+        <form
+          id="diary-form"
+          class="diary-form"
+          method="post"
+          action="{{ url_for('main.diary') }}"
+          enctype="multipart/form-data"
+        >
+          <input id="diary-remove-image" type="hidden" name="remove-image" value="0">
+          <input id="diary-latitude" type="hidden" name="latitude" value="">
+          <input id="diary-longitude" type="hidden" name="longitude" value="">
+          <input id="diary-accuracy" type="hidden" name="accuracy" value="">
+
+          <div class="diary-editor-toolbar" aria-label="图片工具">
+            <button id="diary-image-select" class="diary-icon-button" type="button" aria-label="添加或替换图片" title="添加或替换图片">
+              {{ diary_icon("image") }}
+              <span class="visually-hidden">添加或替换图片</span>
+            </button>
+            <input id="diary-image-input" class="visually-hidden" type="file" name="diary-image" accept="image/png,image/jpeg,image/webp">
+            <span id="diary-image-name" class="diary-image-name">{% if existing_image %}已保留图片{% endif %}</span>
+            <button
+              id="diary-image-remove"
+              class="diary-icon-button diary-image-remove"
+              type="button"
+              aria-label="移除图片"
+              title="移除图片"
+              {% if not existing_image %}hidden{% endif %}
+            >
+              {{ diary_icon("trash") }}
+              <span class="visually-hidden">移除图片</span>
+            </button>
+          </div>
+
+          <div id="diary-image-preview-panel" class="diary-image-preview-panel" {% if not existing_image %}hidden{% endif %}>
+            <img
+              id="diary-image-preview"
+              {% if existing_image %}src="{{ url_for('main.media_diary_image', filename=existing_image) }}"{% endif %}
+              alt="日记图片预览"
+            >
+          </div>
+
+          <label class="visually-hidden" for="diary-content">日记内容</label>
+          <textarea id="diary-content" name="content" rows="10" placeholder="写下今天。">{{ today_diary.content if today_diary else '' }}</textarea>
+
+          <div class="diary-form-footer">
+            <p id="diary-status" class="diary-status" role="status" aria-live="polite"></p>
+            <button id="diary-submit" class="diary-save-button" type="submit" title="{% if today_diary %}更新日记{% else %}存入日记{% endif %}">
+              {% if today_diary %}更新日记{% else %}存入日记{% endif %}
+            </button>
+          </div>
+        </form>
+      </section>
+    {% else %}
+      <p class="diary-readonly-note">这个月的日记仅供回看。</p>
+    {% endif %}
+
+    <section class="diary-entry-list" aria-labelledby="diary-entry-list-title">
+      <div class="diary-list-heading">
+        <div>
+          <p class="section-label">Month Archive</p>
+          <h2 id="diary-entry-list-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
+        </div>
+        <span>{{ archive_count }} 篇</span>
+      </div>
+
+      {% for diary in diaries %}
+        {% set detail_url = url_for('main.diary_detail', year=diary.entry_date[0:4], month=diary.entry_date[5:7], day=diary.entry_date[8:10]) %}
+        <article class="diary-entry{% if diary.image_url %} has-image{% endif %}">
+          <time class="diary-entry-date" datetime="{{ diary.entry_date }}">
+            <strong>{{ diary.entry_date[8:10] }}</strong>
+            <span class="diary-entry-weekday">{{ diary.weekday_label }}</span>
+            <span class="diary-entry-mobile-date">{{ diary.entry_date[5:7] }} / {{ diary.entry_date[8:10] }}</span>
+          </time>
+          <div class="diary-entry-main">
+            <div class="diary-entry-meta">
+              {% if diary.created_at %}
+                <span>{{ diary_icon("clock") }}{{ diary.created_at[11:16] }}</span>
+              {% endif %}
+              {% if diary.weather %}
+                <span>{{ diary_icon("cloud") }}{{ diary.weather.condition }} {{ diary.weather.temperature_c }}°C</span>
+              {% endif %}
+              {% if diary.location and (diary.location.city or diary.location.district or diary.location.province) %}
+                <span>{{ diary_icon("pin") }}{% if diary.location.city %}{{ diary.location.city }}{% else %}{{ diary.location.province }}{% endif %}{% if diary.location.district %}{% if diary.location.city or diary.location.province %} · {% endif %}{{ diary.location.district }}{% endif %}</span>
+              {% endif %}
+            </div>
+            <div class="diary-entry-summary" data-diary-summary>
+              <div class="diary-entry-summary-inner" data-diary-summary-inner>{{ diary.content }}</div>
+            </div>
+            <a class="diary-read-more" href="{{ detail_url }}" data-diary-read-more hidden>阅读全文 {{ diary_icon("arrow") }}</a>
+          </div>
+          {% if diary.image_url %}
+            <a class="diary-entry-image" href="{{ detail_url }}" aria-label="查看 {{ diary.entry_date }} 的日记图片">
+              <img src="{{ url_for('main.media_diary_image', filename=diary.image_url) }}" alt="{{ diary.entry_date }} 日记图片" loading="lazy">
+            </a>
+          {% endif %}
+        </article>
+      {% else %}
+        <div class="diary-empty-state">
+          <p>这个月还没有留下日记。</p>
+        </div>
+      {% endfor %}
+    </section>
+  </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/diary.js') }}"></script>
+{% endblock %}

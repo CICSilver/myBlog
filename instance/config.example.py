@@ -20,6 +20,10 @@ BLOG_TRUST_PROXY_HEADERS = _env("BLOG_TRUST_PROXY_HEADERS", "false").lower() in 
     "yes",
     "on",
 )
+BLOG_AMAP_WEB_SERVICE_KEY = _env("BLOG_AMAP_WEB_SERVICE_KEY", "")
+BLOG_DIARY_IMAGE_UPLOAD_DIR = _env("BLOG_DIARY_IMAGE_UPLOAD_DIR")
+BLOG_DIARY_IMAGE_MAX_BYTES = _env("BLOG_DIARY_IMAGE_MAX_BYTES", 10 * 1024 * 1024)
+BLOG_TIMEZONE = _env("BLOG_TIMEZONE", "Asia/Shanghai")
 
 # Example literal local-only values:
 # BLOG_ADMIN_PASSWORD = "change-this-admin-password"

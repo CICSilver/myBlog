@@ -31,6 +31,29 @@ def create_app():
     app.config["BLOG_COVER_MAX_BYTES"] = _get_cover_max_bytes(app)
     app.config["BLOG_ARTICLE_IMAGE_UPLOAD_DIR"] = _get_article_image_upload_dir(app)
     app.config["BLOG_ARTICLE_IMAGE_MAX_BYTES"] = _get_article_image_max_bytes(app)
+    amap_web_service_key = _get_config_value(app, "BLOG_AMAP_WEB_SERVICE_KEY", "")
+    app.config["BLOG_AMAP_WEB_SERVICE_KEY"] = (
+        amap_web_service_key.strip()
+        if isinstance(amap_web_service_key, str)
+        else ""
+    )
+    app.config["BLOG_DIARY_IMAGE_UPLOAD_DIR"] = _get_config_value(
+        app,
+        "BLOG_DIARY_IMAGE_UPLOAD_DIR",
+    ) or os.path.join(
+        project_root,
+        "instance",
+        "uploads",
+        "diaries",
+    )
+    app.config["BLOG_DIARY_IMAGE_MAX_BYTES"] = int(
+        _get_config_value(app, "BLOG_DIARY_IMAGE_MAX_BYTES", 10 * 1024 * 1024)
+    )
+    app.config["BLOG_TIMEZONE"] = _get_config_value(
+        app,
+        "BLOG_TIMEZONE",
+        "Asia/Shanghai",
+    )
     app.config["BLOG_TRUST_PROXY_HEADERS"] = _get_bool_config_value(
         app,
         "BLOG_TRUST_PROXY_HEADERS",

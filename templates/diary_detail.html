@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_diary_icons.html" import diary_icon %}
+
+{% block title %}{{ diary.entry_date }} 日记 | {{ site_name }}{% endblock %}
+{% block body_class %}diary-page diary-detail-page{% endblock %}
+
+{% block site_header %}
+  {% set site_cover_title_id = "diary-detail-cover-title" %}
+  {% set site_cover_title_tag = "span" %}
+  {% set site_cover_section_title = "日记" %}
+  {% set site_cover_note = "把今天留在这里。" %}
+  {% set site_cover_menu_id = "diary-detail-admin-bookmark-menu" %}
+  {% include "_site_header.html" %}
+{% endblock %}
+
+{% block content %}
+  <main class="diary-detail-shell" aria-labelledby="diary-detail-title">
+    <section class="diary-detail-lead">
+      <a class="diary-back-link" href="{{ url_for('main.diary') }}">{{ diary_icon("arrow-left") }}返回日记</a>
+      <div class="diary-detail-heading">
+        <p class="section-label">Private Diary</p>
+        <h1 id="diary-detail-title"><time datetime="{{ diary.entry_date }}">{{ diary.entry_date }}</time></h1>
+      </div>
+      {% if is_today %}
+        <a class="diary-edit-today" href="{{ url_for('main.diary') }}#diary-editor">编辑今天</a>
+      {% endif %}
+    </section>
+
+    <article class="diary-detail-entry">
+      <dl class="diary-detail-facts">
+        {% if diary.created_at %}
+          <div>
+            <dt>{{ diary_icon("clock") }}首次发表时间</dt>
+            <dd>{{ diary.created_at }}</dd>
+          </div>
+        {% endif %}
+        {% if diary.weather %}
+          <div>
+            <dt>{{ diary_icon("cloud") }}天气</dt>
+            <dd>{{ diary.weather.condition }} {{ diary.weather.temperature_c }}°C{% if diary.weather.report_time %}<span>{{ diary.weather.report_time }}</span>{% endif %}</dd>
+          </div>
+        {% endif %}
+        {% if diary.location and diary.location.formatted_address %}
+          <div>
+            <dt>{{ diary_icon("pin") }}位置</dt>
+            <dd>
+              <span>{{ diary.location.formatted_address }}</span>
+              {% if diary.location.poi_name %}<span>{{ diary.location.poi_name }}</span>{% endif %}
+              {% if diary.location.accuracy_m is not none %}<span>约 {{ diary.location.accuracy_m }} 米</span>{% endif %}
+            </dd>
+          </div>
+        {% endif %}
+      </dl>
+
+      {% if diary.image_url %}
+        <figure class="diary-detail-image">
+          <img src="{{ url_for('main.media_diary_image', filename=diary.image_url) }}" alt="{{ diary.entry_date }} 日记图片">
+        </figure>
+      {% endif %}
+
+      <div class="diary-detail-content">{{ diary.content }}</div>
+    </article>
+
+    <nav class="diary-detail-pagination" aria-label="相邻日记">
+      {% if previous_diary %}
+        <a class="diary-detail-previous" href="{{ url_for('main.diary_detail', year=previous_diary.entry_date[0:4], month=previous_diary.entry_date[5:7], day=previous_diary.entry_date[8:10]) }}">
+          {{ diary_icon("arrow-left") }}<span>上一篇</span><strong>{{ previous_diary.entry_date }}</strong>
+        </a>
+      {% else %}
+        <span class="is-empty" aria-hidden="true"></span>
+      {% endif %}
+      {% if next_diary %}
+        <a class="diary-detail-next" href="{{ url_for('main.diary_detail', year=next_diary.entry_date[0:4], month=next_diary.entry_date[5:7], day=next_diary.entry_date[8:10]) }}">
+          <strong>{{ next_diary.entry_date }}</strong><span>下一篇</span>{{ diary_icon("arrow-right") }}
+        </a>
+      {% else %}
+        <span class="is-empty" aria-hidden="true"></span>
+      {% endif %}
+    </nav>
+  </main>
+{% endblock %}

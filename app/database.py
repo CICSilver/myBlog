@@ -109,6 +109,7 @@ class _DatabaseWriteLock:
 
 _write_lock = _DatabaseWriteLock()
 _ARTICLE_VIEW_INSERT_ATTEMPTS = 8
+_DIARY_INSERT_ATTEMPTS = 8
 _EXCLUDED_ARTICLE_VIEW_IPS_SEEDED_KEY = "article_view_excluded_ips_seeded_v1"
 _DEFAULT_EXCLUDED_IP_LABEL = "手动排除"
 
@@ -478,6 +479,46 @@ class Blog:
         self.date = data.get('date')
         self.time = data.get('time')
 
+
+class Diary:
+    def __init__(
+        self,
+        entry_date="",
+        content="",
+        image_url="",
+        created_at="",
+        updated_at="",
+        location=None,
+        weather=None,
+    ):
+        self.entry_date = entry_date or ""
+        self.content = content or ""
+        self.image_url = image_url or ""
+        self.created_at = created_at or ""
+        self.updated_at = updated_at or ""
+        self.location = location or {}
+        self.weather = weather or {}
+
+    def to_dict(self):
+        return {
+            'entry_date': self.entry_date,
+            'content': self.content,
+            'image_url': self.image_url,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+            'location': self.location or {},
+            'weather': self.weather or {}
+        }
+
+    def from_dict(self, data):
+        self.entry_date = data.get('entry_date') or ""
+        self.content = data.get('content') or ""
+        self.image_url = data.get('image_url') or ""
+        self.created_at = data.get('created_at') or ""
+        self.updated_at = data.get('updated_at') or ""
+        self.location = data.get('location') or {}
+        self.weather = data.get('weather') or {}
+
 class DatabaseHelper:
     """
     数据库模板：
@@ -519,6 +560,8 @@ class DatabaseHelper:
         self.category_table = blog_db.table('categories')
         # 博客表，存储全部博客
         self.blog_table = blog_db.table('blogs')
+        # 日记表，按日期存储每日一条日记
+        self.diary_table = blog_db.table('diaries')
         # 文章访问记录表，存储每一次文章详情页访问
         self.article_view_table = blog_db.table('article_views')
         # 浏览量排除 IP 表，存储后台手动维护的测试机/异常 IP
@@ -783,6 +826,107 @@ class DatabaseHelper:
         获取所有博客列表
         """
         return self.blog_table.all()
+
+    def get_diary_by_date(self, entry_date):
+        """
+        根据日期获取日记。
+        """
+        if entry_date is None:
+            raise ValueError("entry_date cannot be None")
+
+        diary_data = self.diary_table.get(Query().entry_date == entry_date)
+        if diary_data is None:
+            return None
+
+        diary = Diary()
+        diary.from_dict(diary_data)
+        return diary
+
+    def get_all_diaries(self):
+        """
+        获取全部日记，日期最新的在前面。
+        """
+        diaries = []
+        for diary_data in self.diary_table.all():
+            diary = Diary()
+            diary.from_dict(diary_data)
+            diaries.append(diary)
+
+        diaries.sort(key=lambda diary: diary.entry_date, reverse=True)
+        return diaries
+
+    def get_diaries_by_month(self, year, month):
+        """
+        根据年月获取日记，日期最新的在前面。
+        """
+        if year is None:
+            raise ValueError("year cannot be None")
+        if month is None:
+            raise ValueError("month cannot be None")
+
+        month_prefix = "{0}-{1:02d}-".format(year, int(month))
+        return [
+            diary
+            for diary in self.get_all_diaries()
+            if diary.entry_date.startswith(month_prefix)
+        ]
+
+    def save_today_diary(self, diary: Diary, today):
+        """
+        保存当天日记；同一天已有记录时更新该记录。
+        """
+        with _write_lock:
+            if diary is None:
+                raise ValueError("Diary cannot be None")
+            if not isinstance(diary, Diary):
+                raise TypeError("Expected a Diary instance")
+            if diary.entry_date != today:
+                raise ValueError("只能保存当天日记。")
+            if not diary.content or not diary.content.strip():
+                raise ValueError("日记正文不能为空。")
+
+            existing = self.diary_table.get(Query().entry_date == diary.entry_date)
+            if existing:
+                updated_data = diary.to_dict()
+                updated_data["created_at"] = existing.get("created_at")
+                if existing.get("location"):
+                    updated_data["location"] = existing.get("location")
+                if existing.get("weather"):
+                    updated_data["weather"] = existing.get("weather")
+
+                _snapshot_history("pre-update-diary")
+                self.diary_table.update(updated_data, doc_ids=[existing.doc_id])
+                _snapshot_history("post-update-diary")
+                return {
+                    "status": "success",
+                    "operation": "updated",
+                    "message": "今日日记更新成功。",
+                }
+
+            _snapshot_history("pre-insert-diary")
+            last_error = None
+            for _ in range(_DIARY_INSERT_ATTEMPTS):
+                try:
+                    self.diary_table.insert(
+                        Document(
+                            diary.to_dict(),
+                            doc_id=secrets.randbits(63) or 1,
+                        )
+                    )
+                    break
+                except ValueError as exc:
+                    if "Document with ID" not in str(exc):
+                        raise
+                    last_error = exc
+            else:
+                raise last_error
+
+            _snapshot_history("post-insert-diary")
+            return {
+                "status": "success",
+                "operation": "inserted",
+                "message": "今日日记保存成功。",
+            }
 
     def record_article_view(self, blog: Blog, ip, path, viewed_at=None):
         """
