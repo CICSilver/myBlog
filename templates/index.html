@@ -23,6 +23,46 @@
 {% block content %}
   {% if blogs %}
     {% set featured = blogs[0] %}
+    {% set mobile_blog_count = (categories | sum(attribute='num')) if categories else (blogs | length) %}
+    <section class="mobile-archive-controls" aria-labelledby="mobile-filter-title">
+      <div class="mobile-filter-heading">
+        <h2 id="mobile-filter-title">浏览文章</h2>
+        <span>共 {{ mobile_blog_count }} 篇</span>
+      </div>
+      <nav class="mobile-filter-chips" aria-label="文章筛选">
+        {% set all_active = request.endpoint == 'main.index' %}
+        <a
+          class="mobile-filter-chip{% if all_active %} is-active{% endif %}"
+          href="{{ url_for('main.index') }}"
+          {% if all_active %}aria-current="page"{% endif %}
+        >
+          <span>全部</span>
+          <span class="mobile-filter-chip-count">{{ mobile_blog_count }}</span>
+        </a>
+        {% for category in categories %}
+          {% set category_active = request.endpoint == 'main.categorized_blogs' and request.view_args.get('categoryName') == category.name %}
+          <a
+            class="mobile-filter-chip{% if category_active %} is-active{% endif %}"
+            href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
+            {% if category_active %}aria-current="page"{% endif %}
+          >
+            <span>{{ category.name }}</span>
+            <span class="mobile-filter-chip-count">{{ category.num }}</span>
+          </a>
+        {% endfor %}
+        {% for date in dateList %}
+          {% set date_active = request.endpoint == 'main.archived_blogs' and request.view_args.get('year') | string == date.year | string and request.view_args.get('month') | string == date.month | string %}
+          <a
+            class="mobile-filter-chip{% if date_active %} is-active{% endif %}"
+            href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}"
+            {% if date_active %}aria-current="page"{% endif %}
+          >
+            <span>{{ date.year }}.{{ date.month }}</span>
+            <span class="mobile-filter-chip-count">{{ date.num }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+    </section>
     <section class="home-body">
       <aside class="archive-sidebar">
         <section class="sidebar-block">
@@ -98,8 +138,58 @@
         </article>
 
         <div class="stream-heading">
-          <p class="section-label">Archive Stream</p>
-          <h2>近期归档</h2>
+          <div class="stream-heading-copy">
+            <p class="section-label">Archive Stream</p>
+            <h2>近期归档</h2>
+          </div>
+          <details class="mobile-archive-details">
+            <summary>分类与时间</summary>
+            <div class="mobile-archive-panel">
+              <section class="mobile-archive-group">
+                <div class="mobile-archive-group-heading">
+                  <h3>分类索引</h3>
+                  <span>{{ categories | length }}</span>
+                </div>
+                <ul class="mobile-archive-list">
+                  {% for category in categories %}
+                    {% set category_active = request.endpoint == 'main.categorized_blogs' and request.view_args.get('categoryName') == category.name %}
+                    <li>
+                      <a
+                        class="mobile-archive-link{% if category_active %} is-active{% endif %}"
+                        href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
+                        {% if category_active %}aria-current="page"{% endif %}
+                      >
+                        <span>{{ category.name }}</span>
+                        <em>{{ category.num }}</em>
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </section>
+
+              <section class="mobile-archive-group">
+                <div class="mobile-archive-group-heading">
+                  <h3>时间归档</h3>
+                  <span>{{ dateList | length }}</span>
+                </div>
+                <ul class="mobile-archive-list">
+                  {% for date in dateList %}
+                    {% set date_active = request.endpoint == 'main.archived_blogs' and request.view_args.get('year') | string == date.year | string and request.view_args.get('month') | string == date.month | string %}
+                    <li>
+                      <a
+                        class="mobile-archive-link{% if date_active %} is-active{% endif %}"
+                        href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}"
+                        {% if date_active %}aria-current="page"{% endif %}
+                      >
+                        <span>{{ date.year }}.{{ date.month }}</span>
+                        <em>{{ date.num }}</em>
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </section>
+            </div>
+          </details>
         </div>
 
         {% if blogs | length > 1 %}
