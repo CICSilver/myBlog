@@ -18,7 +18,18 @@
       <a class="diary-back-link" href="{{ url_for('main.diary') }}">{{ diary_icon("arrow-left") }}返回日记</a>
       <div class="diary-detail-heading">
         <p class="section-label">Private Diary</p>
-        <h1 id="diary-detail-title"><time datetime="{{ diary.entry_date }}">{{ diary.entry_date }}</time></h1>
+        <h1 id="diary-detail-title">
+          <time datetime="{{ diary.entry_date }}" aria-label="{{ diary.entry_date }} {{ diary.weekday_label }}">
+            <span class="diary-detail-date-full">{{ diary.entry_date }}</span>
+            <span class="diary-detail-date-mobile" aria-hidden="true">
+              <span class="diary-detail-day">{{ diary.entry_date[8:10] }}</span>
+              <span class="diary-detail-date-context">
+                <span class="diary-detail-year-month">{{ diary.entry_date[0:4] }} 年 {{ diary.entry_date[5:7] | int }} 月</span>
+                <span class="diary-detail-weekday">{{ diary.weekday_label }}{% if is_today %}<span class="diary-detail-today">今天</span>{% endif %}</span>
+              </span>
+            </span>
+          </time>
+        </h1>
       </div>
       {% if is_today %}
         <a class="diary-edit-today" href="{{ url_for('main.diary') }}#diary-editor">编辑今天</a>

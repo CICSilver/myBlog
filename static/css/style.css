@@ -3091,30 +3091,26 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
     }
 
     .home-page .feature-article {
-        --mobile-feature-bg: #4a3023;
-        --mobile-feature-line: rgba(226, 151, 91, 0.46);
-        --mobile-feature-ink: #fff3e5;
-        --mobile-feature-muted: #e2c2a7;
-        --mobile-feature-accent: #f0ad76;
+        --mobile-feature-bg: var(--surface-strong);
+        --mobile-feature-line: var(--line-strong);
+        --mobile-feature-ink: var(--ink);
+        --mobile-feature-muted: var(--ink-soft);
+        --mobile-feature-accent: var(--accent-strong);
         gap: 13px;
         margin: 0 0 22px;
         padding: 24px 20px 21px;
         border: 1px solid var(--mobile-feature-line);
+        border-top: 3px solid var(--accent);
         border-radius: 8px;
         background: var(--mobile-feature-bg);
         color: var(--mobile-feature-ink);
-        box-shadow: 0 16px 32px rgba(62, 40, 29, 0.2);
+        box-shadow: 0 8px 20px rgba(62, 40, 29, 0.08);
     }
 
     html[data-theme="dark"] .home-page .feature-article {
-        --mobile-feature-bg: #2f1d16;
-        --mobile-feature-line: rgba(210, 145, 98, 0.46);
-        --mobile-feature-ink: #f7e9dc;
-        --mobile-feature-muted: #d1b19b;
-        --mobile-feature-accent: #efb07a;
         background: var(--mobile-feature-bg);
         color: var(--mobile-feature-ink);
-        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     }
 
     .home-page .feature-article .stream-heading-compact {
@@ -4065,6 +4061,10 @@ a.diary-week-day:focus-visible {
     gap: 8px;
 }
 
+.diary-detail-date-mobile {
+    display: none;
+}
+
 .diary-back-link {
     display: inline-flex;
     align-items: center;
@@ -4278,10 +4278,95 @@ a.diary-week-day:focus-visible {
     }
 
     .diary-detail-lead {
-        align-items: stretch;
-        flex-direction: column;
-        gap: 16px;
-        padding-bottom: 16px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px 12px;
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .diary-detail-lead .diary-back-link {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 44px;
+        justify-self: start;
+    }
+
+    .diary-detail-lead .diary-edit-today {
+        grid-column: 2;
+        grid-row: 1;
+        min-height: 44px;
+        padding: 8px 14px;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--accent-strong);
+        box-shadow: none;
+        font-size: 0.875rem;
+    }
+
+    .diary-detail-heading {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-width: 0;
+        gap: 0;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        background: var(--surface-strong);
+    }
+
+    .diary-detail-heading .section-label,
+    .diary-detail-date-full {
+        display: none;
+    }
+
+    .diary-detail-date-mobile {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .diary-detail-day {
+        flex: 0 0 auto;
+        padding-right: 18px;
+        border-right: 1px solid var(--line-strong);
+        color: var(--accent-strong);
+        font-size: 4.5rem;
+        font-variant-numeric: lining-nums tabular-nums;
+        line-height: 1;
+    }
+
+    .diary-detail-date-context {
+        display: grid;
+        gap: 8px;
+        color: var(--ink);
+        font-family: var(--font-body);
+        line-height: 1.4;
+    }
+
+    .diary-detail-year-month {
+        font-size: 1.125rem;
+        font-weight: 700;
+    }
+
+    .diary-detail-weekday {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink-soft);
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+
+    .diary-detail-today {
+        padding: 2px 7px;
+        border-radius: 4px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        font-size: 0.75rem;
+        font-weight: 700;
     }
 
     .diary-date-display {
