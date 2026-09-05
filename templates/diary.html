@@ -145,13 +145,13 @@
         {% set detail_url = url_for('main.diary_detail', year=diary.entry_date[0:4], month=diary.entry_date[5:7], day=diary.entry_date[8:10]) %}
         <article class="diary-entry{% if diary.image_url %} has-image{% endif %}">
           <a class="diary-entry-link" href="{{ detail_url }}" aria-label="查看 {{ diary.entry_date }} 的日记"></a>
-          <time class="diary-entry-date" datetime="{{ diary.entry_date }}">
+          <time class="diary-entry-date" datetime="{{ diary.entry_date }}" aria-label="{{ diary.entry_date }} {{ diary.weekday_label }}">
             <strong>{{ diary.entry_date[8:10] }}</strong>
             <span class="diary-entry-weekday">{{ diary.weekday_label }}</span>
-            <span class="diary-entry-mobile-date">{{ diary.entry_date[5:7] }} / {{ diary.entry_date[8:10] }}</span>
           </time>
           <div class="diary-entry-main">
             <div class="diary-entry-meta">
+              <span class="diary-entry-calendar-date" aria-hidden="true"><b>{{ diary.entry_date[0:4] }} 年 {{ diary.entry_date[5:7] | int }} 月</b> · {{ diary.weekday_label }}</span>
               {% if diary.created_at %}
                 <span>{{ diary_icon("clock") }}{{ diary.created_at[11:16] }}</span>
               {% endif %}
@@ -159,7 +159,7 @@
                 <span>{{ diary_icon("cloud") }}{{ diary.weather.condition }} {{ diary.weather.temperature_c }}°C</span>
               {% endif %}
               {% if diary.location and (diary.location.city or diary.location.district or diary.location.province) %}
-                <span>{{ diary_icon("pin") }}{% if diary.location.city %}{{ diary.location.city }}{% else %}{{ diary.location.province }}{% endif %}{% if diary.location.district %}{% if diary.location.city or diary.location.province %} · {% endif %}{{ diary.location.district }}{% endif %}</span>
+                <span class="diary-entry-location">{{ diary_icon("pin") }}{% if diary.location.city %}{{ diary.location.city }}{% else %}{{ diary.location.province }}{% endif %}{% if diary.location.district %}{% if diary.location.city or diary.location.province %} · {% endif %}{{ diary.location.district }}{% endif %}</span>
               {% endif %}
             </div>
             <div class="diary-entry-summary" data-diary-summary>

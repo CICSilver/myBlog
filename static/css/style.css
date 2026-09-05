@@ -3955,10 +3955,6 @@ a.diary-week-day:focus-visible {
     line-height: 1.3;
 }
 
-.diary-entry-mobile-date {
-    display: none;
-}
-
 .diary-entry-image {
     display: block;
     overflow: hidden;
@@ -3995,6 +3991,10 @@ a.diary-week-day:focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+}
+
+.diary-entry-meta .diary-entry-calendar-date {
+    display: none;
 }
 
 .diary-entry-meta .diary-icon {
@@ -4476,25 +4476,74 @@ a.diary-week-day:focus-visible {
 
     .diary-entry,
     .diary-entry.has-image {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 14px 16px;
         padding: 20px 0;
     }
 
     .diary-entry-date {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: start;
         display: block;
-        font-size: 1.2rem;
-        line-height: 1.35;
+        min-height: 58px;
+        padding-right: 12px;
+        border-right: 1px solid var(--line-strong);
+        line-height: 1;
     }
 
-    .diary-entry-date strong,
+    .diary-entry-date strong {
+        display: block;
+        color: var(--accent-strong);
+        font-size: 2.625rem;
+        font-variant-numeric: lining-nums tabular-nums;
+        line-height: 1;
+    }
+
     .diary-entry-weekday {
         display: none;
     }
 
-    .diary-entry-mobile-date {
-        display: block;
-        color: var(--ink-soft);
+    .diary-entry-main {
+        display: contents;
+    }
+
+    .diary-entry-meta {
+        grid-column: 2;
+        grid-row: 1;
+        align-content: start;
+        gap: 6px 14px;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+    }
+
+    .diary-entry-meta .diary-entry-calendar-date {
+        display: flex;
+        flex-basis: 100%;
+        flex-wrap: wrap;
+        color: var(--ink);
+        font-size: 0.875rem;
+    }
+
+    .diary-entry-meta .diary-entry-location {
+        flex-basis: 100%;
+        min-width: 0;
+        align-items: flex-start;
+        overflow-wrap: anywhere;
+    }
+
+    .diary-entry-meta .diary-icon {
+        flex: 0 0 15px;
+    }
+
+    .diary-entry-location .diary-icon {
+        margin-top: 2px;
+    }
+
+    .diary-entry-summary,
+    .diary-entry .diary-read-more,
+    .diary-entry-image {
+        grid-column: 1 / -1;
     }
 
     .diary-entry-image {
