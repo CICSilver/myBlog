@@ -4,6 +4,10 @@
 {% block title %}日记 | {{ site_name }}{% endblock %}
 {% block body_class %}diary-page{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/diary-calendar.css') }}?v=20260905">
+{% endblock %}
+
 {% block site_header %}
   {% set site_cover_title_id = "diary-cover-title" %}
   {% set site_cover_title_tag = "h1" %}
@@ -37,17 +41,7 @@
         </p>
       </div>
 
-      <form class="diary-month-form" method="get" action="{{ url_for('main.diary') }}">
-        <label for="diary-month">查看月份</label>
-        <div class="diary-month-control">
-          {{ diary_icon("calendar") }}
-          <input id="diary-month" type="month" name="month" value="{{ month_value }}">
-        </div>
-        <button class="diary-month-submit" type="submit" aria-label="查看所选月份" title="查看所选月份">
-          {{ diary_icon("arrow") }}
-          <span class="visually-hidden">查看所选月份</span>
-        </button>
-      </form>
+      {% include "_diary_calendar.html" %}
     </section>
 
     {% if is_current_month %}
@@ -189,5 +183,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/diary-calendar.js') }}?v=20260905"></script>
 <script src="{{ url_for('static', filename='js/diary.js') }}"></script>
 {% endblock %}

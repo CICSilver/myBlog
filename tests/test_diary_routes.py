@@ -249,6 +249,49 @@ class DiaryRouteTest(unittest.TestCase):
         self.assertIn("{0} 年 {1} 月".format(past_day.year, past_day.month), html)
         self.assertNotIn('id="diary-form"', html)
 
+    def test_activity_is_private_and_rejects_invalid_years(self):
+        with self.app.test_client() as client:
+            self.assertEqual(client.get("/diary/activity", headers={"Accept": "application/json"}).status_code, 401)
+            self.login(client)
+            for year in ("0", "-1", "bad", "2026.5", str(self.today().year + 1)):
+                self.assertEqual(client.get("/diary/activity?year=" + year).status_code, 400)
+
+    def test_activity_has_counts_and_detail_links_but_no_private_content(self):
+        today = self.today()
+        self.db.add(self.make_diary(today.isoformat(), content="私密文字" * 100, location={"city": "不应返回"}))
+        with self.app.test_client() as client:
+            self.login(client)
+            response = client.get("/diary/activity?year=" + str(today.year))
+            page = client.get("/diary").get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        payload = response.get_json()
+        self.assertEqual(payload["recorded_days"], 1)
+        day = next(day for day in payload["days"] if day and day["today"])
+        self.assertEqual(day["count"], 400)
+        self.assertEqual(day["level"], 2)
+        self.assertEqual(day["url"], f"/diary/{today.year}/{today.month}/{today.day}")
+        self.assertNotIn("私密文字", response.get_data(as_text=True))
+        self.assertNotIn("不应返回", response.get_data(as_text=True))
+        self.assertIn('aria-expanded="false"', page)
+        self.assertIn('id="diary-activity-panel" aria-label="日记足迹" hidden', page)
+        self.assertIn('diary-calendar.js', page)
+
+    def test_activity_refresh_after_save_and_update_counts_one_day(self):
+        metadata = self.metadata_result()
+        with patch("app.routes.fetch_diary_metadata", return_value=metadata):
+            with self.app.test_client() as client:
+                self.login(client)
+                self.assertEqual(client.get("/diary/activity").get_json()["recorded_days"], 0)
+                self.assertEqual(self.post_diary(client, {"content": "一"}).status_code, 200)
+                first = client.get("/diary/activity").get_json()
+                self.assertEqual(first["recorded_days"], 1)
+                self.assertEqual(self.post_diary(client, {"content": "二" * 1000}).status_code, 200)
+                updated = client.get("/diary/activity").get_json()
+        self.assertEqual(updated["recorded_days"], 1)
+        self.assertEqual(updated["current_streak"], 1)
+        self.assertEqual(next(day for day in updated["days"] if day and day["today"])["level"], 4)
+
     def test_invalid_or_future_month_is_rejected(self):
         future_month = (self.today().replace(day=28) + timedelta(days=7)).strftime(
             "%Y-%m"

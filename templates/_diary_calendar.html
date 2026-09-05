@@ -1,0 +1,44 @@
+<div class="diary-calendar" data-diary-calendar data-year="{{ archive_year }}" data-endpoint="{{ url_for('main.diary_activity') }}">
+  <div class="diary-calendar-bar">
+    <form class="diary-calendar-month" method="get" action="{{ url_for('main.diary') }}">
+      <label class="visually-hidden" for="diary-month">查看月份</label>
+      <div class="diary-calendar-month-field">
+        {{ diary_icon("calendar") }}
+        <input id="diary-month" type="month" name="month" value="{{ month_value }}" min="0001-01" max="{{ today_month }}" required>
+      </div>
+      <span class="diary-calendar-summary">{{ '今年' if archive_year == today_date[:4] | int else archive_year ~ '年' }}{{ activity.recorded_days }}天 · 连续{{ activity.current_streak }}天</span>
+      <button class="diary-calendar-go" type="submit" title="查看所选月份" aria-label="查看所选月份">{{ diary_icon("arrow") }}</button>
+    </form>
+    <button class="diary-calendar-toggle" type="button" aria-expanded="false" aria-controls="diary-activity-panel" disabled>
+      足迹 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"></path></svg>
+    </button>
+  </div>
+  <section class="diary-activity-panel" id="diary-activity-panel" aria-label="日记足迹" hidden>
+    <div class="diary-activity-heading">
+      <div class="diary-activity-years">
+        <button type="button" data-activity-prev aria-label="上一年" disabled>‹</button>
+        <span data-activity-year>{{ archive_year }}年</span>
+        <button type="button" data-activity-next aria-label="下一年" disabled>›</button>
+      </div>
+      <span class="diary-activity-summary" data-activity-summary></span>
+    </div>
+    <p class="diary-activity-status" role="status" data-activity-status hidden></p>
+    <button class="diary-activity-retry" type="button" data-activity-retry hidden>重新加载</button>
+    <div class="diary-activity-chart" data-activity-chart hidden>
+      <div class="diary-activity-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+      <div class="diary-activity-viewport" data-activity-viewport>
+        <div class="diary-activity-months" data-activity-months aria-hidden="true"></div>
+        <div class="diary-activity-grid" data-activity-grid role="group" aria-label="每日记录，使用方向键移动，点击查看日期"></div>
+      </div>
+    </div>
+    <p class="diary-activity-swipe" aria-hidden="true">← 左右滑动查看全年 →</p>
+    <div class="diary-activity-footer" data-activity-footer hidden>
+      <div class="diary-activity-legend" aria-label="字数色阶：无记录、1至199字、200至499字、500至999字、1000字及以上">
+        <span>少</span>{% for level in range(5) %}<i data-level="{{ level }}" aria-hidden="true"></i>{% endfor %}<span>多 · 字数</span>
+      </div>
+      <div class="diary-activity-selection" aria-live="polite">
+        <span data-activity-detail></span><a data-activity-link hidden><span data-activity-link-label>查看日记</span> →</a>
+      </div>
+    </div>
+  </section>
+</div>

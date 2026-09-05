@@ -12,6 +12,7 @@ from flask import (
 from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from app.diary_metadata import fetch_diary_metadata
+from app.diary_activity import activity_summary, build_activity_calendar, diary_activity_counts
 from app.view_filter import (
     EFFECTIVE_VIEW_SECONDS,
     READING_HEARTBEAT_SECONDS,
@@ -202,7 +203,9 @@ def diary():
     is_current_month = (archive_year, archive_month) == (today.year, today.month)
     today_diary = dbHelper.get_diary_by_date(today_date) if is_current_month else None
     current_week = []
-    diary_dates = {diary_entry.entry_date for diary_entry in dbHelper.get_all_diaries()}
+    all_diaries = dbHelper.get_all_diaries()
+    diary_dates = {diary_entry.entry_date for diary_entry in all_diaries}
+    activity_counts = diary_activity_counts(all_diaries, today)
     week_start = today - timedelta(days=today.weekday())
     for day_offset in range(7):
         week_day = week_start + timedelta(days=day_offset)
@@ -238,8 +241,28 @@ def diary():
         archive_month=archive_month,
         archive_count=len(diaries),
         month_value=month_value,
+        activity=activity_summary(activity_counts, archive_year, today),
+        today_month=today.strftime("%Y-%m"),
         **get_site_context(),
     )
+
+
+@main.route('/diary/activity', methods=['GET'])
+@login_required
+def diary_activity():
+    today = datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])).date()
+    year_value = request.args.get("year", str(today.year))
+    if not re.fullmatch(r"[0-9]{1,4}", year_value) or not 1 <= int(year_value) <= today.year:
+        return jsonify({"message": "请选择有效年份。"}), 400
+    counts = diary_activity_counts(dbHelper.get_all_diaries(), today)
+    calendar = build_activity_calendar(counts, int(year_value), today)
+    for day in calendar["days"]:
+        if day is not None:
+            year, month, day_number = map(int, day["date"].split("-"))
+            day["url"] = url_for("main.diary_detail", year=year, month=month, day=day_number) if day["count"] else None
+    response = jsonify(calendar)
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @main.route('/diary', methods=['POST'])
