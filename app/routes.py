@@ -12,7 +12,15 @@ from flask import (
 from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from app.diary_metadata import fetch_diary_metadata
-from app.diary_activity import activity_summary, build_activity_calendar, diary_activity_counts
+from app.diary_activity import (
+    activity_summary,
+    build_activity_calendar,
+    build_month_calendar,
+    build_year_overview,
+    diary_activity_counts,
+    word_milestone,
+    year_char_total,
+)
 from app.view_filter import (
     EFFECTIVE_VIEW_SECONDS,
     READING_HEARTBEAT_SECONDS,
@@ -22,7 +30,7 @@ from app.view_filter import (
     is_verified_crawler_ip,
     normalize_reading_seconds,
 )
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import json
 import math
 import os
@@ -202,32 +210,15 @@ def diary():
 
     is_current_month = (archive_year, archive_month) == (today.year, today.month)
     today_diary = dbHelper.get_diary_by_date(today_date) if is_current_month else None
-    current_week = []
-    all_diaries = dbHelper.get_all_diaries()
-    diary_dates = {diary_entry.entry_date for diary_entry in all_diaries}
-    activity_counts = diary_activity_counts(all_diaries, today)
-    week_start = today - timedelta(days=today.weekday())
-    for day_offset in range(7):
-        week_day = week_start + timedelta(days=day_offset)
-        week_day_date = week_day.isoformat()
-        current_week.append(
-            {
-                "date": week_day_date,
-                "weekday": DIARY_WEEKDAY_LABELS[week_day.weekday()],
-                "day": week_day.day,
-                "is_today": week_day == today,
-                "detail_url": (
-                    url_for(
-                        "main.diary_detail",
-                        year=week_day.year,
-                        month=week_day.month,
-                        day=week_day.day,
-                    )
-                    if week_day_date in diary_dates
-                    else None
-                ),
-            }
-        )
+    activity_counts = diary_activity_counts(dbHelper.get_all_diaries(), today)
+    month_calendar = build_month_calendar(activity_counts, archive_year, archive_month, today)
+    for week in month_calendar["weeks"]:
+        for day in week["days"]:
+            if day and day["count"]:
+                day["url"] = _diary_detail_url(day["date"])
+    first_of_month = date(archive_year, archive_month, 1)
+    previous_month = first_of_month - timedelta(days=1) if first_of_month > date.min else None
+    next_month = (first_of_month + timedelta(days=32)).replace(day=1)
 
     return render_template(
         'diary.html',
@@ -235,16 +226,25 @@ def diary():
         today_diary=today_diary,
         today_date=today_date,
         today_weekday=DIARY_WEEKDAY_LABELS[today.weekday()],
-        current_week=current_week,
         is_current_month=is_current_month,
         archive_year=archive_year,
         archive_month=archive_month,
         archive_count=len(diaries),
         month_value=month_value,
         activity=activity_summary(activity_counts, archive_year, today),
+        month_calendar=month_calendar,
+        year_overview=build_year_overview(activity_counts, archive_year, today),
+        milestone=word_milestone(year_char_total(activity_counts, archive_year)),
+        previous_month_value=previous_month.strftime("%Y-%m") if previous_month else None,
+        next_month_value=None if is_current_month else next_month.strftime("%Y-%m"),
         today_month=today.strftime("%Y-%m"),
         **get_site_context(),
     )
+
+
+def _diary_detail_url(entry_date):
+    year, month, day = map(int, entry_date.split("-"))
+    return url_for("main.diary_detail", year=year, month=month, day=day)
 
 
 @main.route('/diary/activity', methods=['GET'])
@@ -258,8 +258,7 @@ def diary_activity():
     calendar = build_activity_calendar(counts, int(year_value), today)
     for day in calendar["days"]:
         if day is not None:
-            year, month, day_number = map(int, day["date"].split("-"))
-            day["url"] = url_for("main.diary_detail", year=year, month=month, day=day_number) if day["count"] else None
+            day["url"] = _diary_detail_url(day["date"]) if day["count"] else None
     response = jsonify(calendar)
     response.headers["Cache-Control"] = "private, no-store"
     return response

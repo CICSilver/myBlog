@@ -39,7 +39,7 @@ class SiteFooterTest(unittest.TestCase):
             '{% extends "base.html" %}{% block site_header %}{% endblock %}'
         )
         html = template.render(
-            url_for=lambda endpoint, filename: "/static/" + filename,
+            url_for=lambda endpoint, filename, **kwargs: "/static/" + filename,
             csrf_token=lambda: "test-token",
         )
         parser = FooterParser()

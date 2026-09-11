@@ -1,0 +1,28 @@
+{% set milestone_year_label = '今年' if archive_year == today_month[:4] | int else archive_year ~ ' 年' %}
+<section class="diary-milestone" aria-label="字数里程碑">
+  <div class="diary-milestone-head">
+    <span class="diary-milestone-total"><b>{{ milestone.total_number }}</b><span>{{ milestone.total_unit }} · {{ milestone_year_label }}累计</span></span>
+    {% if milestone.last_title %}
+      <span class="diary-milestone-ratio">≈ {{ milestone.ratio }} 本《{{ milestone.last_title }}》</span>
+    {% elif milestone.next_title %}
+      <span class="diary-milestone-ratio">下一本《{{ milestone.next_title }}》</span>
+    {% endif %}
+  </div>
+  <div class="diary-milestone-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ milestone.percent }}" aria-label="距下一本书的进度">
+    <span style="width: {{ milestone.percent }}%;"></span>
+  </div>
+  <div class="diary-milestone-foot">
+    {% if milestone.passed_count > 1 %}
+      <span>已超过《{{ milestone.last_title }}》等 {{ milestone.passed_count }} 本</span>
+    {% elif milestone.passed_count == 1 %}
+      <span>已超过《{{ milestone.last_title }}》</span>
+    {% else %}
+      <span>写下第一个字就开始计数</span>
+    {% endif %}
+    {% if milestone.next_title %}
+      <span>再写 {{ milestone.remaining_text }}追上《{{ milestone.next_title }}》</span>
+    {% else %}
+      <span>已经超过书单上的每一本</span>
+    {% endif %}
+  </div>
+</section>

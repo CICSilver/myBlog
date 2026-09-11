@@ -26,6 +26,18 @@ class DiaryFrontendTest(unittest.TestCase):
         self.stylesheet = (project_root / "static" / "css" / "style.css").read_text(
             encoding="utf-8"
         )
+        self.calendar_template = (
+            project_root / "templates" / "_diary_calendar.html"
+        ).read_text(encoding="utf-8")
+        self.milestone_template = (
+            project_root / "templates" / "_diary_milestone.html"
+        ).read_text(encoding="utf-8")
+        self.calendar_stylesheet = (
+            project_root / "static" / "css" / "diary-calendar.css"
+        ).read_text(encoding="utf-8")
+        self.calendar_javascript = (
+            project_root / "static" / "js" / "diary-calendar.js"
+        ).read_text(encoding="utf-8")
 
     def test_diary_template_keeps_the_route_and_form_contract(self):
         self.assertIn('id="diary-form"', self.diary_template)
@@ -39,10 +51,9 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("today_date", self.diary_template)
         self.assertIn("today_weekday", self.diary_template)
         self.assertIn("today_diary", self.diary_template)
-        self.assertIn("current_week", self.diary_template)
         self.assertIn("is_current_month", self.diary_template)
-        self.assertIn("week_day.detail_url", self.diary_template)
-        self.assertIn("{% if week_day.detail_url %}", self.diary_template)
+        self.assertIn('{% include "_diary_calendar.html" %}', self.diary_template)
+        self.assertIn('{% include "_diary_milestone.html" %}', self.diary_template)
         self.assertIn("{% if is_current_month %}", self.diary_template)
         self.assertIn("更新日记", self.diary_template)
         self.assertIn("存入日记", self.diary_template)
@@ -197,11 +208,11 @@ class DiaryFrontendTest(unittest.TestCase):
             self.diary_template,
         )
 
-    def test_week_strip_is_current_month_only_and_icons_are_shared(self):
-        self.assertIn(
-            '{% if is_current_month %}\n      <nav class="diary-week-strip"',
-            self.diary_template,
-        )
+    def test_sidebar_calendar_replaces_the_week_strip_and_icons_are_shared(self):
+        self.assertNotIn("diary-week-strip", self.diary_template)
+        self.assertNotIn("diary-week", self.stylesheet)
+        self.assertNotIn('type="month"', self.calendar_template)
+        self.assertIn('<aside class="diary-side"', self.diary_template)
         self.assertIn('{% from "_diary_icons.html" import diary_icon %}', self.diary_template)
         self.assertIn('{% from "_diary_icons.html" import diary_icon %}', self.detail_template)
         self.assertIn('name == "clock"', self.icons_template)
@@ -212,10 +223,11 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("Daily Notes", self.diary_template)
         self.assertIn("写下此刻", self.diary_template)
         self.assertIn("{{ today_date }} · {{ today_weekday }}", self.diary_template)
-        self.assertIn(".diary-week-strip {\n    display: none", self.stylesheet)
-        self.assertIn(".diary-week-strip {\n        display: grid", mobile_styles)
+        self.assertIn(".diary-columns {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) 372px", self.stylesheet)
+        self.assertIn(".diary-side {\n    position: sticky", self.stylesheet)
+        self.assertIn(".diary-side {\n        position: static;\n        order: -1", mobile_styles)
+        self.assertIn(".diary-overview-stats {\n        display: none", mobile_styles)
         self.assertIn(".diary-date-display {\n        display: none", mobile_styles)
-        self.assertIn(".diary-month-form > label {\n        display: none", mobile_styles)
         self.assertIn(".diary-composer-date {\n    display: none", self.stylesheet)
         self.assertIn(".diary-composer-date {\n        display: flex", mobile_styles)
         textarea_index = self.diary_template.index('<textarea id="diary-content"')
@@ -238,6 +250,47 @@ class DiaryFrontendTest(unittest.TestCase):
             self.stylesheet,
         )
         self.assertIn("{% if not existing_image %}hidden{% endif %}", self.diary_template)
+
+    def test_calendar_card_collapses_with_a_height_transition_and_remembers_state(self):
+        self.assertIn('data-calendar-collapse aria-expanded="true" aria-controls="diary-calendar-body"', self.calendar_template)
+        self.assertIn('<div class="diary-calendar-body" id="diary-calendar-body">', self.calendar_template)
+        self.assertIn("grid-template-rows: 1fr;", self.calendar_stylesheet)
+        self.assertIn(".diary-calendar.is-collapsed .diary-calendar-body {\n    grid-template-rows: 0fr;", self.calendar_stylesheet)
+        self.assertIn("transition: grid-template-rows 0.22s ease, opacity 0.22s ease;", self.calendar_stylesheet)
+        self.assertIn("@media (prefers-reduced-motion: reduce)", self.calendar_stylesheet)
+        self.assertIn('localStorage.getItem("diary-calendar:collapsed") === "1"', self.calendar_template)
+        self.assertIn('localStorage.getItem("diary-calendar:mode") === "year"', self.calendar_template)
+        self.assertIn('calendar.classList.add("is-static")', self.calendar_template)
+        self.assertIn('calendar.classList.remove("is-static")', self.calendar_javascript)
+        self.assertIn('remember(STORAGE_COLLAPSED, collapsed ? "1" : "0")', self.calendar_javascript)
+        self.assertIn('remember(STORAGE_MODE, yearMode ? "year" : "month")', self.calendar_javascript)
+
+    def test_calendar_has_month_and_year_views_and_mobile_keeps_this_week_when_collapsed(self):
+        mobile_styles = self.calendar_stylesheet.split("@media (max-width: 767px)", 1)[1]
+
+        self.assertIn('data-calendar-mode="month" aria-pressed="true"', self.calendar_template)
+        self.assertIn('data-calendar-mode="year" aria-pressed="false"', self.calendar_template)
+        self.assertIn('data-calendar-view="month"', self.calendar_template)
+        self.assertIn('data-calendar-view="year"', self.calendar_template)
+        self.assertIn("{% for week in month_calendar.weeks %}", self.calendar_template)
+        self.assertIn("{% if week.current %} is-current-week{% endif %}", self.calendar_template)
+        self.assertIn('href="#diary-editor"', self.calendar_template)
+        self.assertIn("{% for month in year_overview %}", self.calendar_template)
+        self.assertIn("url_for('main.diary', month=month.value)", self.calendar_template)
+        self.assertIn('.diary-calendar.is-year [data-calendar-view="month"]', self.calendar_stylesheet)
+        self.assertIn(".diary-month-week:not(.is-current-week) {\n        grid-template-rows: 0fr;", mobile_styles)
+        self.assertIn("result.overview.forEach", self.calendar_javascript)
+        self.assertNotIn("diary-activity-viewport", self.calendar_template)
+
+    def test_milestone_shows_total_ratio_and_next_book(self):
+        self.assertIn("milestone.total_number", self.milestone_template)
+        self.assertIn("milestone.total_unit", self.milestone_template)
+        self.assertIn("本《{{ milestone.last_title }}》", self.milestone_template)
+        self.assertIn('role="progressbar"', self.milestone_template)
+        self.assertIn('aria-valuenow="{{ milestone.percent }}"', self.milestone_template)
+        self.assertIn("追上《{{ milestone.next_title }}》", self.milestone_template)
+        self.assertIn("已经超过书单上的每一本", self.milestone_template)
+        self.assertIn(".diary-milestone-bar span {", self.calendar_stylesheet)
 
 
 if __name__ == "__main__":

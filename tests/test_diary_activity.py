@@ -2,7 +2,16 @@ import unittest
 from datetime import date, timedelta
 from types import SimpleNamespace
 
-from app.diary_activity import activity_summary, build_activity_calendar, diary_activity_counts
+from app.diary_activity import (
+    activity_summary,
+    build_activity_calendar,
+    build_month_calendar,
+    build_year_overview,
+    diary_activity_counts,
+    format_char_count,
+    word_milestone,
+    year_char_total,
+)
 
 
 class DiaryActivityTest(unittest.TestCase):
@@ -60,6 +69,69 @@ class DiaryActivityTest(unittest.TestCase):
         for year in (0, 2027):
             with self.assertRaises(ValueError):
                 build_activity_calendar({}, year, today)
+
+    def test_month_calendar_pads_weeks_and_marks_the_current_week(self):
+        today = date(2026, 9, 11)
+        counts = {date(2026, 9, 2): 40, date(2026, 9, 9): 600, date(2026, 8, 30): 5}
+        result = build_month_calendar(counts, 2026, 9, today)
+        self.assertEqual(result["value"], "2026-09")
+        self.assertEqual(result["recorded_days"], 2)
+        self.assertEqual(len(result["weeks"]), 5)
+        first_week = result["weeks"][0]["days"]
+        self.assertIsNone(first_week[0])
+        self.assertEqual(first_week[1]["day"], 1)
+        self.assertEqual(first_week[2]["level"], 1)
+        self.assertEqual([week["current"] for week in result["weeks"]], [False, True, False, False, False])
+        current = result["weeks"][1]["days"]
+        self.assertTrue(current[4]["today"])
+        self.assertEqual(current[2]["level"], 3)
+        self.assertTrue(current[5]["future"])
+        last_week = result["weeks"][-1]["days"]
+        self.assertEqual(last_week[2]["day"], 30)
+        self.assertIsNone(last_week[3])
+        self.assertEqual(sum(1 for week in result["weeks"] for day in week["days"] if day), 30)
+        with self.assertRaises(ValueError):
+            build_month_calendar(counts, 2026, 10, today)
+
+    def test_year_overview_has_twelve_months_with_levels_and_future_flags(self):
+        today = date(2026, 9, 11)
+        counts = {date(2026, 1, 1): 1200, date(2026, 9, 11): 10}
+        overview = build_year_overview(counts, 2026, today)
+        self.assertEqual([month["month"] for month in overview], list(range(1, 13)))
+        self.assertEqual(overview[0]["recorded_days"], 1)
+        self.assertEqual(overview[0]["cells"][3]["level"], 4)
+        self.assertEqual(overview[0]["cells"][:3], [None, None, None])
+        self.assertTrue(overview[8]["cells"][-1]["future"])
+        self.assertTrue(overview[9]["future"])
+        self.assertFalse(overview[8]["future"])
+        self.assertEqual(overview[8]["value"], "2026-09")
+        self.assertEqual(build_activity_calendar(counts, 2026, today)["char_total"], 1210)
+        self.assertEqual(year_char_total({**counts, date(2025, 3, 1): 99}, 2026), 1210)
+
+    def test_word_milestone_ladder_and_formatting(self):
+        self.assertEqual(format_char_count(83_400), ("8.3", "万字"))
+        self.assertEqual(format_char_count(120_000), ("12", "万字"))
+        self.assertEqual(format_char_count(5_200), ("5,200", "字"))
+
+        start = word_milestone(0)
+        self.assertEqual(start["passed_count"], 0)
+        self.assertIsNone(start["last_title"])
+        self.assertEqual(start["next_title"], "狂人日记")
+        self.assertEqual(start["percent"], 0)
+
+        middle = word_milestone(65_000)
+        self.assertEqual(middle["last_title"], "边城")
+        self.assertEqual(middle["ratio"], 1.1)
+        self.assertEqual(middle["passed_count"], 6)
+        self.assertEqual(middle["next_title"], "呐喊")
+        self.assertEqual(middle["remaining_text"], "5,000 字")
+        self.assertEqual(middle["percent"], 50)
+
+        beyond = word_milestone(2_000_000)
+        self.assertIsNone(beyond["next_title"])
+        self.assertEqual(beyond["last_title"], "平凡的世界")
+        self.assertEqual(beyond["percent"], 100)
+        self.assertEqual(beyond["remaining_text"], "")
 
 
 if __name__ == "__main__":
