@@ -1,0 +1,194 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Creative Writing Archive Silver's Blog" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: Creative Writing Archive
+        - heading "Silver's Blog" [level=1] [ref=e7]
+      - generic "Archive Note" [ref=e8]:
+        - generic [aria-hidden] [ref=e9]: “
+        - paragraph [ref=e10]: 泥留鸿爪，旧游成文。
+      - generic [ref=e11]:
+        - button "切换到深色模式" [ref=e12] [cursor=pointer]
+        - link "管理员登录" [ref=e16] [cursor=pointer]:
+          - /url: /__silver-admin-login
+  - generic [ref=e19]:
+    - complementary [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - heading "分类索引" [level=2] [ref=e23]
+          - generic [ref=e24]: "1"
+        - list [ref=e25]:
+          - listitem [ref=e26]:
+            - link "随笔 10" [ref=e27] [cursor=pointer]:
+              - /url: /categorized_blogs/%E9%9A%8F%E7%AC%94
+              - generic [ref=e28]: 随笔
+              - emphasis [ref=e29]: "10"
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "时间归档" [level=2] [ref=e32]
+          - generic [ref=e33]: "6"
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link "2026.7 2" [ref=e36] [cursor=pointer]:
+              - /url: /date_blogs/2026/7
+              - generic [ref=e37]: "2026.7"
+              - emphasis [ref=e38]: "2"
+          - listitem [ref=e39]:
+            - link "2026.6 2" [ref=e40] [cursor=pointer]:
+              - /url: /date_blogs/2026/6
+              - generic [ref=e41]: "2026.6"
+              - emphasis [ref=e42]: "2"
+          - listitem [ref=e43]:
+            - link "2026.5 4" [ref=e44] [cursor=pointer]:
+              - /url: /date_blogs/2026/5
+              - generic [ref=e45]: "2026.5"
+              - emphasis [ref=e46]: "4"
+          - listitem [ref=e47]:
+            - link "2026.4 1" [ref=e48] [cursor=pointer]:
+              - /url: /date_blogs/2026/4
+              - generic [ref=e49]: "2026.4"
+              - emphasis [ref=e50]: "1"
+          - listitem [ref=e51]:
+            - link "2025.4 0" [ref=e52] [cursor=pointer]:
+              - /url: /date_blogs/2025/4
+              - generic [ref=e53]: "2025.4"
+              - emphasis [ref=e54]: "0"
+          - listitem [ref=e55]:
+            - link "2025.3 2" [ref=e56] [cursor=pointer]:
+              - /url: /date_blogs/2025/3
+              - generic [ref=e57]: "2025.3"
+              - emphasis [ref=e58]: "2"
+    - generic [ref=e59]:
+      - article [ref=e60]:
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: Latest Entry
+          - heading "最新文章" [level=2] [ref=e63]
+        - heading [level=3] [ref=e64]:
+          - link "折桂令·无题" [ref=e65] [cursor=pointer]:
+            - /url: /2026/7/zhe_gui_ling
+        - generic [ref=e66]:
+          - generic [ref=e67]: 2026-07-31
+          - generic [ref=e68]: 随笔
+        - paragraph [ref=e70]: 怪白日、藏了星汉，碎撒霖铃，游作鳞斑。溪心石上，偏折柔枝，乱搅河湾。波住处、光沉影潜，空惹得绿荇微澜。素伞忽回，星耀鳞跃，一点幽微，莫是玙璠？
+        - link "进入全文" [ref=e71] [cursor=pointer]:
+          - /url: /2026/7/zhe_gui_ling
+      - generic [ref=e73]:
+        - paragraph [ref=e74]: Archive Stream
+        - heading "近期归档" [level=2] [ref=e75]
+      - article [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]: 2026-07-18
+          - generic [ref=e79]: 随笔
+        - generic [ref=e80]:
+          - heading [level=3] [ref=e81]:
+            - link "折桂令·夏思" [ref=e82] [cursor=pointer]:
+              - /url: /2026/7/zhe_gui_ling_xia_si
+          - paragraph [ref=e84]: 一点心事谁知？蝉也不知，月也不知。帘静风迟，暑重难支，欲寄无词。一枕蝉嘶歇复嘶，半帘月色瘦如丝。欲问姝颜，可也相怜？相见何时？月两圆时。
+          - link "阅读全文" [ref=e85] [cursor=pointer]:
+            - /url: /2026/7/zhe_gui_ling_xia_si
+      - article [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]: 2026-06-11
+          - generic [ref=e89]: 随笔
+        - generic [ref=e90]:
+          - heading [level=3] [ref=e91]:
+            - link "孤明不坠，江河有源" [ref=e92] [cursor=pointer]:
+              - /url: /2026/6/gu_ming_bu_zhui_jiang_he_you_yuan
+          - generic [ref=e93]:
+            - paragraph [ref=e94]: 日月不失其体，故蔽而复明；江河不失其源，故穷而复通。盖天下有可晦之时，而无可夺之明；有可塞之势，而无可绝之流。惟其明在乎体，流在乎源，故浮云蔽之而不损，乱石横之而不亡。然则人世之变，亦有然者乎？曰：有之。城郭可墟，社稷可改，而一脉所系，未必遂与烟尘俱尽也。
+            - paragraph [ref=e95]: 甲申之变，天倾地坼，九庙为墟，乘舆不返。于是衣冠震荡，士民流离，江淮以南，日色惨淡。其时论者或谓大势已去，孤城残旅，无补于天下；或谓新命既兴，旧人当顺时以全身。此言诚便于一身，而未必安于万姓也。夫天下之大，非一家之私藏；城池之守，非孤臣之私愤。兵燹之后，闾阎待命；锋镝之下，老稚无依。若执义者先解甲，守土者先委城，则一城百姓，将谁与庇？百年衣冠，将谁与存？此其所以知势不可支，而犹不得不支也。
+            - paragraph [ref=e96]: 扬州之役，史公可法当之。北骑南下，书檄交至，劝以富贵，胁以兵威，公皆不顾。城中粮尽而人心危，矢石交飞而援师不至。然公犹登陴抚众，誓与城俱。夫扬州一城，岂足以抗天下之兵哉？而公之所守者，亦岂徒一堵之垣、一郡之地哉？城上有汉家冠带，城下有无告生民；城外一开，则屠戮随之，剃发易服之令随之，故公以残城当大兵，以一身任众命。及城陷而公不屈，身死而名益烈。是役也，胜负已判于兵势之先，而人心之明，乃见于城亡之后。
+          - link "阅读全文" [ref=e97] [cursor=pointer]:
+            - /url: /2026/6/gu_ming_bu_zhui_jiang_he_you_yuan
+      - article [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e100]: 2026-06-10
+          - generic [ref=e101]: 随笔
+        - generic [ref=e102]:
+          - heading [level=3] [ref=e103]:
+            - link "家" [ref=e104] [cursor=pointer]:
+              - /url: /2026/6/jia
+          - paragraph [ref=e106]: 上周开车回家，从南门经过。南门里头有个幼儿园，正撞上六一，门口挤得满满堂堂都是家长，原本两辆车并排都宽敞的路被挤占地只堪堪能过一辆车。其实以前这里没这么些人的。 约莫二十年前，这南门还是个爬满野藤常年锁着的铁门，铁门外头住着个收废品的老头儿，再外头就是一片田了。南门里头是一个广场，正在幼儿园对面。那会儿还没有这么许多车子，广场也自然还没有变成停车场，我和一群孩子便经常骑着小自行车绕着那广场转悠。那会儿不怕太阳，也不怕下雨，真要说有什么怕的，也就是作业没写完回去挨骂了。不过也不是一直在骑车的，广场靠南边儿有一排连廊，顶上爬着野藤，便成了我们的一个休息点。车子随意地停在广场里头，孩子们扎堆趴在连廊靠着铁篱笆那一侧的草地上，似乎总有聊不完的天。我也不总是在广场玩的，那会儿有个自行车，就似乎整个小区哪里都能去得了。在别墅区里头有一小块儿水泥地，里头放了一个滑梯、一个跷跷板还有一个我叫不上名字的，圆圆的铁盒，里头一圈座位，外头带着跑一跑就能转很久的东西。从南边骑到北边，又从东边玩到西边，一直玩的太阳落山了，才慢悠悠晃回家——回去晚了，可就要在拐弯口撞上满脸不开心的妈妈咯。 后来啊，南门也不知道什么时候就开了，后头的田平掉了一部分，修了条路。那会儿我小学也毕业了，骑着电动车从那条路上初中。那条路当时才修好，两边儿还是田呢，种着不少油菜。春节之后开学的时候两边儿都是金色的，一排排的油菜花，远远地闻着是香的，但近了、浓了，倒又似乎让人觉着有些臭了。不过这些油菜花也就一两年，车子越来越多，新小区的住户也越来越多，油菜花的那些土地就得让道啦。初三那年的一个晚上，我正从晚自习回来，老远的看着那些被铲掉的田堆出来的一个小土山上，竟还站着两三只羊！一度我觉得是自己看错了，这地方就在新小区的后头，在马路边上，这羊吃完了草要去哪？不过我没停车，我正赶着回家呢。 现在这条路的人倒是多了，两边儿有卖衣服的、卖盆栽的、卖吃食的，说是城里倒更像是个集市，有够难走的。不过，走在这条路上，也就回家了。
+          - link "阅读全文" [ref=e107] [cursor=pointer]:
+            - /url: /2026/6/jia
+      - article [ref=e108]:
+        - generic [ref=e109]:
+          - generic [ref=e110]: 2026-05-17
+          - generic [ref=e111]: 随笔
+        - generic [ref=e112]:
+          - heading [level=3] [ref=e113]:
+            - link "未名之名" [ref=e114] [cursor=pointer]:
+              - /url: /2026/5/wei_ming_zhi_ming
+          - paragraph [ref=e116]: 小雨，去了趟璐简王陵。陵外是一片月季花海，间在大门与十六石兽群之间。陵内直接连通潞王墓，西侧一牡丹花田接着次妃墓。她生前，他给不了她名分。她死后，他几乎花了半生积蓄，给她修了“共枕一山，共蹬一水”的、近乎皇陵的墓地。一条祖训，断了他再见母亲兄长的希望。又一条规制，让他只能言爱于空山。 下午，溜达去了影院，看了一部电影。情义二字几乎贯穿始终。但我不认可。非言其角色无情无义，而是这所谓“情义”为何？同样的感受，置于大众认可的范围内便成了情义，置于道德洼地也或成为别的什么。只是她称之为情义，她也称之为情义。或许，当一个关系从未被双方定义，那么便都可以归入情义范畴？ 我不愿过多分析数百年前的她和他，也不愿分析数十年前的她和他。他们受制于规训的、仅由历史文字记载的人物，是受制于大众道德的、经过艺术加工的角色。但她的观点很有意思。选择后的再选择，清醒的，独占的，排他的。一系列定义性描述指向了一个精确而清晰的词汇，爱情。爱情和情义，分的开吗？分的开的。那么爱情是否从一开始就是爱情呢？我觉得未必。 言至于此，她之于我如何？或许我应当试着用语言来表述——某些我没法精确地说出口的未名的东西。她之于我，是决策层面的偏向，是资源层面的倾斜，是情绪层面的耦合，是人格层面的欣赏。 若是以主流观点，这自然会被套上一个“喜欢”的帽子——当你的眼力、智力、心力几乎聚焦于一人时，这便是大众的看法。因为“喜欢”便要去“争取”，要去“追求”，倒是把人当了战利品！那么，我要如何去定义这感受？我的词汇是匮乏的，感受又是丰富的。其不可言表的部分，常常使我感到痛苦。
+          - link "阅读全文" [ref=e117] [cursor=pointer]:
+            - /url: /2026/5/wei_ming_zhi_ming
+      - article [ref=e118]:
+        - generic [ref=e119]:
+          - generic [ref=e120]: 2026-05-16
+          - generic [ref=e121]: 随笔
+        - link [ref=e122] [cursor=pointer]:
+          - /url: /2026/5/yu_you_yun_tai
+          - img "雨游云台" [ref=e123]
+        - generic [ref=e124]:
+          - heading [level=3] [ref=e125]:
+            - link "雨游云台" [ref=e126] [cursor=pointer]:
+              - /url: /2026/5/yu_you_yun_tai
+          - paragraph [ref=e128]: 雨很大，天气预报并不准确。人很少，我的预想倒是不错。 许是雨量不小，大小泉瀑遍布山间。大的如云台天瀑，高三百多米，颇为壮观。曾道听途说，这瀑布的水源在山西，山西看不得河南拿着他们那边的这一块儿地去挣钱，就断了这水，于是河南想了法子弄了几个水管续上了这瀑布。早些年是没人发现得了的——可没人爬那峭壁就为了验证这瀑布的真假！而近些年有了无人机，有的人爱拍那山水便飞了上去，于是发现那天瀑不过是几根还把足够高的水管。 雨水也是要投胎的。从天上来的水，是要被伞挡着的。从山上来的水，是供人瞻仰的。我站在瀑布下头，伞上噼里啪啦吵着，是山上的？天上的？还是水管里的？我不知道，伞也不知道，或许它们自己也不知道。落在伞上的那一刻，它们反倒成了一样的东西。 所谓烟雨，山雨似烟。山上缭绕的烟雨自然是多少传说里的仙气，只可惜我到底是个凡人，遇了仙气无福消受，哪怕小心翼翼也照样落得个鞋裤皆湿的下场。倒是路上见了一对父子，只穿着长裤球鞋便下去小溪踩水。父亲握着孩子的手，男孩儿在小溪里蹦哒。快活吗？自然是快活的。遭罪吗？那是之后的事情了。 沿路见了不少牌子，说这些石头刻着海的声音。走了不多时，见着三只蜗牛——两只趴在石头上不动弹，一只正歪歪扭扭蠕动着。我试着拽了它一下，它不动弹，只是换了个方向，就像它脚下那块石头一样。呵，蜗牛在水上，水在石头上。那么些年以前，这石头曾在水里的时候，许是也有些什么爬在上面？
+          - link "阅读全文" [ref=e129] [cursor=pointer]:
+            - /url: /2026/5/yu_you_yun_tai
+      - article [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e132]: 2026-05-05
+          - generic [ref=e133]: 随笔
+        - generic [ref=e134]:
+          - heading [level=3] [ref=e135]:
+            - link "散步" [ref=e136] [cursor=pointer]:
+              - /url: /2026/5/san_bu
+          - generic [ref=e137]:
+            - paragraph [ref=e138]: 每次回家，妈妈总会在晚饭后叫我出去散步。我向来是不喜欢散步的，多是有烦心事没法排解才会去水边转转。家住的小区距离河边不到一公里，大约五年前这河边还只是一条泥路。慢慢的因为城市整改，做了绿化、修了小亭，前两年也终于通了灯。人愈来愈多了，六七点的时候，多是些中老年人，吃完饭消消食，有两人做伴的、也有独自一人带个新闻广播的，当然也不乏牵着一两条狗的。
+            - paragraph [ref=e139]: 河边的绿化近来做的很好，路边隔几步就有几丛粉色的蔷薇。蔷薇间种的位置很好，不在某个路灯下，而是间在两个灯中间，灯光从两侧顶部下来，层叠的花便站了起来。而草地上的月见草便活泼的多了，一片接着一片，间或在杂草中探头，四处都有她们的影子，散着时淡时浓的香气。她们并不避讳灯光，就那么大咧咧站在灯光下，恣意舒展着那四片朴素的粉瓣。于是我把她们拍下来，发给了她。妈妈在前面叫我，我耽搁地太久了。
+            - paragraph [ref=e140]: 我们聊着时常聊起的话，叔叔给表弟托关系找的工作很苦很累、我在外面爬山看到的瀑布悬崖如何壮观。妈妈讲着，小婆婆癌症又复发，再次去医院做了化疗。二舅离了婚又结了婚，生了孩子又买了房子。“你知道吗？上次出去玩，她还给我打伞呢，就像你一样。”突然地我也开始讲着我想到的事情。妈妈安静了下来，听我絮叨着，她是怎样的能吃，又是怎样的能睡，是怎样的恐高，又是怎样的倔强。我讲的很开心，或许是那晚，笑得最久的一会儿。
+          - link "阅读全文" [ref=e141] [cursor=pointer]:
+            - /url: /2026/5/san_bu
+      - article [ref=e142]:
+        - generic [ref=e143]:
+          - generic [ref=e144]: 2026-05-01
+          - generic [ref=e145]: 随笔
+        - generic [ref=e146]:
+          - heading [level=3] [ref=e147]:
+            - link "早醒随笔" [ref=e148] [cursor=pointer]:
+              - /url: /2026/5/morning_essay
+          - generic [ref=e149]:
+            - paragraph [ref=e150]: 最近一早总是不太睡得着。醒来时的缘由多种多样，但往常总能翻翻睡过去。清醒总是伴着一阵鼓点般的心跳节奏，就像睡着的不是我而是那个器官。但首先挣脱梦境的从里都不是它，它只是在战争打响后才后知后觉敲锣打鼓地叫醒整个身体。最先醒来的总是脑子，或者说，有人住进来了，它不得不在第一时间去尝试为我解开那道题。
+            - paragraph [ref=e151]: 小时候总觉得，试卷上的题目就是我所能接触到的全部，后来又觉得工作里的题目才是我不得不重视的。我似乎一直在忽略我自己的题目。不，准确的说不是忽略，我只是从来没有过这般出题的机会。于是去年开始一头扎进了哲学的书里，试着用准确的语言来结构它。显然我失败了，但失败的不是语言而是感受、是经历。样本太少以至于理性没法继续推导、解释并归档。但今年有了不一样的感受，也有了不同去年的经历，尽管这还是不够，但我得出了一个中间结论。
+            - paragraph [ref=e152]: 这个结论关于司各脱的haecceitias和quidditias，也即是“thisness”和“whatness”。
+          - link "阅读全文" [ref=e153] [cursor=pointer]:
+            - /url: /2026/5/morning_essay
+      - article [ref=e154]:
+        - generic [ref=e155]:
+          - generic [ref=e156]: 2026-04-29
+          - generic [ref=e157]: 随笔
+        - generic [ref=e158]:
+          - heading [level=3] [ref=e159]:
+            - link "博客升级导致的异常问题" [ref=e160] [cursor=pointer]:
+              - /url: /2026/4/blog_update_notes
+          - generic [ref=e161]:
+            - paragraph [ref=e162]: 近期做了一部分博客的升级事项，尝试对云服务器部分的不成熟代码进行了更新。尤其是数据库部分，原本单纯用TinyDB做单文件存储管理，不具备备份功能。
+            - paragraph [ref=e163]: 恰恰是这次针对备份的升级，导致了原始数据丢失——服务器也一直没开备份，尝试了一个多小时进行恢复也失败了。直接导致去年的记录几乎全部丢失。仅有部分手写内容还在本子上，勉强把去年的一些心路历程记下来一些。
+          - link "阅读全文" [ref=e164] [cursor=pointer]:
+            - /url: /2026/4/blog_update_notes
+      - article [ref=e165]:
+        - generic [ref=e166]:
+          - generic [ref=e167]: 2025-03-30
+          - generic [ref=e168]: 随笔
+        - generic [ref=e169]:
+          - heading [level=3] [ref=e170]:
+            - link "随笔" [ref=e171] [cursor=pointer]:
+              - /url: /2025/3/essay_25_3_30
+          - generic [ref=e172]:
+            - paragraph [ref=e173]: 看完恋如雨止漫画，结局实在是意难平，可以说女主青涩但男主最后的不挽留甚至强硬要求其回家的剧情，可以预见但实在是让人很难受，甚至大雪过后两人彻底再无交集，作为旁观者尚不能放下，为何当局者如此放得下？
+            - separator [ref=e174]
+            - paragraph [ref=e175]: 心情复杂的同时，又联想到自己最近纠结很久的问题：痤疮。其实也算不得最近了，十年前射出去的箭兜兜转转还是中了自己身上。或许我的青春早就结束了，就在高中时候不愿整理外表，半年剪一次头发早起从不洗脸的时候，就在脸上出满痘痘仍不愿去医院的时候，如此的自轻自贱假装用功，恨不能回到当时给自己两耳光。
+          - link "阅读全文" [ref=e176] [cursor=pointer]:
+            - /url: /2025/3/essay_25_3_30

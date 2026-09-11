@@ -1,0 +1,26 @@
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-shell {
+    flex: 1 0 auto;
+}
+
+.site-footer {
+    flex-shrink: 0;
+    padding: 20px 16px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.8;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+    color: var(--accent-strong);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
