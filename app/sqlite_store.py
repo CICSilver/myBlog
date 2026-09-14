@@ -77,20 +77,24 @@ def backup_sqlite(source, target):
 
 
 class SQLiteStore:
-    def __init__(self, path):
+    def __init__(self, path, create=True):
         self.path = str(Path(path).resolve())
+        self.create = create
         self._local = threading.local()
         self._initialized_pid = None
         self._init_lock = threading.Lock()
 
     def _connect(self):
-        Path(self.path).parent.mkdir(parents=True, exist_ok=True)
-        try:
-            descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(descriptor)
-        except FileExistsError:
-            pass
-        connection = sqlite3.connect(self.path, timeout=15, isolation_level=None)
+        if self.create:
+            Path(self.path).parent.mkdir(parents=True, exist_ok=True)
+            try:
+                descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                os.close(descriptor)
+            except FileExistsError:
+                pass
+        elif not Path(self.path).is_file():
+            raise FileNotFoundError("Production database missing: " + self.path)
+        connection = sqlite3.connect(Path(self.path).as_uri() + ("?mode=rwc" if self.create else "?mode=rw"), uri=True, timeout=15, isolation_level=None)
         connection.execute("PRAGMA busy_timeout=15000")
         connection.execute("PRAGMA foreign_keys=ON")
         connection.execute("PRAGMA synchronous=FULL")
@@ -106,6 +110,8 @@ class SQLiteStore:
                             version = connection.execute("PRAGMA user_version").fetchone()[0]
                             if version not in (0, SCHEMA_VERSION):
                                 raise ValueError("Unsupported myBlog schema version")
+                            if version == 0 and not self.create:
+                                raise ValueError("Production database is uninitialized")
                             if version == 0 and connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
                                 raise ValueError("Refusing to initialize an unrelated SQLite database")
                             connection.execute("CREATE TABLE IF NOT EXISTS document_tables (name TEXT PRIMARY KEY)")

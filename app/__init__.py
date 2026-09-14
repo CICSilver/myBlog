@@ -1,5 +1,6 @@
 from flask import Flask
 from app.sqlite_store import SQLiteStore
+from app.runtime_config import load_runtime
 from datetime import timedelta
 import os
 
@@ -13,19 +14,27 @@ from app.content_history import (
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 数据库文件路径
-db_path = os.environ.get("BLOG_DB_PATH") or os.path.join(project_root, "db", "blog_db.sqlite3")
+runtime_settings = load_runtime(project_root)
+db_path = runtime_settings["BLOG_DB_PATH"]
 
 # 确保父目录存在
-os.makedirs(os.path.dirname(db_path), exist_ok=True)
+if runtime_settings["BLOG_ENV"].lower() != "production":
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
 # 初始化 SQLite 存储；连接在操作期间按需创建。
-blog_db = SQLiteStore(db_path)
-if not os.path.exists(db_path) and os.path.exists(os.path.join(project_root, "db", "blog_db.json")) and not os.environ.get("BLOG_DB_PATH"):
-    raise RuntimeError("Legacy JSON database found. Run scripts/migrate_sqlite.py before starting the application.")
+blog_db = SQLiteStore(db_path, create=runtime_settings["BLOG_ENV"].lower() != "production")
 
 def create_app():
     app = Flask(__name__, static_folder="../static", template_folder="../templates")
     app.config.from_pyfile(_local_config_path(), silent=True)
+    app.config.update(load_runtime(project_root))
+    if not _is_development(app):
+        from app.sqlite_store import read_documents
+        if not os.path.isfile(db_path):
+            raise RuntimeError("Production database missing. Restore or explicitly initialize it before startup.")
+        read_documents(db_path)
+    elif not os.path.exists(db_path) and os.path.exists(os.path.join(project_root, "db", "blog_db.json")) and not os.environ.get("BLOG_DB_PATH"):
+        raise RuntimeError("Legacy JSON database found. Run scripts/migrate_sqlite.py before starting the application.")
     app.config["SECRET_KEY"] = _get_secret_key(app)
     app.config["ADMIN_LOGIN_PATH"] = _get_admin_login_path(app)
     app.config["BLOG_CONTENT_HISTORY_DIR"] = _get_content_history_dir(app)
@@ -200,7 +209,14 @@ def _register_history_commands(app):
     def history_restore(snapshot_path, service_stopped):
         if not service_stopped:
             raise click.ClickException("Stop all app processes and pass --service-stopped.")
-        restore_snapshot(snapshot_path, app.config["BLOG_DB_PATH"], service_stopped=True, sqlite_target=True)
+        from app.file_lock import file_lock
+        with file_lock(app.config["BLOG_MAINTENANCE_LOCK"]):
+            if not _is_development(app) and os.name != "nt":
+                import subprocess
+                service = app.config.get("MYBLOG_SERVICE", "myblog.service")
+                if subprocess.run(["systemctl", "is-active", "--quiet", service], timeout=10).returncode == 0:
+                    raise click.ClickException("Service is still active. Use maintenance.py restore --confirm-stop.")
+            restore_snapshot(snapshot_path, app.config["BLOG_DB_PATH"], service_stopped=True, sqlite_target=True)
         snapshot_content_db(
             app.config["BLOG_DB_PATH"],
             "post-restore",

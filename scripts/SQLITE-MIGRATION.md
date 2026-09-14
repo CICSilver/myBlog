@@ -5,6 +5,9 @@
 The default database is `db/blog_db.sqlite3`. Set `BLOG_DB_PATH` explicitly
 for deployments and tests. A legacy JSON file is never auto-imported or
 overwritten during app startup. Migration is an explicit offline operation.
+Production settings now live in the shared `instance/runtime.json`; use
+`install_runtime.py` rather than independent systemd-only path overrides.
+See `DEPLOYMENT.md` for updates, rollback, and missing-database recovery.
 
 SQLite owns persistence, transactions, IDs, unique constraints, and crash
 recovery. The `documents` table preserves original per-table document IDs,
@@ -72,6 +75,9 @@ and WAL/SHM sidecars are moved to a uniquely named quarantine directory,
 including when the previous database is corrupt. The restore command does
 not prune away its selected target. Restart the app after restoration.
 The flag is an operator assertion, not an automatic service-stop mechanism.
+An active production service is rejected. For missing/corrupt DBs use
+`maintenance.py restore SNAPSHOT --confirm-stop`, which manages the service
+and the shared maintenance lock without initializing the Flask app.
 
 ## Full encrypted backup
 

@@ -98,15 +98,20 @@ def list_history(history_dir=None, limit=None):
     return result if limit is None else result[:limit]
 
 
-def restore_snapshot(snapshot_path, target_db_path, service_stopped=False, sqlite_target=None):
-    # Pin the source before any pruning; quarantine even a corrupt current DB.
+def load_snapshot(snapshot_path):
+    """Validate the manifest hash and database before maintenance stops the site."""
     source_bytes = Path(snapshot_path).read_bytes()
     manifest = Path(snapshot_path).parent / MANIFEST_NAME
     if manifest.exists():
         entry = next((item for item in list_history(str(manifest.parent)) if Path(item["path"]).resolve() == Path(snapshot_path).resolve()), None)
         if entry and hashlib.sha256(source_bytes).hexdigest() != entry.get("sha256"):
             raise ValueError("Snapshot checksum mismatch")
-    data = read_documents(snapshot_path)
+    return source_bytes, read_documents(snapshot_path)
+
+
+def restore_snapshot(snapshot_path, target_db_path, service_stopped=False, sqlite_target=None):
+    # Pin the source before any pruning; quarantine even a corrupt current DB.
+    source_bytes, data = load_snapshot(snapshot_path)
     target = Path(target_db_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     if sqlite_target is None:

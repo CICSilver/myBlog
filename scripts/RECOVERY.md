@@ -29,6 +29,9 @@ application files and runtime data, not merely an export of a Git commit.
 3. Review and adapt the service unit, drop-ins, paths, and Caddyfile from
    `runtime` before enabling services. Point DNS at the replacement host.
    TLS certificates can be reissued; old certificate private keys are excluded.
+   Re-run `scripts/install_runtime.py` with the replacement host's Python and
+   data paths. Do not retain a previous host's update-run virtualenv path from
+   `instance/runtime.json`. See `scripts/DEPLOYMENT.md` for the bootstrap steps.
 4. Start only after restoring data. Validate the homepage, article pages,
    diaries, and uploaded images before exposing the replacement to users.
 5. Configure the backup client and network proxy separately using the offline
@@ -42,6 +45,9 @@ Old manifests may contain absolute source-machine paths. The SQLite-era reader
 supports filename fallback and mixed JSON/SQLite snapshots. For SQLite restore,
 stop all app processes and pass `history-restore --service-stopped`. The old
 database and WAL/SHM files are quarantined before the validated replacement.
+For a missing or corrupt database use `scripts/maintenance.py restore
+SNAPSHOT --confirm-stop`; the ordinary Flask app deliberately refuses an
+invalid production database. Maintenance can also list history independently.
 
 ## Isolated Verification
 

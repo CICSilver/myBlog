@@ -9,6 +9,14 @@ _mutex = threading.RLock()
 
 @contextmanager
 def file_lock(path):
+    inherited = os.environ.get("MYBLOG_MAINTENANCE_FD")
+    if inherited and os.name != "nt":
+        import fcntl
+        fd = int(inherited)
+        if os.path.exists(path) and os.path.samestat(os.fstat(fd), os.stat(path)):
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            yield fd
+            return
     with _mutex:
         fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
         locked = False
@@ -31,7 +39,7 @@ def file_lock(path):
                 import fcntl
                 fcntl.flock(fd, fcntl.LOCK_EX)
             locked = True
-            yield
+            yield fd
         finally:
             if locked:
                 if os.name == "nt":

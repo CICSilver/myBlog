@@ -75,6 +75,7 @@ def main():
         "BLOG_SECRET_KEY": secrets.token_hex(32),
         "BLOG_AMAP_WEB_SERVICE_KEY": "disabled-for-recovery-test",
         "BLOG_CONTENT_HISTORY_DIR": str(directory / "test-history"),
+        "BLOG_MAINTENANCE_LOCK": str(directory / "test-maintenance.lock"),
     })
     for kind, key in [("covers", "BLOG_COVER_UPLOAD_DIR"), ("articles", "BLOG_ARTICLE_IMAGE_UPLOAD_DIR"), ("diaries", "BLOG_DIARY_IMAGE_UPLOAD_DIR")]:
         os.environ[key] = str(app_root / "instance/uploads" / kind)

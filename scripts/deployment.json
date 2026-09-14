@@ -1,0 +1,6 @@
+{
+  "maintenance_api": 1,
+  "readable_schema_versions": [1],
+  "writable_schema_versions": [1],
+  "database_migration": "explicit-offline-only"
+}

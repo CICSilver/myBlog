@@ -12,6 +12,7 @@ import subprocess
 import tarfile
 import time
 from datetime import datetime, timezone
+from deployment_support import maintenance_lock, runtime as load_runtime_config
 
 
 def command(*args, timeout=120):
@@ -33,19 +34,17 @@ def inventory(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--app-dir", default="/home/xyr/myBlog")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--stop-service", action="store_true")
     mode.add_argument("--online", action="store_true")
     args = parser.parse_args()
     os.umask(0o077)
-    app = Path("/home/xyr/myBlog")
-    history = Path("/root/.local/share/SilverBlog/history")
-    pid = command("systemctl", "show", "myblog.service", "-p", "MainPID", "--value").strip()
-    environment = dict(item.split("=", 1) for item in Path("/proc/" + pid + "/environ").read_text().split("\0") if "=" in item)
-    history = Path(environment.get("BLOG_CONTENT_HISTORY_DIR") or history)
-    database_path = Path(environment.get("BLOG_DB_PATH") or app / "db/blog_db.sqlite3")
-    if not database_path.exists() and "BLOG_DB_PATH" not in environment:
-        database_path = app / "db/blog_db.json"
+    app = Path(args.app_dir).resolve()
+    config = load_runtime_config(app)
+    history = Path(config["BLOG_CONTENT_HISTORY_DIR"])
+    database_path = Path(config["BLOG_DB_PATH"])
+    service_name = config["MYBLOG_SERVICE"]
     if not database_path.resolve().is_relative_to(app):
         parser.error("External database location requires an explicit bundle mapping")
     with database_path.open("rb") as source:
@@ -61,11 +60,10 @@ def main():
     if output.is_relative_to(app) or output.is_relative_to(history):
         parser.error("Output must be outside live data")
     output.mkdir(parents=True, exist_ok=True)
-    with (output / ".baseline.lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        if command("systemctl", "is-active", "myblog.service").strip() != "active":
+    with maintenance_lock(app, config):
+        if command("systemctl", "is-active", service_name).strip() != "active":
             raise RuntimeError("Live service must be active before capture")
-        if args.stop_service and command("systemctl", "show", "myblog.service", "-p", "KillSignal", "--value").strip() != "15":
+        if args.stop_service and command("systemctl", "show", service_name, "-p", "KillSignal", "--value").strip() != "15":
             raise RuntimeError("Graceful SIGTERM shutdown must be configured first")
         name = datetime.now(timezone.utc).strftime("baseline-%Y%m%dT%H%M%SZ")
         stage = output / name
@@ -74,24 +72,24 @@ def main():
         full.mkdir()
         runtime = full / "runtime"
         runtime.mkdir()
-        (runtime / "requirements.freeze.txt").write_text(command("/home/venv/bin/python", "-m", "pip", "freeze"))
-        (runtime / "python-version.txt").write_text(command("/home/venv/bin/python", "--version"))
-        (runtime / "myblog.service.effective.txt").write_text(command("systemctl", "cat", "myblog.service"))
+        (runtime / "requirements.freeze.txt").write_text(command(config["MYBLOG_PYTHON"], "-m", "pip", "freeze"))
+        (runtime / "python-version.txt").write_text(command(config["MYBLOG_PYTHON"], "--version"))
+        (runtime / "myblog.service.effective.txt").write_text(command("systemctl", "cat", service_name))
         (runtime / "git-head.txt").write_text(command("git", "-C", str(app), "rev-parse", "HEAD"))
         (runtime / "git-status.txt").write_text(command("git", "-C", str(app), "status", "--short"))
         for source, target in [
-            (Path("/etc/systemd/system/myblog.service"), runtime / "myblog.service"),
-            (Path("/home/xyr/update_myblog.sh"), runtime / "update_myblog.sh"),
+            (Path("/etc/systemd/system") / service_name, runtime / "myblog.service"),
+            (app.parent / "update_myblog.sh", runtime / "update_myblog.sh"),
             (Path("/etc/caddy/Caddyfile"), runtime / "Caddyfile"),
         ]:
             shutil.copy2(source, target)
-        override = Path("/etc/systemd/system/myblog.service.d")
+        override = Path("/etc/systemd/system") / (service_name + ".d")
         if override.exists():
             shutil.copytree(override, runtime / "myblog.service.d")
         started = time.monotonic()
         try:
             if args.stop_service:
-                command("systemctl", "stop", "myblog.service", timeout=100)
+                command("systemctl", "stop", service_name, timeout=100)
             excluded = [".git", "__pycache__", "*.pyc"]
             if sqlite_format:
                 excluded += [database_path.name, database_path.name + "-wal", database_path.name + "-shm", database_path.name + "-journal"]
@@ -104,10 +102,10 @@ def main():
                 shutil.copytree(history, stage / "content-history")
         finally:
             if args.stop_service:
-                command("systemctl", "start", "myblog.service", timeout=100)
+                command("systemctl", "start", service_name, timeout=100)
         ready = False
         for _ in range(20):
-            result = subprocess.run(["curl", "--noproxy", "*", "-fsS", "--max-time", "2", "-o", "/dev/null", "http://127.0.0.1:8900/"], capture_output=True)
+            result = subprocess.run(["curl", "--noproxy", "*", "-fsS", "--max-time", "2", "-o", "/dev/null", config["MYBLOG_HEALTH_URL"]], capture_output=True)
             if result.returncode == 0:
                 ready = True
                 break
