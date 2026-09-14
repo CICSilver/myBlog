@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from tinydb import TinyDB
+from app.sqlite_store import SQLiteStore
 
 import app.database as database_module
 from app.database import Blog, DatabaseHelper, normalize_cover_url, normalize_html_title
@@ -11,13 +11,13 @@ from app.database import Blog, DatabaseHelper, normalize_cover_url, normalize_ht
 class BlogHtmlTitleTest(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.db = TinyDB(os.path.join(self.temp_dir.name, "blog_db.json"))
-        self.helper = DatabaseHelper()
+        self.db = SQLiteStore(os.path.join(self.temp_dir.name, "blog_db.sqlite3"))
+        self.helper = DatabaseHelper(self.db)
         self.helper.date_table = self.db.table("date")
         self.helper.category_table = self.db.table("categories")
         self.helper.blog_table = self.db.table("blogs")
         self._snapshot_history = database_module._snapshot_history
-        database_module._snapshot_history = lambda reason: None
+        database_module._snapshot_history = lambda reason, **kwargs: None
 
     def tearDown(self):
         database_module._snapshot_history = self._snapshot_history

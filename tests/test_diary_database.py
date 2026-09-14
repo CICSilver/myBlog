@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tinydb import TinyDB
+from app.sqlite_store import SQLiteStore
 from tinydb.table import Document
 
 import app.database as database_module
@@ -13,12 +13,12 @@ from app.database import DatabaseHelper, Diary
 class DiaryDatabaseTest(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.db = TinyDB(os.path.join(self.temp_dir.name, "blog_db.json"))
-        self.helper = DatabaseHelper()
+        self.db = SQLiteStore(os.path.join(self.temp_dir.name, "blog_db.sqlite3"))
+        self.helper = DatabaseHelper(self.db)
         self.helper.diary_table = self.db.table("diaries")
         self.snapshot_reasons = []
         self._snapshot_history = database_module._snapshot_history
-        database_module._snapshot_history = self.snapshot_reasons.append
+        database_module._snapshot_history = lambda reason, **kwargs: self.snapshot_reasons.append(reason)
 
     def tearDown(self):
         database_module._snapshot_history = self._snapshot_history

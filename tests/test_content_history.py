@@ -35,7 +35,7 @@ class ContentHistoryTest(unittest.TestCase):
 
             for index in range(3):
                 with open(db_path, "w", encoding="utf-8") as db_file:
-                    json.dump({"index": index}, db_file)
+                    json.dump({"items": {"1": {"index": index}}}, db_file)
                 snapshot_content_db(
                     db_path,
                     "unit-test-{0}".format(index),

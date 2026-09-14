@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tinydb import TinyDB
+from app.sqlite_store import SQLiteStore
 from tinydb.table import Document
 
 from app import create_app
@@ -16,8 +16,8 @@ import app.routes as routes_module
 class ArticleViewDatabaseTest(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.db = TinyDB(os.path.join(self.temp_dir.name, "blog_db.json"))
-        self.helper = DatabaseHelper()
+        self.db = SQLiteStore(os.path.join(self.temp_dir.name, "blog_db.sqlite3"))
+        self.helper = DatabaseHelper(self.db)
         self.helper.date_table = self.db.table("date")
         self.helper.category_table = self.db.table("categories")
         self.helper.blog_table = self.db.table("blogs")

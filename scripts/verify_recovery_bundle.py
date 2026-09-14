@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -43,15 +44,31 @@ def main():
                 raise ValueError("File checksum mismatch")
             verified += 1
     history = destination / "content-history"
+    app_root = destination / "full/app"
+    storage = None
+    if (app_root / "app/sqlite_store.py").exists():
+        spec = importlib.util.spec_from_file_location("restored_storage", app_root / "app/sqlite_store.py")
+        storage = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(storage)
     entries = json.loads((history / "manifest.json").read_text(encoding="utf-8"))
     for entry in entries:
-        snapshot = history / Path(entry["path"]).name
+        snapshot = history / Path(entry["path"].replace("\\", "/")).name
         if digest(snapshot) != entry["sha256"]:
             raise ValueError("Historical snapshot hash mismatch")
-        json.loads(snapshot.read_text(encoding="utf-8"))
-    app_root = destination / "full/app"
-    db_path = app_root / "db/blog_db.json"
-    database = json.loads(db_path.read_text(encoding="utf-8"))
+        if storage:
+            storage.read_documents(snapshot)
+        else:
+            json.loads(snapshot.read_text(encoding="utf-8"))
+    db_path = app_root / "db/blog_db.sqlite3"
+    if not db_path.exists():
+        db_path = app_root / "db/blog_db.json"
+    descriptor = destination / "full/runtime/database.json"
+    if descriptor.exists():
+        relative = json.loads(descriptor.read_text())["path"]
+        db_path = (app_root / relative).resolve()
+        if not db_path.is_relative_to(app_root):
+            raise ValueError("Invalid database path in recovery metadata")
+    database = storage.read_documents(db_path) if storage else json.loads(db_path.read_text(encoding="utf-8"))
     os.environ.update({
         "BLOG_DB_PATH": str(db_path),
         "BLOG_ENV": "development",

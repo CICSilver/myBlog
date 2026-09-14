@@ -1,4 +1,4 @@
-from app import blog_db, db_path
+from app import blog_db
 from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
 from app.view_filter import (
@@ -15,99 +15,11 @@ from tinydb import Query
 from tinydb.table import Document
 from datetime import datetime
 from pypinyin import lazy_pinyin
-from threading import RLock
 from urllib.parse import urlparse
-import os
 import re
 import secrets
-import time
 
 
-class _DatabaseWriteLock:
-    def __init__(self, timeout_seconds=15, stale_seconds=120):
-        self._thread_lock = RLock()
-        self._depth = 0
-        self._fd = None
-        self._lock_path = None
-        self._timeout_seconds = timeout_seconds
-        self._stale_seconds = stale_seconds
-
-    def __enter__(self):
-        self._thread_lock.acquire()
-        try:
-            if self._depth == 0:
-                self._acquire_process_lock()
-            self._depth += 1
-            return self
-        except Exception:
-            self._thread_lock.release()
-            raise
-
-    def __exit__(self, exc_type, exc, traceback):
-        self._depth -= 1
-        if self._depth == 0:
-            self._release_process_lock()
-        self._thread_lock.release()
-
-    def _acquire_process_lock(self):
-        lock_path = "{0}.lock".format(db_path)
-        os.makedirs(os.path.dirname(lock_path), exist_ok=True)
-        deadline = time.monotonic() + self._timeout_seconds
-
-        while True:
-            try:
-                fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
-                os.write(
-                    fd,
-                    "{0} {1}\n".format(os.getpid(), datetime.now().isoformat()).encode(
-                        "utf-8"
-                    ),
-                )
-                self._fd = fd
-                self._lock_path = lock_path
-                return
-            except FileExistsError:
-                self._remove_stale_lock(lock_path)
-                if time.monotonic() >= deadline:
-                    raise TimeoutError(
-                        "Timed out waiting for database write lock: {0}".format(lock_path)
-                    )
-                time.sleep(0.05)
-
-    def _remove_stale_lock(self, lock_path):
-        try:
-            age_seconds = time.time() - os.path.getmtime(lock_path)
-        except OSError:
-            return
-
-        if age_seconds < self._stale_seconds:
-            return
-
-        try:
-            os.unlink(lock_path)
-        except OSError:
-            return
-
-    def _release_process_lock(self):
-        lock_path = self._lock_path
-        fd = self._fd
-        self._fd = None
-        self._lock_path = None
-
-        if fd is not None:
-            try:
-                os.close(fd)
-            except OSError:
-                pass
-
-        if lock_path:
-            try:
-                os.unlink(lock_path)
-            except FileNotFoundError:
-                pass
-
-
-_write_lock = _DatabaseWriteLock()
 _ARTICLE_VIEW_INSERT_ATTEMPTS = 8
 _DIARY_INSERT_ATTEMPTS = 8
 _EXCLUDED_ARTICLE_VIEW_IPS_SEEDED_KEY = "article_view_excluded_ips_seeded_v1"
@@ -160,14 +72,15 @@ def normalize_cover_url(value):
     raise ValueError("封面地址仅支持 /static/...、/media/covers/... 或 https://...。")
 
 
-def _snapshot_history(reason):
+def _snapshot_history(reason, store=None):
     try:
         history_dir = None
         if has_app_context():
             history_dir = current_app.config.get("BLOG_CONTENT_HISTORY_DIR")
-        snapshot_content_db(db_path, reason, history_dir=history_dir)
-    except Exception as exc:
-        print("content history snapshot failed: {0}".format(exc))
+        snapshot_content_db((store or blog_db).path, reason, history_dir=history_dir, source=store or blog_db)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Content history snapshot failed")
 
 
 def format_reading_seconds(seconds):
@@ -553,21 +466,22 @@ class DatabaseHelper:
         }
     }
     """
-    def __init__(self):
+    def __init__(self, store=None):
+        self.db = store or blog_db
         # 年表，存储全部有博客的年份+月份
-        self.date_table = blog_db.table('date')
+        self.date_table = self.db.table('date')
         # 分类表，存储分类
-        self.category_table = blog_db.table('categories')
+        self.category_table = self.db.table('categories')
         # 博客表，存储全部博客
-        self.blog_table = blog_db.table('blogs')
+        self.blog_table = self.db.table('blogs')
         # 日记表，按日期存储每日一条日记
-        self.diary_table = blog_db.table('diaries')
+        self.diary_table = self.db.table('diaries')
         # 文章访问记录表，存储每一次文章详情页访问
-        self.article_view_table = blog_db.table('article_views')
+        self.article_view_table = self.db.table('article_views')
         # 浏览量排除 IP 表，存储后台手动维护的测试机/异常 IP
-        self.excluded_article_view_ip_table = blog_db.table('article_view_excluded_ips')
+        self.excluded_article_view_ip_table = self.db.table('article_view_excluded_ips')
         # 设置表，存储一次性迁移标记
-        self.settings_table = blog_db.table('settings')
+        self.settings_table = self.db.table('settings')
 
     def get_excluded_article_view_ips(self):
         """
@@ -608,7 +522,7 @@ class DatabaseHelper:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = Query()
 
-        with _write_lock:
+        with self.db.transaction():
             self._ensure_default_excluded_article_view_ips_locked()
             existing = self.excluded_article_view_ip_table.get(query.ip == ip)
             if existing:
@@ -640,7 +554,7 @@ class DatabaseHelper:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = Query()
 
-        with _write_lock:
+        with self.db.transaction():
             self._ensure_default_excluded_article_view_ips_locked()
             existing = self.excluded_article_view_ip_table.get(query.ip == original_ip)
             if not existing:
@@ -667,7 +581,7 @@ class DatabaseHelper:
         ip = self._validate_excluded_article_view_ip(ip)
         query = Query()
 
-        with _write_lock:
+        with self.db.transaction():
             self._ensure_default_excluded_article_view_ips_locked()
             return self.excluded_article_view_ip_table.remove(query.ip == ip)
 
@@ -678,7 +592,7 @@ class DatabaseHelper:
         }
 
     def _ensure_default_excluded_article_view_ips(self):
-        with _write_lock:
+        with self.db.transaction():
             self._ensure_default_excluded_article_view_ips_locked()
 
     def _ensure_default_excluded_article_view_ips_locked(self):
@@ -727,6 +641,9 @@ class DatabaseHelper:
         获取所有分类列表
         """
         categories = self.category_table.all()
+        blogs = self.blog_table.all()
+        for category in categories:
+            category['num'] = sum(blog.get('category') == category.get('name') for blog in blogs)
         return categories
     
     def get_all_date(self):
@@ -734,6 +651,9 @@ class DatabaseHelper:
         获取所有日期列表
         """
         dates = self.date_table.all()
+        blogs = self.blog_table.all()
+        for date in dates:
+            date['num'] = sum((blog.get('year'), blog.get('month')) == (date.get('year'), date.get('month')) for blog in blogs)
         dates.reverse()  # 反转列表，最新的在前面
         return dates
 
@@ -875,7 +795,7 @@ class DatabaseHelper:
         """
         保存当天日记；同一天已有记录时更新该记录。
         """
-        with _write_lock:
+        with self.db.transaction():
             if diary is None:
                 raise ValueError("Diary cannot be None")
             if not isinstance(diary, Diary):
@@ -900,16 +820,16 @@ class DatabaseHelper:
                             merged_data[key] = value
                     updated_data[field] = merged_data
 
-                _snapshot_history("pre-update-diary")
+                _snapshot_history("pre-update-diary", store=self.db)
                 self.diary_table.update(updated_data, doc_ids=[existing.doc_id])
-                _snapshot_history("post-update-diary")
+                _snapshot_history("post-update-diary", store=self.db)
                 return {
                     "status": "success",
                     "operation": "updated",
                     "message": "今日日记更新成功。",
                 }
 
-            _snapshot_history("pre-insert-diary")
+            _snapshot_history("pre-insert-diary", store=self.db)
             last_error = None
             for _ in range(_DIARY_INSERT_ATTEMPTS):
                 try:
@@ -927,7 +847,7 @@ class DatabaseHelper:
             else:
                 raise last_error
 
-            _snapshot_history("post-insert-diary")
+            _snapshot_history("post-insert-diary", store=self.db)
             return {
                 "status": "success",
                 "operation": "inserted",
@@ -940,7 +860,7 @@ class DatabaseHelper:
         """
         view_record = self._build_article_view_record(blog, ip, path, viewed_at)
 
-        with _write_lock:
+        with self.db.transaction():
             return self._merge_or_insert_article_view_record(view_record)
 
     def record_or_update_article_view_session(
@@ -963,7 +883,7 @@ class DatabaseHelper:
 
         self._validate_article_view_blog(blog)
 
-        with _write_lock:
+        with self.db.transaction():
             query = Query()
             existing = self.article_view_table.get(
                 (query.view_session_id == view_session_id)
@@ -1069,7 +989,7 @@ class DatabaseHelper:
         """
         按当前统计规则预览或重写历史访问记录。
         """
-        with _write_lock:
+        with self.db.transaction():
             excluded_ip_set = self._excluded_article_view_ip_set()
             original_views = self.article_view_table.all()
             compacted_views = _effective_article_views(original_views, excluded_ip_set)
@@ -1239,7 +1159,7 @@ class DatabaseHelper:
         """
         插入博客到数据库
         """
-        with _write_lock:
+        with self.db.transaction():
             if blog is None:
                 raise ValueError("Blog cannot be None")
             if not isinstance(blog, Blog):
@@ -1247,14 +1167,14 @@ class DatabaseHelper:
 
             self.__ensure_unique_html_title(blog)
 
-            _snapshot_history("pre-insert-blog")
+            _snapshot_history("pre-insert-blog", store=self.db)
             self.__insert_category(blog.category)  # 确保分类存在
             # 更新月份数据
             self.__insert_date(blog)
             # 插入博客数据
             self.blog_table.insert(blog.to_dict())
             self.__update_blog_num_in_date(blog.year, blog.month)
-            _snapshot_history("post-insert-blog")
+            _snapshot_history("post-insert-blog", store=self.db)
             return {"status": "success", "message": "博客数据插入成功。", "html_title": blog.html_title}
 
     def __ensure_unique_html_title(self, blog: Blog, exclude_key=None):
@@ -1310,7 +1230,7 @@ class DatabaseHelper:
         """
         更新博客数据
         """
-        with _write_lock:
+        with self.db.transaction():
             original_key = original_key or (blog.year, blog.month, blog.html_title)
             original_year, original_month, original_html_title = original_key
 
@@ -1321,6 +1241,10 @@ class DatabaseHelper:
                     & (Query().month == original_month)
                     & (Query().html_title == original_html_title),
                 )
+                self.__insert_date(blog)
+                self.__update_blog_num_in_date(original_year, original_month)
+                if (original_year, original_month) != (blog.year, blog.month):
+                    self.__update_blog_num_in_date(blog.year, blog.month)
 
             # 更新分类信息
             old_blog_data = self.get_specify_blog(original_year, original_month, original_html_title)
@@ -1329,7 +1253,7 @@ class DatabaseHelper:
 
             self.__ensure_unique_html_title(blog, exclude_key=original_key)
 
-            _snapshot_history("pre-update-blog")
+            _snapshot_history("pre-update-blog", store=self.db)
             if old_blog_data.category != blog.category:
                 # 分类发生变化，更新分类数量
                 res = self.category_table.search(Query().name == old_blog_data.category)
@@ -1346,7 +1270,7 @@ class DatabaseHelper:
                     self.__update_category(Category(init_dict=new_category_data))
 
             response = self.__process_blog(blog, update_opera)
-            _snapshot_history("post-update-blog")
+            _snapshot_history("post-update-blog", store=self.db)
             response["html_title"] = blog.html_title
             return response
 
@@ -1361,13 +1285,13 @@ class DatabaseHelper:
 
         {"status": "success", "message": "博客数据删除成功。"}
         """
-        with _write_lock:
+        with self.db.transaction():
             def del_opear(blog):
                 self.blog_table.remove((Query().year == blog.year) & (Query().month == blog.month) & (Query().html_title == blog.html_title))
                 # 删除博客后，更新日期信息
                 self.__update_blog_num_in_date(blog.year, blog.month)
 
-            _snapshot_history("pre-delete-blog")
+            _snapshot_history("pre-delete-blog", store=self.db)
             # 更新分类信息
             res = self.category_table.search(Query().name == blog.category)
             if len(res) == 0:
@@ -1380,7 +1304,7 @@ class DatabaseHelper:
                 self.category_table.update(category_data, Query().name == blog.category)
 
             response = self.__process_blog(blog, del_opear)
-            _snapshot_history("post-delete-blog")
+            _snapshot_history("post-delete-blog", store=self.db)
             return response
     
     def get_specify_blog(self, year, month, html_title) -> Blog | None:

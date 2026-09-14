@@ -1,5 +1,5 @@
 from flask import Flask
-from tinydb import TinyDB
+from app.sqlite_store import SQLiteStore
 from datetime import timedelta
 import os
 
@@ -13,13 +13,15 @@ from app.content_history import (
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 数据库文件路径
-db_path = os.environ.get("BLOG_DB_PATH") or os.path.join(project_root, "db", "blog_db.json")
+db_path = os.environ.get("BLOG_DB_PATH") or os.path.join(project_root, "db", "blog_db.sqlite3")
 
 # 确保父目录存在
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-# 初始化 TinyDB
-blog_db = TinyDB(db_path)  # 基础数据库
+# 初始化 SQLite 存储；连接在操作期间按需创建。
+blog_db = SQLiteStore(db_path)
+if not os.path.exists(db_path) and os.path.exists(os.path.join(project_root, "db", "blog_db.json")) and not os.environ.get("BLOG_DB_PATH"):
+    raise RuntimeError("Legacy JSON database found. Run scripts/migrate_sqlite.py before starting the application.")
 
 def create_app():
     app = Flask(__name__, static_folder="../static", template_folder="../templates")
@@ -194,13 +196,11 @@ def _register_history_commands(app):
 
     @app.cli.command("history-restore")
     @click.argument("snapshot_path")
-    def history_restore(snapshot_path):
-        snapshot_content_db(
-            app.config["BLOG_DB_PATH"],
-            "pre-restore",
-            history_dir=app.config["BLOG_CONTENT_HISTORY_DIR"],
-        )
-        restore_snapshot(snapshot_path, app.config["BLOG_DB_PATH"])
+    @click.option("--service-stopped", is_flag=True, help="Confirm all app processes are stopped; current DB and WAL will be quarantined.")
+    def history_restore(snapshot_path, service_stopped):
+        if not service_stopped:
+            raise click.ClickException("Stop all app processes and pass --service-stopped.")
+        restore_snapshot(snapshot_path, app.config["BLOG_DB_PATH"], service_stopped=True, sqlite_target=True)
         snapshot_content_db(
             app.config["BLOG_DB_PATH"],
             "post-restore",
