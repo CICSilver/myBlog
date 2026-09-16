@@ -34,7 +34,7 @@ class SiteIconTest(unittest.TestCase):
         self.assertEqual(len(parser.icons), 1)
         icon = parser.icons[0]
         self.assertEqual(icon["type"], "image/png")
-        self.assertEqual(icon["href"], "/static/images/favicon-path-bookmark.png")
+        self.assertEqual(icon["href"], "/static/images/favicon-path-circle.png")
         with app.test_client() as client:
             response = client.get(icon["href"])
             self.assertEqual(response.status_code, 200)
