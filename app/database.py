@@ -1,3 +1,4 @@
+from app.diary_policy import better_location
 from app import blog_db
 from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
@@ -810,6 +811,8 @@ class DatabaseHelper:
                 updated_data = diary.to_dict()
                 updated_data["created_at"] = existing.get("created_at")
                 for field in ("location", "weather"):
+                    if field == "location" and better_location(existing.get(field) or {}, updated_data[field]):
+                        continue
                     merged_data = dict(existing.get(field) or {})
                     for key, value in updated_data[field].items():
                         if (

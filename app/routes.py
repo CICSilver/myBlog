@@ -11,6 +11,7 @@ from flask import (
 )
 from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
+from app.diary_policy import diary_date, location_needs_retry, better_location
 from app.diary_metadata import fetch_diary_metadata
 from app.diary_activity import (
     activity_summary,
@@ -186,7 +187,7 @@ def media_diary_image(filename):
 def diary():
     timezone = ZoneInfo(current_app.config["BLOG_TIMEZONE"])
     now = datetime.now(timezone)
-    today = now.date()
+    today = diary_date(now)
     today_date = today.isoformat()
 
     month_value = request.args.get("month", today.strftime("%Y-%m"))
@@ -224,6 +225,7 @@ def diary():
         'diary.html',
         diaries=diaries,
         today_diary=today_diary,
+        retry_location=location_needs_retry(today_diary.location if today_diary else {}),
         today_date=today_date,
         today_weekday=DIARY_WEEKDAY_LABELS[today.weekday()],
         is_current_month=is_current_month,
@@ -250,7 +252,7 @@ def _diary_detail_url(entry_date):
 @main.route('/diary/activity', methods=['GET'])
 @login_required
 def diary_activity():
-    today = datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])).date()
+    today = diary_date(datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])))
     year_value = request.args.get("year", str(today.year))
     if not re.fullmatch(r"[0-9]{1,4}", year_value) or not 1 <= int(year_value) <= today.year:
         return jsonify({"message": "请选择有效年份。"}), 400
@@ -283,8 +285,10 @@ def save_diary():
 
     timezone = ZoneInfo(current_app.config["BLOG_TIMEZONE"])
     now = datetime.now(timezone)
-    today = now.date()
+    today = diary_date(now)
     today_date = today.isoformat()
+    if request.form.get("entry_date") not in (None, "", today_date):
+        return jsonify({"status": "error", "message": "已超过这篇日记的可编辑时间，请刷新页面后记录新一天。"}), 409
     existing_diary = dbHelper.get_diary_by_date(today_date)
     old_location = existing_diary.location if existing_diary else {}
     old_weather = existing_diary.weather if existing_diary else {}
@@ -321,8 +325,9 @@ def save_diary():
     location = old_location
     weather = old_weather
     warnings = []
-    if location_needs_metadata or weather_needs_metadata:
-        coordinates = stored_coordinates or submitted_coordinates
+    retry_location = location_needs_retry(old_location) and submitted_coordinates is not None
+    if location_needs_metadata or weather_needs_metadata or retry_location:
+        coordinates = submitted_coordinates if retry_location else (stored_coordinates or submitted_coordinates)
         if coordinates is None:
             warnings.append("当前连接未提供定位，天气和位置未记录。")
         else:
@@ -333,8 +338,12 @@ def save_diary():
                 accuracy,
                 current_app.config["BLOG_AMAP_WEB_SERVICE_KEY"],
             )
-            location = metadata["location"]
-            weather = metadata["weather"]
+            if better_location(old_location, metadata["location"]) or not stored_coordinates:
+                location = metadata["location"]
+            elif not retry_location:
+                location = metadata["location"]
+            if weather_needs_metadata:
+                weather = metadata["weather"]
             warnings.extend(metadata["warnings"])
 
     new_image_path = None
@@ -438,7 +447,7 @@ def diary_detail(year, month, day):
         if diary_index + 1 < len(all_diaries)
         else None
     )
-    today = datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])).date()
+    today = diary_date(datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])))
 
     return render_template(
         'diary_detail.html',
