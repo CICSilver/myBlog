@@ -90,11 +90,24 @@
     min-width: 0;
 }
 
+/* 整列不吸附：它比视口高，钉住会让下面的面板在滚到底之前永远够不着。
+   只钉日历——这一栏里唯一需要一直在手边的东西（切月份、对照热力图）；
+   左右平衡 / PR / 身体数据 是看一眼就够的，滚走没有损失。 */
 .fit-side {
-    position: sticky;
-    top: 16px;
+    /* 撑满这一行，日历才能在整个主栏的高度里跟随，而不是滚过侧栏就脱离。 */
+    align-self: stretch;
+    align-content: start;
     display: grid;
     gap: 14px;
+}
+
+.fit-side > .diary-calendar {
+    position: sticky;
+    top: 16px;
+    z-index: 2;
+    /* 钉住之后其它面板会从它背后滑过去，而卡片默认背景是 88% 不透明的，
+       会把下面的内容透出来。这里换成不透明的那一档。 */
+    background-color: var(--surface-strong);
 }
 
 /* ---------- Today composer ---------- */
@@ -1041,6 +1054,10 @@
     }
 
     .fit-side {
+        align-self: start;
+    }
+
+    .fit-side > .diary-calendar {
         position: static;
     }
 }
