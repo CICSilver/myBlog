@@ -302,14 +302,14 @@
 .fit-set-head,
 .fit-set {
     display: grid;
-    grid-template-columns: 30px 108px 108px 36px;
+    grid-template-columns: 30px 108px 108px 36px 26px;
     align-items: center;
     gap: 8px;
 }
 
 .fit-exercise.is-unilateral .fit-set-head,
 .fit-exercise.is-unilateral .fit-set {
-    grid-template-columns: 30px 108px 108px 108px 36px;
+    grid-template-columns: 30px 108px 108px 108px 36px 26px;
 }
 
 /* Units live in the column header, not in every field: with a left and a
@@ -1076,13 +1076,13 @@
 
     .fit-set-head,
     .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 30px;
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 30px 24px;
         gap: 6px;
     }
 
     .fit-exercise.is-unilateral .fit-set-head,
     .fit-exercise.is-unilateral .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 30px;
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 30px 24px;
     }
 
     .fit-exercise-sides {
@@ -1402,7 +1402,7 @@ html[data-theme="dark"] .fit-volume-chart {
 /* Static holds (plank): no weight, no reps — just seconds. */
 .fit-exercise.is-static .fit-set-head,
 .fit-exercise.is-static .fit-set {
-    grid-template-columns: 30px 108px 36px;
+    grid-template-columns: 30px 108px 36px 26px;
 }
 
 .fit-set-note,
@@ -1414,7 +1414,56 @@ html[data-theme="dark"] .fit-volume-chart {
 
 .fit-set-note {
     grid-column: 2 / -1;
+    display: none;
+    overflow: hidden;
+    width: 100%;
     margin-top: -2px;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px dashed transparent;
+    background: transparent;
+    font: inherit;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--ink-faint);
+    outline: none;
+    resize: none;
+}
+
+.fit-set.has-note .fit-set-note,
+.fit-set:focus-within .fit-set-note {
+    display: block;
+}
+
+.fit-set-note:focus {
+    border-bottom-color: var(--focus-border);
+    color: var(--ink-soft);
+}
+
+/* 删除这一组。常驻但很轻，hover 才变红——误删一组的代价比看着乱要大。 */
+.fit-set-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-faint);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 0.45;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.fit-set-remove:hover,
+.fit-set-remove:focus-visible {
+    background: var(--danger-soft);
+    color: var(--danger);
+    opacity: 1;
 }
 
 .fit-exercise-notes {
@@ -1517,4 +1566,13 @@ html[data-theme="dark"] .fit-volume-chart {
 
 .fit-status.is-ok {
     color: var(--success);
+}
+
+/* 这条要放在 .fit-set-remove 的基础规则之后才压得住它。
+   24px 是触摸目标的下限；再小就点不准，再大又容易误删。 */
+@media (max-width: 720px) {
+    .fit-set-remove {
+        width: 24px;
+        height: 24px;
+    }
 }

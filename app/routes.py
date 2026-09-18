@@ -630,11 +630,13 @@ def _parse_set(entry, kind, name):
     weight = _parse_number(entry.get("weight"), 0.5, 200, "「%s」的重量" % name)
     left = _parse_number(entry.get("left"), 1, 500, "「%s」的次数" % name, integer=True)
     right = _parse_number(entry.get("right"), 1, 500, "「%s」的次数" % name, integer=True)
+    if weight is None and left is None and right is None and not note:
+        raise ValueError("「%s」有空组，删掉它或者填上数字。" % name)
     if kind == "bilateral":
         # 双侧只有一个次数，存在 left 上；right 留空，别让它看起来像漏了一侧。
         return {"weight": weight, "left": left, "right": None, "note": note}
-    if left is None and right is None:
-        raise ValueError("「%s」至少要记一侧的次数。" % name)
+    # 只记了重量、次数没记下来是真实会发生的（历史记录里就有），照存，
+    # 容量那天会标成“未记录”而不是零——路由不该比模型更严。
     return {"weight": weight, "left": left, "right": right, "note": note}
 
 

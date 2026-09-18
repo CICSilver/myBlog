@@ -23,6 +23,10 @@
     };
 
     const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>';
+    const REMOVE_BTN = '<button class="fit-set-remove" type="button" data-remove-set'
+        + ' aria-label="删除这一组" title="删除这一组">×</button>';
+    const NOTE_INPUT = '<textarea class="fit-set-note" data-field="note" rows="1" maxlength="120"'
+        + ' placeholder="这一组的备注" aria-label="这一组的备注"></textarea>';
     const TRASH_SVG = '<svg class="diary-icon" viewBox="0 0 24 24" aria-hidden="true">'
         + '<path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg>';
 
@@ -191,7 +195,8 @@
         return '<div class="fit-set' + (done ? " is-done" : "") + '" data-set>'
             + '<span class="fit-set-index"></span>' + fieldHTML(kind, values)
             + '<button class="fit-set-check" type="button" data-set-check aria-pressed="'
-            + (done ? "true" : "false") + '" aria-label="标记完成">' + CHECK_SVG + "</button></div>";
+            + (done ? "true" : "false") + '" aria-label="标记完成">' + CHECK_SVG + "</button>"
+            + REMOVE_BTN + NOTE_INPUT + "</div>";
     }
 
     function addExercise(name, sets) {
@@ -250,6 +255,20 @@
             if (input) input.focus();
             return;
         }
+        const dropSet = event.target.closest("[data-remove-set]");
+        if (dropSet) {
+            const card = dropSet.closest(".fit-exercise");
+            const row = dropSet.closest(".fit-set");
+            if (card.querySelectorAll("[data-set]").length === 1) {
+                // 最后一组删掉就等于删动作，那有专门的按钮，别在这儿留个空壳。
+                say("这是最后一组；要去掉整个动作请用右上角的删除。", "error");
+                return;
+            }
+            row.remove();
+            refresh(card);
+            markDirty();
+            return;
+        }
         const remove = event.target.closest("[data-remove-exercise]");
         if (remove) {
             const card = remove.closest(".fit-exercise");
@@ -279,7 +298,17 @@
         }
     });
 
+    // 备注框跟着内容长高，别让长备注藏在一行里。
+    function growNote(note) {
+        note.style.height = "auto";
+        note.style.height = note.scrollHeight + "px";
+    }
+
     form.addEventListener("input", function (event) {
+        if (event.target.dataset.field === "note") {
+            event.target.closest(".fit-set").classList.toggle("has-note", !!event.target.value.trim());
+            growNote(event.target);
+        }
         const card = event.target.closest(".fit-exercise");
         if (card) refresh(card);
         markDirty();
@@ -297,6 +326,13 @@
             input.setAttribute("list", "fit-weight-steps");
         });
     }
+
+    form.querySelectorAll('[data-field="note"]').forEach(function (note) {
+        if (note.value.trim()) growNote(note);
+    });
+    form.addEventListener("focusin", function (event) {
+        if (event.target.dataset.field === "note") growNote(event.target);
+    });
 
     const initialRpe = activeValue(form.querySelector("[data-rpe]"));
     if (initialRpe) rpeHint.textContent = RPE_HINTS[initialRpe] || "";
@@ -332,12 +368,18 @@
                     return input ? number(input.value) : null;
                 };
                 if (kind === "static") {
-                    if (field("seconds") != null) sets.push({ seconds: field("seconds") });
+                    const seconds = field("seconds");
+                    if (seconds != null) {
+                        const staticNote = row.querySelector('[data-field="note"]');
+                        sets.push({ seconds: seconds, note: staticNote ? staticNote.value.trim() : "" });
+                    }
                     return;
                 }
-                const entry = { weight: field("weight"), left: field("left") };
+                const noteInput = row.querySelector('[data-field="note"]');
+                const note = noteInput ? noteInput.value.trim() : "";
+                const entry = { weight: field("weight"), left: field("left"), note: note };
                 entry.right = kind === "unilateral" ? field("right") : null;
-                if (entry.weight == null && entry.left == null && entry.right == null) return;
+                if (entry.weight == null && entry.left == null && entry.right == null && !note) return;
                 sets.push(entry);
             });
             if (sets.length) exercises.push({ name: card.dataset.exercise, sets: sets });
@@ -377,7 +419,9 @@
             });
             const result = await response.json().catch(function () { return {}; });
             if (!response.ok) throw new Error(result.message || "保存失败，请再试一次。");
-            say(result.message || "已保存。", "ok");
+            const partial = result.totals && result.totals.partial;
+            say((result.message || "已保存。")
+                + (partial ? " 有组没填完，今天的容量算不出来。" : ""), partial ? "error" : "ok");
             if (saveState) saveState.textContent = "已保存";
             submit.textContent = "更新训练";
         } catch (error) {

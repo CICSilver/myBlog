@@ -200,10 +200,34 @@ class FitnessRouteTest(unittest.TestCase):
                               "exercises": [{"name": "深蹲", "sets": [{"weight": 10, "left": 5}]}]})
         self.assertEqual(response.status_code, 400)
 
-    def test_a_unilateral_set_needs_at_least_one_side(self):
+    def test_a_completely_empty_set_is_refused(self):
         response = self.post({"day_type": "上肢",
-                              "exercises": [{"name": "弯举", "sets": [{"weight": 8}]}]})
+                              "exercises": [{"name": "弯举", "sets": [{}]}]})
         self.assertEqual(response.status_code, 400)
+        self.assertIn("空组", response.get_json()["message"])
+
+    def test_a_weight_without_reps_is_kept_and_leaves_the_volume_unknown(self):
+        # 真实记录里就有这种：练了、重量记了，次数当时忘了。
+        response = self.post({"entry_date": self.today(), "day_type": "上肢",
+                              "exercises": [{"name": "弯举", "sets": [{"weight": 8}]}]})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.get_json()["totals"]["volume"])
+        self.assertTrue(response.get_json()["totals"]["partial"])
+
+    def test_set_notes_survive_a_save(self):
+        # 回归：前端收集数据时漏了 note，而保存是整条替换文档，
+        # 结果编辑一次当天记录就会把导入进来的备注全部抹掉。
+        response = self.post({
+            "entry_date": self.today(), "day_type": "上肢",
+            "exercises": [{"name": "划船", "sets": [
+                {"weight": 10, "left": 12, "right": 15, "note": "首次上10kg；站姿微屈膝"},
+                {"weight": 10, "left": 8, "right": 14},
+            ]}],
+        })
+        self.assertEqual(response.status_code, 200)
+        saved = self.database.saved[-1].exercises[0]["sets"]
+        self.assertEqual(saved[0]["note"], "首次上10kg；站姿微屈膝")
+        self.assertEqual(saved[1]["note"], "")
 
     def test_saving_stores_the_session_and_the_body_weight(self):
         response = self.post({
