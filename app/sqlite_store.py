@@ -18,6 +18,8 @@ SCHEMA_VERSION = 1
 UNIQUE_FIELDS = {
     "blogs": ("year", "month", "html_title"),
     "diaries": ("entry_date",),
+    "workouts": ("entry_date",),
+    "body_metrics": ("measured_date",),
     "categories": ("name",),
     "date": ("year", "month"),
     "article_view_excluded_ips": ("ip",),

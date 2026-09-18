@@ -9,7 +9,26 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
+from app.database import BodyMetric, DatabaseHelper, Blog, Diary, Workout, normalize_cover_url
+from app.fitness_activity import (
+    build_activity_calendar as build_fitness_calendar,
+    build_chart,
+    build_month_calendar as build_fitness_month,
+    build_year_overview as build_fitness_year,
+    activity_summary as fitness_summary,
+    month_summary,
+)
+from app.fitness_model import (
+    DAY_TYPES,
+    MOVEMENTS,
+    balance,
+    exercise_totals,
+    movement_kind,
+    records,
+    volume_by_day,
+    weight_options,
+    workout_totals,
+)
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from app.diary_policy import diary_date, location_needs_retry, better_location
 from app.diary_metadata import fetch_diary_metadata
@@ -457,6 +476,237 @@ def diary_detail(year, month, day):
         next_diary=next_diary,
         **get_site_context(),
     )
+
+# ========================= 健身 =========================
+FITNESS_CHART_DAYS = 30
+_MAX_EXERCISES = 12
+_MAX_SETS = 20
+
+
+@main.route('/fitness', methods=['GET'])
+@login_required
+def fitness():
+    timezone = ZoneInfo(current_app.config["BLOG_TIMEZONE"])
+    today = diary_date(datetime.now(timezone))
+
+    month_value = request.args.get("month", today.strftime("%Y-%m"))
+    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month_value):
+        abort(400)
+    archive_year, archive_month = int(month_value[:4]), int(month_value[5:])
+    if (archive_year, archive_month) > (today.year, today.month):
+        abort(400)
+
+    workouts = dbHelper.get_all_workouts()
+    volumes = volume_by_day(workouts)
+    month_workouts = dbHelper.get_workouts_by_month(archive_year, archive_month)
+    is_current_month = (archive_year, archive_month) == (today.year, today.month)
+    today_workout = dbHelper.get_workout_by_date(today.isoformat()) if is_current_month else None
+
+    first_of_month = date(archive_year, archive_month, 1)
+    previous_month = first_of_month - timedelta(days=1) if first_of_month > date.min else None
+    next_month = (first_of_month + timedelta(days=32)).replace(day=1)
+
+    metrics = dbHelper.get_body_metrics()
+    return render_template(
+        'fitness.html',
+        workouts=[_decorate_workout(workout) for workout in month_workouts
+                  if workout.entry_date != today.isoformat()],
+        today_workout=_decorate_workout(today_workout) if today_workout else None,
+        today_date=today.isoformat(),
+        today_weekday=DIARY_WEEKDAY_LABELS[today.weekday()],
+        is_current_month=is_current_month,
+        archive_year=archive_year,
+        archive_month=archive_month,
+        month_stats=month_summary(workouts, archive_year, archive_month),
+        activity=fitness_summary(volumes, archive_year, today),
+        month_calendar=build_fitness_month(volumes, archive_year, archive_month, today),
+        year_overview=build_fitness_year(volumes, archive_year, today),
+        chart=build_chart(workouts, FITNESS_CHART_DAYS, today),
+        balance_rows=balance(workouts),
+        record_rows=records(workouts),
+        body_metrics=_body_metric_tiles(metrics, workouts),
+        movements=MOVEMENTS,
+        day_types=DAY_TYPES,
+        weight_steps=weight_options(workouts),
+        previous_month_value=previous_month.strftime("%Y-%m") if previous_month else None,
+        next_month_value=None if is_current_month else next_month.strftime("%Y-%m"),
+        today_month=today.strftime("%Y-%m"),
+        last_session=_previous_session_label(workouts, today),
+        repeat_template=_repeat_template(workouts, today),
+        **get_site_context(),
+    )
+
+
+@main.route('/fitness/activity', methods=['GET'])
+@login_required
+def fitness_activity():
+    today = diary_date(datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])))
+    year_value = request.args.get("year", str(today.year))
+    if not re.fullmatch(r"[0-9]{1,4}", year_value) or not 1 <= int(year_value) <= today.year:
+        return jsonify({"message": "请选择有效年份。"}), 400
+    calendar_data = build_fitness_calendar(dbHelper.get_all_workouts(), int(year_value), today)
+    response = jsonify(calendar_data)
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@main.route('/fitness', methods=['POST'])
+@login_required
+def save_fitness():
+    validate_csrf_token()
+    today = diary_date(datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])))
+    today_date = today.isoformat()
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"status": "error", "message": "提交格式不正确。"}), 400
+    if payload.get("entry_date") not in (None, "", today_date):
+        return jsonify({"status": "error", "message": "只能保存当天的训练，请刷新页面。"}), 409
+
+    try:
+        workout = _parse_workout_payload(payload, today_date)
+    except ValueError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+
+    now = datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])).isoformat(timespec="seconds")
+    workout.created_at = workout.created_at or now
+    workout.updated_at = now
+    result = dbHelper.save_workout(workout, today_date)
+
+    body_weight = _parse_number(payload.get("weight_kg"), 20, 300, "体重")
+    if body_weight is not None:
+        dbHelper.save_body_metric(BodyMetric(measured_date=today_date, weight_kg=body_weight))
+
+    return jsonify({**result, "totals": workout_totals(workout)})
+
+
+def _parse_workout_payload(payload, today_date):
+    day_type = payload.get("day_type")
+    if day_type not in DAY_TYPES:
+        raise ValueError("请选择训练类型。")
+
+    raw_exercises = payload.get("exercises") or []
+    if not isinstance(raw_exercises, list) or len(raw_exercises) > _MAX_EXERCISES:
+        raise ValueError("动作数量超出范围。")
+
+    exercises = []
+    for raw in raw_exercises:
+        if not isinstance(raw, dict):
+            raise ValueError("动作格式不正确。")
+        name = raw.get("name")
+        if name not in dict((item[0], item[1]) for item in MOVEMENTS):
+            raise ValueError("不认识的动作：%s" % name)
+        kind = movement_kind(name)
+        raw_sets = raw.get("sets") or []
+        if not isinstance(raw_sets, list) or not raw_sets or len(raw_sets) > _MAX_SETS:
+            raise ValueError("「%s」的组数超出范围。" % name)
+        exercises.append({"name": name, "sets": [_parse_set(entry, kind, name) for entry in raw_sets]})
+
+    if day_type == "休息" and exercises:
+        raise ValueError("休息日不该有动作。")
+    if day_type != "休息" and not exercises:
+        raise ValueError("至少记一个动作，或者把类型改成休息。")
+
+    return Workout(
+        entry_date=today_date,
+        day_type=day_type,
+        exercises=exercises,
+        duration_min=_parse_number(payload.get("duration_min"), 1, 600, "训练时长", integer=True),
+        rpe=_parse_number(payload.get("rpe"), 1, 10, "RPE", integer=True),
+        note=str(payload.get("note") or "")[:2000],
+    )
+
+
+def _parse_set(entry, kind, name):
+    if not isinstance(entry, dict):
+        raise ValueError("「%s」的组格式不正确。" % name)
+    note = str(entry.get("note") or "")[:120]
+    if kind == "static":
+        seconds = _parse_number(entry.get("seconds"), 1, 3600, "「%s」的时长" % name, integer=True)
+        if seconds is None:
+            raise ValueError("「%s」需要填时长。" % name)
+        return {"seconds": seconds, "note": note}
+
+    weight = _parse_number(entry.get("weight"), 0.5, 200, "「%s」的重量" % name)
+    left = _parse_number(entry.get("left"), 1, 500, "「%s」的次数" % name, integer=True)
+    right = _parse_number(entry.get("right"), 1, 500, "「%s」的次数" % name, integer=True)
+    if kind == "bilateral":
+        # 双侧只有一个次数，存在 left 上；right 留空，别让它看起来像漏了一侧。
+        return {"weight": weight, "left": left, "right": None, "note": note}
+    if left is None and right is None:
+        raise ValueError("「%s」至少要记一侧的次数。" % name)
+    return {"weight": weight, "left": left, "right": right, "note": note}
+
+
+def _parse_number(value, minimum, maximum, label, integer=False):
+    if value is None or value == "":
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError("%s 需要是数字。" % label)
+    if not minimum <= number <= maximum:
+        raise ValueError("%s 超出合理范围。" % label)
+    if integer:
+        if number != int(number):
+            raise ValueError("%s 需要是整数。" % label)
+        return int(number)
+    return round(number, 2)
+
+
+def _decorate_workout(workout):
+    """把模板要用的小计挂上去，模板里不再算数。"""
+    workout.weekday_label = DIARY_WEEKDAY_LABELS[
+        datetime.strptime(workout.entry_date, "%Y-%m-%d").weekday()
+    ]
+    workout.totals = workout_totals(workout)
+    workout.exercise_rows = [exercise_totals(exercise) for exercise in workout.exercises]
+    return workout
+
+
+def _previous_session_label(workouts, today):
+    for workout in workouts:
+        if workout.entry_date < today.isoformat():
+            day = date.fromisoformat(workout.entry_date)
+            return "上次是 %d 月 %d 日 %s" % (day.month, day.day, workout.day_type)
+    return "还没有训练记录"
+
+
+def _repeat_template(workouts, today):
+    """上一次训练的动作与重量，供「套用上次」。次数不带——那要当场练出来。"""
+    for workout in workouts:
+        if workout.entry_date < today.isoformat() and workout.exercises:
+            return [
+                {
+                    "name": exercise.get("name"),
+                    "sets": [{"weight": entry.get("weight")} for entry in exercise.get("sets") or []],
+                }
+                for exercise in workout.exercises
+            ]
+    return []
+
+
+def _body_metric_tiles(metrics, workouts):
+    """体重、腰围各取最新一条，平板支撑直接从训练记录里取，不重复记。"""
+    weights = [metric for metric in metrics if metric.weight_kg]
+    waists = [metric for metric in metrics if metric.waist_cm]
+    planks = sorted(
+        (
+            (workout.entry_date, max(entry.get("seconds") or 0 for entry in exercise["sets"]))
+            for workout in workouts
+            for exercise in workout.exercises
+            if movement_kind(exercise.get("name")) == "static" and exercise.get("sets")
+        ),
+        key=lambda item: item[0],
+    )
+    return {
+        "weight": weights[-1] if weights else None,
+        "weight_first": weights[0] if weights else None,
+        "waist": waists[-1] if waists else None,
+        "plank": planks[-1] if planks else None,
+        "plank_previous": planks[-2] if len(planks) > 1 else None,
+    }
+
 
 @main.route('/edit/cover', methods=['POST'])
 @login_required

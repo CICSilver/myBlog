@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% from "_diary_icons.html" import diary_icon %}
+
+{% macro side_count(row) -%}
+  {% if row.kind == "static" %}
+    <span class="fit-side-count">{{ row.seconds }} 秒</span>
+  {% elif row.kind == "unilateral" %}
+    <span class="fit-side-count{% if row.imbalance >= 8 %} is-off{% endif %}">左 {{ row.left }} · 右 {{ row.right }}</span>
+  {% else %}
+    <span class="fit-side-count">{{ row.reps }} 次</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro load_label(row) -%}
+  {% if row.kind == "static" %}自重
+  {% elif not row.weights %}未记录
+  {% elif row.weights | length == 1 %}{{ row.weights[0] | round(1) | int if row.weights[0] == row.weights[0] | int else row.weights[0] }} kg
+  {% else %}{{ row.weights[0] }}–{{ row.weights[-1] }} kg{% endif %}
+{%- endmacro %}
+
+{% block title %}健身 | {{ site_name }}{% endblock %}
+{% block body_class %}fitness-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/diary-calendar.css') }}?v=20260918">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fitness.css') }}?v=20260918">
+{% endblock %}
+
+{% block site_header %}
+  {% set site_cover_title_id = "fitness-cover-title" %}
+  {% set site_cover_title_tag = "h1" %}
+  {% set site_cover_section_title = "健身" %}
+  {% set site_cover_menu_id = "fitness-admin-bookmark-menu" %}
+  {% set site_cover_note = "身体也是一种归档。" %}
+  {% include "_site_header.html" %}
+{% endblock %}
+
+{% block content %}
+  <main class="fit-shell" aria-labelledby="fit-page-title">
+    <section class="fit-overview">
+      <div class="fit-date-display">
+        <p class="section-label">Training Log</p>
+        <h2 id="fit-page-title">
+          {% if is_current_month %}今天练什么{% else %}{{ archive_year }} 年 {{ archive_month }} 月{% endif %}
+        </h2>
+        <p class="fit-date-note">
+          {% if is_current_month %}{{ today_date }} · {{ today_weekday }} · {{ last_session }}
+          {% else %}{{ month_stats.count }} 次训练 · {{ month_stats.sets }} 组{% endif %}
+        </p>
+      </div>
+      <div class="fit-kpis">
+        <div class="fit-kpi"><b>{{ month_stats.count }}</b><span>本月训练</span></div>
+        <div class="fit-kpi"><b>{{ month_stats.sets }}</b><span>本月组数</span></div>
+        <div class="fit-kpi"><b>{{ activity.week_streak }}</b><span>连续周</span></div>
+      </div>
+    </section>
+
+    {% if chart.trend_path or chart.bars | selectattr("recorded") | list %}
+      <section class="fit-volume-chart" aria-labelledby="fit-vol-title">
+        <div class="fit-chart-head">
+          <div>
+            <p class="section-label">Volume</p>
+            <h2 id="fit-vol-title">每日训练容量</h2>
+          </div>
+          <span class="fit-chart-span">近 {{ chart.days }} 天</span>
+        </div>
+
+        <figure class="fit-chart-figure">
+          <div class="fit-chart-scroll">
+            <svg class="fit-chart-svg" viewBox="{{ chart.viewbox }}" role="img"
+                 aria-label="每日训练容量，近 {{ chart.days }} 天，纵轴最高 {{ chart.max }} 公斤">
+              {% for line in chart.grid %}
+                <line class="fit-chart-grid" x1="36" y1="{{ line.y }}" x2="1032" y2="{{ line.y }}"></line>
+                <text class="fit-chart-tick" x="28" y="{{ line.y + 3.5 }}" text-anchor="end">{{ line.label }}</text>
+              {% endfor %}
+              {% if chart.trend_path %}
+                <path class="fit-chart-area" d="{{ chart.area_path }}"></path>
+                <path class="fit-chart-line" d="{{ chart.trend_path }}"></path>
+              {% endif %}
+              {% for bar in chart.bars if bar.path %}
+                <path class="fit-chart-col{% if bar.partial %} is-unknown{% endif %}{% if bar.today %} is-today{% endif %}" d="{{ bar.path }}"></path>
+              {% endfor %}
+              {% for bar in chart.bars if bar.is_peak %}
+                <text class="fit-chart-peak" x="{{ bar.centre }}" y="{{ bar.label_y }}" text-anchor="middle">{{ bar.volume | round | int }} kg</text>
+              {% endfor %}
+              {% for tick in chart.ticks %}
+                <text class="fit-chart-tick" x="{{ tick.x }}" y="138" text-anchor="middle">{{ tick.label }}</text>
+              {% endfor %}
+              {% for bar in chart.bars %}
+                <rect class="fit-chart-hit" x="{{ bar.x | round(1) }}" y="{{ chart.hit_top }}"
+                      width="{{ bar.width | round(1) }}" height="{{ chart.hit_height }}"
+                      data-date="{{ bar.label }}"
+                      data-part="{{ bar.day_type or '未训练' }}"
+                      data-vol="{% if not bar.recorded %}—{% elif bar.partial %}未记录重量{% else %}{{ bar.volume | round | int }} kg{% endif %}"
+                      data-sets="{{ bar.sets or '—' }}"></rect>
+              {% endfor %}
+            </svg>
+          </div>
+          <div class="fit-chart-tip" data-chart-tip>
+            <strong data-tip-vol></strong>
+            <span data-tip-meta></span>
+          </div>
+        </figure>
+
+        <p class="fit-chart-note">
+          <button type="button" class="fit-chart-key" data-series="cols" aria-pressed="true"><i></i>当天容量</button>
+          <button type="button" class="fit-chart-key is-mean" data-series="mean" aria-pressed="true"><i></i>近 3 次平均</button>
+        </p>
+
+        <details class="fit-chart-table">
+          <summary>查看数据</summary>
+          <div class="fit-chart-table-scroll">
+            <table>
+              <thead><tr><th>日期</th><th>部位</th><th>组数</th><th>容量 kg</th></tr></thead>
+              <tbody>
+                {% for bar in chart.bars | selectattr("recorded") | reverse %}
+                  <tr>
+                    <td>{{ bar.label }}</td>
+                    <td>{{ bar.day_type }}</td>
+                    <td>{{ bar.sets }}</td>
+                    <td>{% if bar.partial %}未记录{% else %}{{ bar.volume | round | int }}{% endif %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+    {% endif %}
+
+    <div class="fit-columns">
+      <div class="fit-main">
+        {% if is_current_month %}
+          <section
+            class="fit-composer"
+            id="fit-editor"
+            data-fitness-form
+            data-endpoint="{{ url_for('main.fitness') }}"
+            data-entry-date="{{ today_date }}"
+            data-weights="{{ weight_steps | join(',') }}"
+            aria-labelledby="fit-editor-title"
+          >
+            <div class="fit-composer-head">
+              <div class="fit-composer-date">
+                <strong id="fit-editor-title">{{ today_date[5:7] }} 月 {{ today_date[8:10] }} 日</strong>
+                <span>{{ today_weekday }} · <span data-save-state>{% if today_workout %}已保存{% else %}未保存{% endif %}</span></span>
+              </div>
+              <div class="fit-type-switch" role="group" aria-label="今天练什么" data-day-type>
+                {% for value in day_types %}
+                  {% set active = (today_workout.day_type if today_workout else '上肢') == value %}
+                  <button type="button" data-value="{{ value }}" class="{{ 'is-active' if active }}" aria-pressed="{{ 'true' if active else 'false' }}">{{ value }}</button>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="fit-exercise-stack" data-exercise-stack>
+              {% for exercise in (today_workout.exercises if today_workout else []) %}
+                {% set row = today_workout.exercise_rows[loop.index0] %}
+                <article class="fit-exercise{% if row.kind == 'unilateral' %} is-unilateral{% elif row.kind == 'static' %} is-static{% endif %}" data-exercise="{{ row.name }}" data-kind="{{ row.kind }}">
+                  <div class="fit-exercise-head">
+                    <span class="fit-exercise-index">{{ '%02d' % loop.index }}</span>
+                    <h3>{{ row.name }}</h3>
+                    {{ side_count(row) }}
+                    <span class="fit-exercise-volume" data-exercise-volume>{% if row.volume is none %}—{% else %}{{ row.volume | round | int }} kg{% endif %}</span>
+                    <button class="fit-icon-button" type="button" data-remove-exercise aria-label="删除{{ row.name }}">
+                      {{ diary_icon("trash") }}
+                    </button>
+                  </div>
+                  <div class="fit-sets" data-sets>
+                    <div class="fit-set-head" aria-hidden="true">
+                      {% if row.kind == 'static' %}
+                        <span>组</span><span>时长<i>秒</i></span><span></span>
+                      {% elif row.kind == 'unilateral' %}
+                        <span>组</span><span>重量<i>kg</i></span><span class="is-side">左<i>次</i></span><span class="is-side">右<i>次</i></span><span></span>
+                      {% else %}
+                        <span>组</span><span>重量<i>kg</i></span><span>次数</span><span></span>
+                      {% endif %}
+                    </div>
+                    {% for entry in exercise.sets %}
+                      <div class="fit-set is-done" data-set>
+                        <span class="fit-set-index">{{ loop.index }}</span>
+                        {% if row.kind == 'static' %}
+                          <label class="fit-field"><input value="{{ entry.seconds if entry.seconds is not none }}" data-field="seconds" inputmode="numeric" aria-label="第 {{ loop.index }} 组时长"></label>
+                        {% else %}
+                          <label class="fit-field"><input value="{{ entry.weight if entry.weight is not none }}" data-field="weight" inputmode="decimal" placeholder="kg" aria-label="第 {{ loop.index }} 组重量"></label>
+                          <label class="fit-field"><input value="{{ entry.left if entry.left is not none }}" data-field="left" inputmode="numeric" placeholder="{{ '左' if row.kind == 'unilateral' else '次' }}" aria-label="第 {{ loop.index }} 组{{ '左侧' if row.kind == 'unilateral' }}次数"></label>
+                          {% if row.kind == 'unilateral' %}
+                            <label class="fit-field"><input value="{{ entry.right if entry.right is not none }}" data-field="right" inputmode="numeric" placeholder="右" aria-label="第 {{ loop.index }} 组右侧次数"></label>
+                          {% endif %}
+                        {% endif %}
+                        <button class="fit-set-check" type="button" data-set-check aria-pressed="true" aria-label="第 {{ loop.index }} 组已完成">
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>
+                        </button>
+                        {% if entry.note %}<span class="fit-set-note">{{ entry.note }}</span>{% endif %}
+                      </div>
+                    {% endfor %}
+                    <button class="fit-ghost-button" type="button" data-add-set>+ 再加一组</button>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+
+            <div class="fit-add-row" data-add-row>
+              <span class="fit-chip-label">继续添加</span>
+              {% for name, kind, part in movements %}
+                <button type="button" class="fit-chip{% if part not in ('下肢',) and loop.previtem and loop.previtem[2] == '下肢' %}{% endif %}" data-move="{{ name }}" data-kind="{{ kind }}">{{ name }}</button>
+              {% endfor %}
+            </div>
+
+            <p class="fit-subhead">身体与体感</p>
+            <div class="fit-inline-fields">
+              <label class="fit-labeled">
+                <span>今日体重</span>
+                <span class="fit-field"><input data-field="weight_kg" value="{{ body_metrics.weight.weight_kg if body_metrics.weight and body_metrics.weight.measured_date == today_date else '' }}" placeholder="—" inputmode="decimal"><em>kg</em></span>
+              </label>
+              <label class="fit-labeled">
+                <span>训练时长</span>
+                <span class="fit-field"><input data-field="duration_min" value="{{ today_workout.duration_min if today_workout and today_workout.duration_min else '' }}" placeholder="—" inputmode="numeric"><em>分钟</em></span>
+              </label>
+              <div class="fit-labeled" style="grid-column: span 2;">
+                <span class="fit-rpe-label">整体强度 RPE<em class="fit-rpe-hint" data-rpe-hint>还没选</em></span>
+                <div class="fit-rpe-scale" role="group" aria-label="整体强度" data-rpe>
+                  {% for value in range(1, 11) %}
+                    <button type="button" data-value="{{ value }}" class="{{ 'is-active' if today_workout and today_workout.rpe == value }}">{{ value }}</button>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <label class="visually-hidden" for="fit-note">训练备注</label>
+            <textarea class="fit-note" id="fit-note" data-field="note" rows="3" placeholder="今天的状态、卡点、下次要调整的地方…">{{ today_workout.note if today_workout else '' }}</textarea>
+
+            <div class="fit-form-footer">
+              <button class="fit-ghost-button" type="button" data-repeat-last style="min-height:34px;">⟲ 套用上次训练</button>
+              <p class="fit-status" data-fitness-status role="status" aria-live="polite"></p>
+              <button class="fit-save-button" type="button" data-fitness-submit>{% if today_workout %}更新训练{% else %}存入训练{% endif %}</button>
+            </div>
+          </section>
+        {% else %}
+          <p class="fit-readonly-note">这个月的训练仅供回看。</p>
+        {% endif %}
+
+        <section class="fit-log-list" aria-labelledby="fit-log-title">
+          <div class="fit-list-heading">
+            <div>
+              <p class="section-label">Month Archive</p>
+              <h2 id="fit-log-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
+            </div>
+            <span>{{ month_stats.count }} 次 · {{ month_stats.sets }} 组</span>
+          </div>
+
+          {% for workout in workouts %}
+            <article class="fit-log{% if workout.day_type == '休息' %} is-rest{% endif %}">
+              <time class="fit-log-date" datetime="{{ workout.entry_date }}">
+                <strong>{{ workout.entry_date[8:10] | int }}</strong>
+                <span>{{ workout.weekday_label }}</span>
+              </time>
+              <div class="fit-log-main">
+                <div class="fit-log-meta">
+                  <span class="fit-tag {{ 'is-lower' if workout.day_type == '下肢' else 'is-rest' if workout.day_type == '休息' else 'is-upper' }}">{{ workout.day_type }}</span>
+                  {% if workout.totals.sets %}<span>{{ workout.totals.sets }} 组</span>{% endif %}
+                  {% if workout.totals.volume is not none and workout.totals.volume %}
+                    <span>{{ workout.totals.volume | round | int }} kg</span>
+                  {% elif workout.totals.partial %}
+                    <span>容量未记录</span>
+                  {% endif %}
+                  {% if workout.duration_min %}<span>{{ diary_icon("clock") }}{{ workout.duration_min }} 分钟</span>{% endif %}
+                  {% if workout.rpe %}<span>RPE {{ workout.rpe }}</span>{% endif %}
+                </div>
+                {% if workout.exercise_rows %}
+                  <ul class="fit-log-moves">
+                    {% for row in workout.exercise_rows %}
+                      <li>
+                        <b>{{ row.name }}</b>
+                        <span>{{ row.sets }} 组</span>
+                        <span class="fit-load">{{ load_label(row) }}</span>
+                        {{ side_count(row) }}
+                        <span></span>
+                        {% if row.notes %}<em class="fit-move-note">{{ row.notes | join('；') }}</em>{% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                {% if workout.note %}<p class="fit-log-note">{{ workout.note }}</p>{% endif %}
+              </div>
+            </article>
+          {% else %}
+            <div class="diary-empty-state">
+              <p>这个月还没有训练记录。</p>
+            </div>
+          {% endfor %}
+        </section>
+      </div>
+
+      <aside class="fit-side" aria-label="日历与统计">
+        {% include "_fitness_calendar.html" %}
+
+        {% if balance_rows %}
+          <section class="fit-panel" aria-label="左右平衡">
+            <div class="fit-panel-head">
+              <h2>左右平衡</h2>
+              <span>单侧动作 · 全部历史</span>
+            </div>
+            <ul class="fit-balance-list">
+              {% for row in balance_rows %}
+                <li>
+                  <b>{{ row.name }}</b>
+                  <span class="fit-balance-gauge{% if row.off %} is-off{% endif %}" style="--bias: {{ row.bias }};" aria-hidden="true"><i></i></span>
+                  <span class="fit-balance-count">左 {{ row.left }} · 右 {{ row.right }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+            <div class="fit-balance-foot"><span>左</span><span>右</span></div>
+          </section>
+        {% endif %}
+
+        {% if record_rows %}
+          <section class="fit-panel" aria-label="个人记录">
+            <div class="fit-panel-head">
+              <h2>个人记录 PR</h2>
+              <span>单侧按弱侧计</span>
+            </div>
+            <ul class="fit-pr-list">
+              {% for name, best in record_rows %}
+                <li>
+                  <b>{{ name }}</b>
+                  <span class="fit-pr-value">{% if best.weight %}{{ best.weight }}<i>kg</i> <s>× {{ best.reps }} {{ best.unit }}</s>{% else %}{{ best.reps }}<i>{{ best.unit }}</i>{% endif %}</span>
+                  <span class="fit-pr-delta is-flat">{{ best.date[5:7] | int }}/{{ best.date[8:10] | int }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+
+        {% if body_metrics.weight or body_metrics.waist or body_metrics.plank %}
+          <section class="fit-panel" aria-label="身体数据">
+            <div class="fit-panel-head">
+              <h2>身体数据</h2>
+              <span>最新一次</span>
+            </div>
+            <div class="fit-metric-tiles">
+              {% if body_metrics.weight %}
+                <div class="fit-metric">
+                  <span>体重</span><strong>{{ body_metrics.weight.weight_kg }}<i>kg</i></strong>
+                  {% if body_metrics.weight_first and body_metrics.weight_first.measured_date != body_metrics.weight.measured_date %}
+                    <em>起步 {{ body_metrics.weight_first.weight_kg }} · {{ '%+g' % (body_metrics.weight.weight_kg - body_metrics.weight_first.weight_kg) }}</em>
+                  {% else %}
+                    <em>{{ body_metrics.weight.measured_date[5:] }}</em>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% if body_metrics.waist %}
+                <div class="fit-metric">
+                  <span>腰围</span><strong>{{ body_metrics.waist.waist_cm }}<i>cm</i></strong>
+                  <em>{{ body_metrics.waist.measured_date[5:] }}</em>
+                </div>
+              {% endif %}
+              {% if body_metrics.plank %}
+                <div class="fit-metric">
+                  <span>平板支撑</span><strong>{{ body_metrics.plank[1] }}<i>秒</i></strong>
+                  {% if body_metrics.plank_previous %}
+                    <em>上次 {{ body_metrics.plank_previous[1] }} · {{ '%+d' % (body_metrics.plank[1] - body_metrics.plank_previous[1]) }}</em>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+          </section>
+        {% endif %}
+      </aside>
+    </div>
+  </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>window.__fitnessLastSession = {{ repeat_template | tojson }};</script>
+<script src="{{ url_for('static', filename='js/diary-calendar.js') }}?v=20260918"></script>
+<script src="{{ url_for('static', filename='js/fitness.js') }}?v=20260918"></script>
+{% endblock %}
