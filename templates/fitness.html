@@ -295,7 +295,10 @@
         </section>
       </div>
 
+      {# 外层撑满这一行、内层才吸附：网格项被 align-items:start 压成内容高度时，
+         sticky 的约束矩形就等于它自己，没有可位移的空间，永远不会吸附。 #}
       <aside class="fit-side" aria-label="日历与统计">
+        <div class="fit-side-inner">
         {% include "_fitness_calendar.html" %}
 
         {% if balance_rows %}
@@ -369,6 +372,7 @@
             </div>
           </section>
         {% endif %}
+        </div>
       </aside>
     </div>
   </main>

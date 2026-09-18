@@ -81,6 +81,78 @@
         });
     })();
 
+    // ------------------------------------------------------------ 侧栏吸附 ----
+    /* 侧栏比视口高，只写 top 的 sticky 会把它钉死在顶部，下半截要等主栏
+       滚到底才露出来；把单块面板拎出来单独吸附，它又会浮在兄弟面板上面
+       把它们“吃掉”。这里整列作为一个整体位移：
+
+         向下滚 —— 跟着页面往上走，直到底边够到视口底部才停住；
+         向上滚 —— 立刻松开往下走，直到顶边够到视口顶部才停住。
+
+       也就是往哪个方向滚，就先把那个方向上的内容交出来。只维护一个量：
+       内层相对外层顶部的偏移，钳在 [0, 外层高 - 内层高] 之间，保证它
+       永远不会跑出自己那一列。 */
+    (function stickySide() {
+        const container = document.querySelector(".fit-side");
+        const inner = document.querySelector(".fit-side-inner");
+        if (!container || !inner) return;
+        // 会随滚动方向改变位置的东西对一部分人来说是干扰；那就干脆不动，
+        // 侧栏退化成普通内容，照样看得全。
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const GAP = 16;
+        let offset = 0;
+        let lastY = window.scrollY;
+        let queued = false;
+
+        function apply() {
+            queued = false;
+            const y = window.scrollY;
+            const delta = y - lastY;
+            lastY = y;
+
+            const room = container.offsetHeight - inner.offsetHeight;
+            if (room <= 0) {          // 单栏布局或内容变短了
+                inner.style.transform = "";
+                offset = 0;
+                return;
+            }
+
+            // 用外层量位置：内层带着 transform，它的 rect 会把偏移算进去。
+            const containerTop = container.getBoundingClientRect().top + y;
+            const natural = containerTop - y + offset;
+            const height = inner.offsetHeight;
+            let target;
+            if (height + GAP * 2 <= window.innerHeight) {
+                target = GAP;                                        // 装得下就钉顶
+            } else if (delta > 0) {
+                target = Math.max(natural, window.innerHeight - GAP - height);
+            } else if (delta < 0) {
+                target = Math.min(natural, GAP);
+            } else {
+                target = natural;
+            }
+
+            offset = Math.min(Math.max(offset + (target - natural), 0), room);
+            inner.style.transform = offset ? "translate3d(0," + offset + "px,0)" : "";
+        }
+
+        function schedule() {
+            if (queued) return;
+            queued = true;
+            window.requestAnimationFrame(apply);
+        }
+
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", function () {
+            offset = 0;
+            inner.style.transform = "";
+            lastY = window.scrollY;
+            apply();
+        });
+        apply();
+    })();
+
     // ---------------------------------------------------------------- 录入 ----
     const form = document.querySelector("[data-fitness-form]");
     if (!form) return;

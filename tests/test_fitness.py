@@ -181,6 +181,13 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertIn('data-move="弯举" data-kind="unilateral" hidden', html)
         self.assertIn('data-move="划船" data-kind="unilateral">', html)
 
+    def test_sidebar_keeps_the_wrapper_the_sticky_logic_needs(self):
+        # 外层撑满整行、内层位移——少了这层包裹，方向感知吸附就没有位移
+        # 空间，会安静地失效而不报错。
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn('class="fit-side"', html)
+        self.assertIn('class="fit-side-inner"', html)
+
     def test_future_month_is_rejected(self):
         self.assertEqual(self.client.get("/fitness?month=2999-01").status_code, 400)
 
