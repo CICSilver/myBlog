@@ -171,6 +171,16 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("深蹲", response.get_data(as_text=True))
 
+    def test_movements_already_logged_today_leave_the_picker(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from app.diary_policy import diary_date
+        today = diary_date(datetime.now(ZoneInfo(self.app.config["BLOG_TIMEZONE"]))).isoformat()
+        self.database.workouts[today] = workout(today, "上肢", [unilateral("弯举", (8, 11, 11))])
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn('data-move="弯举" data-kind="unilateral" hidden', html)
+        self.assertIn('data-move="划船" data-kind="unilateral">', html)
+
     def test_future_month_is_rejected(self):
         self.assertEqual(self.client.get("/fitness?month=2999-01").status_code, 400)
 

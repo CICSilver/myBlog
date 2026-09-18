@@ -200,10 +200,12 @@
               {% endfor %}
             </div>
 
+            {# 已经在今天练过的动作不再出现在候选里；删掉那张卡时 JS 会把它放回来。 #}
+            {% set used = today_workout.exercises | map(attribute='name') | list if today_workout else [] %}
             <div class="fit-add-row" data-add-row>
               <span class="fit-chip-label">继续添加</span>
               {% for name, kind, part in movements %}
-                <button type="button" class="fit-chip{% if part not in ('下肢',) and loop.previtem and loop.previtem[2] == '下肢' %}{% endif %}" data-move="{{ name }}" data-kind="{{ kind }}">{{ name }}</button>
+                <button type="button" class="fit-chip" data-move="{{ name }}" data-kind="{{ kind }}"{% if name in used %} hidden{% endif %}>{{ name }}</button>
               {% endfor %}
             </div>
 
