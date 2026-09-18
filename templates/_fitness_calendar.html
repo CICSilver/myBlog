@@ -1,0 +1,115 @@
+{% set calendar_max_year = today_month[:4] | int %}
+<section
+  class="diary-calendar fit-calendar{% if not is_current_month %} is-archive{% endif %}"
+  data-diary-calendar
+  data-storage-prefix="fitness-calendar"
+  data-count-unit="次"
+  data-year="{{ archive_year }}"
+  data-month="{{ archive_month }}"
+  data-max-year="{{ calendar_max_year }}"
+  data-endpoint="{{ url_for('main.fitness_activity') }}"
+  data-diary-url="{{ url_for('main.fitness') }}"
+  aria-label="训练日历"
+>
+  <div class="diary-calendar-head">
+    <div class="diary-calendar-nav" data-calendar-nav="month">
+      {% if previous_month_value %}
+        <a class="diary-calendar-step" href="{{ url_for('main.fitness', month=previous_month_value) }}" aria-label="上一月" title="上一月">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5"></path></svg>
+        </a>
+      {% else %}
+        <span class="diary-calendar-step is-disabled" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m10 3-5 5 5 5"></path></svg></span>
+      {% endif %}
+      <h2 class="diary-calendar-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
+      {% if next_month_value %}
+        <a class="diary-calendar-step" href="{{ url_for('main.fitness', month=next_month_value) }}" aria-label="下一月" title="下一月">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"></path></svg>
+        </a>
+      {% else %}
+        <span class="diary-calendar-step is-disabled" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"></path></svg></span>
+      {% endif %}
+    </div>
+    <div class="diary-calendar-nav" data-calendar-nav="year">
+      <button class="diary-calendar-step" type="button" data-year-prev aria-label="上一年" title="上一年">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5"></path></svg>
+      </button>
+      <span class="diary-calendar-title" data-year-label>{{ archive_year }} 年</span>
+      <button class="diary-calendar-step" type="button" data-year-next aria-label="下一年" title="下一年" {% if archive_year >= calendar_max_year %}disabled{% endif %}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"></path></svg>
+      </button>
+    </div>
+    <div class="diary-calendar-tools">
+      <div class="diary-calendar-mode" role="group" aria-label="日历视图">
+        <button type="button" data-calendar-mode="month" aria-pressed="true">月历</button>
+        <button type="button" data-calendar-mode="year" aria-pressed="false">年览</button>
+      </div>
+      <button class="diary-calendar-collapse" type="button" data-calendar-collapse aria-expanded="true" aria-controls="fitness-calendar-body" aria-label="收起日历" title="收起日历">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 10 4-4 4 4"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="diary-calendar-body" id="fitness-calendar-body">
+    <div class="diary-calendar-body-inner">
+      <div class="diary-month-view" data-calendar-view="month">
+        <div class="diary-month-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        {% for week in month_calendar.weeks %}
+          <div class="diary-month-week{% if week.current %} is-current-week{% endif %}">
+            <div class="diary-month-week-inner">
+              {% for day in week.days %}
+                {% if day is none %}
+                  <span class="diary-day is-blank" aria-hidden="true"></span>
+                {% elif day.future %}
+                  <span class="diary-day is-future" title="{{ day.label }}" aria-label="{{ day.label }}">{{ day.day }}</span>
+                {% elif day.partial %}
+                  <span class="diary-day is-partial" data-level="0" title="{{ day.label }}" aria-label="{{ day.label }}">{{ day.day }}</span>
+                {% elif day.recorded %}
+                  <span class="diary-day{% if day.today %} is-today{% endif %}" data-level="{{ day.level }}" title="{{ day.label }}" aria-label="{{ day.label }}">{{ day.day }}</span>
+                {% elif day.today %}
+                  <a class="diary-day is-today is-empty" data-level="0" href="#fit-editor" title="{{ day.label }}，记录今天" aria-label="{{ day.label }}，记录今天">{{ day.day }}</a>
+                {% else %}
+                  <span class="diary-day is-empty" data-level="0" title="{{ day.label }}" aria-label="{{ day.label }}">{{ day.day }}</span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="diary-year-view" data-calendar-view="year">
+        <div class="diary-year-grid" data-year-grid>
+          {% for month in year_overview %}
+            <a
+              class="diary-mini-month{% if month.month == archive_month %} is-active{% endif %}{% if month.future %} is-future{% endif %}"
+              href="{{ url_for('main.fitness', month=month.value) }}"
+              {% if month.future %}aria-disabled="true" tabindex="-1"{% endif %}
+            >
+              <span class="diary-mini-month-head"><b>{{ month.label }}</b>{% if not month.future %}<span>{{ month.recorded_days }} 次</span>{% endif %}</span>
+              <span class="diary-mini-month-cells" aria-hidden="true">{% for cell in month.cells %}{% if cell is none %}<i></i>{% else %}<i data-level="{{ cell.level }}"{% if cell.today %} class="is-today"{% elif cell.future %} class="is-future"{% endif %}></i>{% endif %}{% endfor %}</span>
+            </a>
+          {% endfor %}
+        </div>
+        <p class="diary-calendar-status" role="status" aria-live="polite" data-year-status hidden></p>
+      </div>
+
+      <div class="diary-calendar-foot">
+        <div class="diary-calendar-legend" aria-label="容量色阶：没有训练、400 公斤以下、400 至 799、800 至 1499、1500 公斤及以上">
+          <span>少</span>{% for level in range(5) %}<i data-level="{{ level }}" aria-hidden="true"></i>{% endfor %}<span>多 · 容量</span>
+        </div>
+        <span class="diary-calendar-note" data-calendar-note="month">本月 {{ month_calendar.recorded_days }} 次 · 连续 {{ activity.week_streak }} 周</span>
+        <span class="diary-calendar-note" data-calendar-note="year">点月份进入该月</span>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+  (function () {
+    var calendar = document.querySelector("[data-diary-calendar]");
+    if (!calendar) return;
+    calendar.classList.add("is-static");
+    try {
+      if (localStorage.getItem("fitness-calendar:collapsed") === "1") calendar.classList.add("is-collapsed");
+      if (localStorage.getItem("fitness-calendar:mode") === "year") calendar.classList.add("is-year");
+    } catch (error) {}
+  })();
+</script>

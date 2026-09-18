@@ -3,8 +3,11 @@
     const calendar = document.querySelector("[data-diary-calendar]");
     if (!calendar) return;
 
-    const STORAGE_COLLAPSED = "diary-calendar:collapsed";
-    const STORAGE_MODE = "diary-calendar:mode";
+    // 日记和健身共用这段脚本，只有存储前缀和计数单位不同。
+    const prefix = calendar.dataset.storagePrefix || "diary-calendar";
+    const countUnit = calendar.dataset.countUnit || "天";
+    const STORAGE_COLLAPSED = prefix + ":collapsed";
+    const STORAGE_MODE = prefix + ":mode";
     const collapseButton = calendar.querySelector("[data-calendar-collapse]");
     const modeButtons = Array.from(calendar.querySelectorAll("[data-calendar-mode]"));
     const yearPrevious = calendar.querySelector("[data-year-prev]");
@@ -86,7 +89,7 @@
             head.appendChild(title);
             if (!month.future) {
                 const count = document.createElement("span");
-                count.textContent = month.recorded_days + " 天";
+                count.textContent = month.recorded_days + " " + countUnit;
                 head.appendChild(count);
             }
             const cells = document.createElement("span");
