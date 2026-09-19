@@ -580,6 +580,33 @@ def save_fitness():
     return jsonify({**result, "totals": workout_totals(workout)})
 
 
+@main.route('/fitness/body', methods=['POST'])
+@login_required
+def save_body_metric():
+    """单独记一次身体数据。
+
+    体重是早上称的，训练是晚上练的——两件事不该绑在一起。称完就能存，
+    不用先凑出一次完整的训练，换台设备打开也还在。
+    """
+    validate_csrf_token()
+    today = diary_date(datetime.now(ZoneInfo(current_app.config["BLOG_TIMEZONE"])))
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"status": "error", "message": "提交格式不正确。"}), 400
+
+    try:
+        weight = _parse_number(payload.get("weight_kg"), 20, 300, "体重")
+        waist = _parse_number(payload.get("waist_cm"), 30, 200, "腰围")
+    except ValueError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+    if weight is None and waist is None:
+        return jsonify({"status": "error", "message": "没有要记的数字。"}), 400
+
+    dbHelper.save_body_metric(BodyMetric(
+        measured_date=today.isoformat(), weight_kg=weight, waist_cm=waist))
+    return jsonify({"status": "success", "message": "已记下。"})
+
+
 def _parse_workout_payload(payload, today_date):
     day_type = payload.get("day_type")
     if day_type not in DAY_TYPES:

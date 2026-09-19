@@ -137,6 +137,8 @@
             data-fitness-form
             data-endpoint="{{ url_for('main.fitness') }}"
             data-entry-date="{{ today_date }}"
+            {# 服务端今天已有记录时，草稿不静默覆盖，改成问一句 #}
+            data-saved="{{ '1' if today_workout else '0' }}"
             data-weights="{{ weight_steps | join(',') }}"
             aria-labelledby="fit-editor-title"
           >

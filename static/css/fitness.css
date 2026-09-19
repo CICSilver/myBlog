@@ -1583,3 +1583,48 @@ html[data-theme="dark"] .fit-volume-chart {
         height: 24px;
     }
 }
+
+/* 草稿提示条：服务端已有记录、本地又有草稿时出现，让人自己选，
+   不替他决定哪份是对的。 */
+.fit-draft-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--warning-line);
+    border-radius: 8px;
+    background: var(--warning-soft);
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+}
+
+.fit-draft-bar span {
+    flex: 1;
+    min-width: 12em;
+}
+
+.fit-draft-bar button {
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--control-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.fit-draft-bar button:hover {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+}
+
+.fit-draft-bar button[data-draft-restore] {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--button-ink);
+    font-weight: 600;
+}

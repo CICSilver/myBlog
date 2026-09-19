@@ -188,6 +188,41 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertIn('class="fit-side"', html)
         self.assertIn('class="fit-side-inner"', html)
 
+    def test_body_metric_can_be_saved_on_its_own(self):
+        # 早上称完就能存，不用先凑出一次完整的训练。
+        response = self.client.post("/fitness/body", json={"weight_kg": 64.6},
+                                    headers={"X-CSRF-Token": "token"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.database.metrics[-1].weight_kg, 64.6)
+
+    def test_body_metric_rejects_an_empty_payload(self):
+        response = self.client.post("/fitness/body", json={},
+                                    headers={"X-CSRF-Token": "token"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_body_metric_rejects_an_absurd_weight(self):
+        response = self.client.post("/fitness/body", json={"weight_kg": 900},
+                                    headers={"X-CSRF-Token": "token"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_body_metric_needs_the_csrf_token(self):
+        self.assertEqual(self.client.post("/fitness/body", json={"weight_kg": 65}).status_code, 403)
+
+    def test_body_metric_needs_a_login(self):
+        anonymous = self.app.test_client()
+        self.assertEqual(anonymous.post("/fitness/body", json={"weight_kg": 65}).status_code, 401)
+
+    def test_page_tells_the_draft_whether_today_is_already_saved(self):
+        # 前端据此决定草稿是静默恢复还是先问一句——服务端已有记录时
+        # 直接覆盖，等于偷偷回滚了一次保存。
+        self.assertIn('data-saved="0"', self.client.get("/fitness").get_data(as_text=True))
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from app.diary_policy import diary_date
+        today = diary_date(datetime.now(ZoneInfo(self.app.config["BLOG_TIMEZONE"]))).isoformat()
+        self.database.workouts[today] = workout(today, "上肢", [unilateral("弯举", (8, 11, 11))])
+        self.assertIn('data-saved="1"', self.client.get("/fitness").get_data(as_text=True))
+
     def test_future_month_is_rejected(self):
         self.assertEqual(self.client.get("/fitness?month=2999-01").status_code, 400)
 

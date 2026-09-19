@@ -25,8 +25,16 @@
     const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>';
     const REMOVE_BTN = '<button class="fit-set-remove" type="button" data-remove-set'
         + ' aria-label="删除这一组" title="删除这一组">×</button>';
-    const NOTE_INPUT = '<textarea class="fit-set-note" data-field="note" rows="1" maxlength="120"'
-        + ' placeholder="这一组的备注" aria-label="这一组的备注"></textarea>';
+    function noteInput(value) {
+        return '<textarea class="fit-set-note" data-field="note" rows="1" maxlength="120"'
+            + ' placeholder="这一组的备注" aria-label="这一组的备注">' + escapeHTML(value || "") + "</textarea>";
+    }
+
+    function escapeHTML(text) {
+        return String(text).replace(/[&<>"']/g, function (ch) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+        });
+    }
     const TRASH_SVG = '<svg class="diary-icon" viewBox="0 0 24 24" aria-hidden="true">'
         + '<path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg>';
 
@@ -175,6 +183,11 @@
         if (saveState) saveState.textContent = "未保存";
     }
 
+    // 点击类的改动（加减组、勾完成、切类型/RPE）也要落进草稿。
+    form.addEventListener("click", function (event) {
+        if (event.target.closest("button")) scheduleDraft();
+    });
+
     function activeValue(group) {
         const button = group && group.querySelector("button.is-active");
         return button ? button.dataset.value : null;
@@ -264,11 +277,13 @@
     }
 
     function setHTML(kind, values, done) {
-        return '<div class="fit-set' + (done ? " is-done" : "") + '" data-set>'
+        values = values || {};
+        const note = values.note || "";
+        return '<div class="fit-set' + (done ? " is-done" : "") + (note ? " has-note" : "") + '" data-set>'
             + '<span class="fit-set-index"></span>' + fieldHTML(kind, values)
             + '<button class="fit-set-check" type="button" data-set-check aria-pressed="'
             + (done ? "true" : "false") + '" aria-label="标记完成">' + CHECK_SVG + "</button>"
-            + REMOVE_BTN + NOTE_INPUT + "</div>";
+            + REMOVE_BTN + noteInput(note) + "</div>";
     }
 
     function addExercise(name, sets) {
@@ -279,7 +294,7 @@
         card.dataset.exercise = name;
         card.dataset.kind = kind;
         const rows = (sets && sets.length ? sets : [{}])
-            .map(function (values) { return setHTML(kind, values, false); }).join("");
+            .map(function (values) { return setHTML(kind, values, !!(values && values.done)); }).join("");
         card.innerHTML =
             '<div class="fit-exercise-head"><span class="fit-exercise-index"></span><h3>' + name + "</h3>"
             + '<span class="fit-exercise-sides"></span>'
@@ -384,6 +399,7 @@
         const card = event.target.closest(".fit-exercise");
         if (card) refresh(card);
         markDirty();
+        scheduleDraft();
     });
 
     // 重量档位：手头的哑铃就这几档，给个候选省得把 6.5 打成 65。
@@ -443,7 +459,11 @@
                     const seconds = field("seconds");
                     if (seconds != null) {
                         const staticNote = row.querySelector('[data-field="note"]');
-                        sets.push({ seconds: seconds, note: staticNote ? staticNote.value.trim() : "" });
+                        sets.push({
+                            seconds: seconds,
+                            note: staticNote ? staticNote.value.trim() : "",
+                            done: row.classList.contains("is-done"),
+                        });
                     }
                     return;
                 }
@@ -452,6 +472,7 @@
                 const entry = { weight: field("weight"), left: field("left"), note: note };
                 entry.right = kind === "unilateral" ? field("right") : null;
                 if (entry.weight == null && entry.left == null && entry.right == null && !note) return;
+                entry.done = row.classList.contains("is-done");   // 只给草稿用，服务端不读
                 sets.push(entry);
             });
             if (sets.length) exercises.push({ name: card.dataset.exercise, sets: sets });
@@ -471,6 +492,144 @@
             note: note ? note.value : "",
         };
     }
+
+    // ---------------------------------------------------------------- 草稿 ----
+    /* 一次训练的录入常常跨大半天：早上称体重，晚上才练完回来补组数。
+       中间关掉页面不该把输入弄丢，所以每次改动都把整张表单写进 localStorage。
+
+       恢复的策略分两种，因为风险不一样：
+         服务端今天还没有记录 —— 直接恢复，没有什么可覆盖的；
+         服务端已经有记录 —— 只提示，让人自己决定。草稿可能是另一台设备
+         保存之前留下的残影，静默盖上去就等于偷偷回滚了一次保存。 */
+    const DRAFT_KEY = "fitness-draft";
+    let draftTimer = null;
+
+    function readDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return null;
+            const draft = JSON.parse(raw);
+            // 隔天的草稿没有意义，当天才认。
+            return draft && draft.entry_date === form.dataset.entryDate ? draft : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function writeDraft() {
+        try {
+            const payload = collect();
+            payload.saved_at = Date.now();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+            if (saveState) saveState.textContent = "草稿已存 " + clock(payload.saved_at);
+        } catch (error) {
+            // 无痕模式、存储配额满——存不下就算了，不该拦着人继续录入。
+        }
+    }
+
+    function dropDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (error) { /* 同上 */ }
+    }
+
+    function clock(stamp) {
+        const when = new Date(stamp);
+        return String(when.getHours()).padStart(2, "0") + ":"
+            + String(when.getMinutes()).padStart(2, "0");
+    }
+
+    function scheduleDraft() {
+        window.clearTimeout(draftTimer);
+        draftTimer = window.setTimeout(writeDraft, 600);
+    }
+
+    function applyDraft(draft) {
+        const dayGroup = form.querySelector("[data-day-type]");
+        const dayButton = dayGroup && dayGroup.querySelector('[data-value="' + draft.day_type + '"]');
+        if (dayButton) pressGroup(dayGroup, dayButton);
+
+        stack.replaceChildren();
+        addRow.querySelectorAll("[data-move]").forEach(function (chip) { chip.hidden = false; });
+        (draft.exercises || []).forEach(function (item) { addExercise(item.name, item.sets); });
+
+        const fill = function (selector, value) {
+            const input = form.querySelector(selector);
+            if (input) input.value = value == null ? "" : value;
+        };
+        fill('[data-field="duration_min"]', draft.duration_min);
+        fill('[data-field="weight_kg"]', draft.weight_kg);
+        const note = form.querySelector('[data-field="note"]');
+        if (note) note.value = draft.note || "";
+
+        const rpeGroup = form.querySelector("[data-rpe]");
+        const rpeButton = rpeGroup && draft.rpe
+            && rpeGroup.querySelector('[data-value="' + draft.rpe + '"]');
+        if (rpeButton) {
+            pressGroup(rpeGroup, rpeButton);
+            rpeHint.textContent = RPE_HINTS[draft.rpe] || "";
+        }
+        form.querySelectorAll('[data-field="note"]').forEach(function (field) {
+            if (field.value.trim()) growNote(field);
+        });
+    }
+
+    (function restoreDraft() {
+        const draft = readDraft();
+        if (!draft) return;
+        const alreadySaved = form.dataset.saved === "1";
+        if (!alreadySaved) {
+            applyDraft(draft);
+            say("已恢复 " + clock(draft.saved_at) + " 的草稿，还没存进去。");
+            return;
+        }
+        // 服务端已有记录：给个选择，不擅自覆盖。
+        const bar = document.createElement("div");
+        bar.className = "fit-draft-bar";
+        bar.innerHTML = '<span>有一份 ' + clock(draft.saved_at)
+            + ' 的未保存草稿，和已存的记录不一定一致。</span>'
+            + '<button type="button" data-draft-restore>恢复草稿</button>'
+            + '<button type="button" data-draft-discard>丢弃</button>';
+        form.insertBefore(bar, form.firstElementChild.nextSibling);
+        bar.querySelector("[data-draft-restore]").addEventListener("click", function () {
+            applyDraft(draft);
+            bar.remove();
+            say("已恢复草稿，确认无误后记得保存。");
+        });
+        bar.querySelector("[data-draft-discard]").addEventListener("click", function () {
+            dropDraft();
+            bar.remove();
+            say("草稿已丢弃。");
+        });
+    })();
+
+    // ------------------------------------------------------------ 体重直存 ----
+    /* 体重是早上称的，训练是晚上练的。称出来的数字已经是定数，不是半成品，
+       所以它不走草稿，改一下就直接存进 body_metrics——换台设备打开也在。 */
+    (function bodyWeight() {
+        const input = form.querySelector('[data-field="weight_kg"]');
+        if (!input) return;
+        let lastSent = input.value.trim();
+        input.addEventListener("change", async function () {
+            const value = input.value.trim();
+            if (value === lastSent) return;
+            if (!value) { lastSent = value; return; }
+            try {
+                const response = await fetch("/fitness/body", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": window.BLOG_CSRF_TOKEN || "",
+                    },
+                    body: JSON.stringify({ weight_kg: number(value) }),
+                });
+                const result = await response.json().catch(function () { return {}; });
+                if (!response.ok) throw new Error(result.message || "体重没记上。");
+                lastSent = value;
+                say("体重 " + value + " kg 已单独记下，不用等训练保存。", "ok");
+            } catch (error) {
+                say(error.message, "error");
+            }
+        });
+    })();
 
     submit.addEventListener("click", async function () {
         const payload = collect();
