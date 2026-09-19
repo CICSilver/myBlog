@@ -34,8 +34,19 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css', v='20260911-diary-calendar') }}">
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site-footer.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/weather-ambience.css', v='20260919') }}">
   </head>
   <body class="{% block body_class %}{% endblock %}">
+    <div
+      class="weather-ambience"
+      data-weather-ambience
+      data-weather-endpoint="{{ url_for('main.api_weather') }}"
+      aria-hidden="true"
+    >
+      <canvas class="weather-ambience-canvas weather-ambience-canvas--back" data-weather-canvas="back"></canvas>
+      <canvas class="weather-ambience-canvas weather-ambience-canvas--front" data-weather-canvas="front"></canvas>
+    </div>
+
     <div class="page-shell">
       {% block site_header %}
         {% include "_site_header.html" %}
@@ -52,6 +63,7 @@
       window.BLOG_CSRF_TOKEN = "{{ csrf_token() }}";
     </script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/weather-ambience.js', v='20260919') }}" defer></script>
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>

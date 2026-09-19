@@ -24,6 +24,7 @@ class SiteIconTest(unittest.TestCase):
             template_folder=str(root / "templates"),
             static_folder=str(root / "static"),
         )
+        app.add_url_rule("/api/weather", endpoint="main.api_weather", view_func=lambda: "")
         with app.test_request_context():
             html = render_template_string(
                 '{% extends "base.html" %}{% block site_header %}{% endblock %}',

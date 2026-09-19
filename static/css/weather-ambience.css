@@ -1,0 +1,84 @@
+/* Ambient weather: rain and snow drifting behind the page, following the live
+   weather where the visitor is. Colours come from the theme, so a rainy day
+   stays warm-papered in light mode and ink-dark at night. */
+
+:root {
+    --weather-rain: rgba(96, 108, 126, 0.42);
+    --weather-rain-front: rgba(96, 108, 126, 0.24);
+    /* White flakes need an edge to be read as snow on warm paper. */
+    --weather-snow: rgba(255, 252, 247, 0.94);
+    --weather-snow-front: rgba(255, 252, 247, 0.66);
+    --weather-snow-edge: rgba(118, 100, 86, 0.36);
+    --weather-wash: transparent;
+}
+
+html[data-theme="dark"] {
+    --weather-rain: rgba(196, 212, 232, 0.3);
+    --weather-rain-front: rgba(196, 212, 232, 0.18);
+    --weather-snow: rgba(242, 231, 219, 0.72);
+    --weather-snow-front: rgba(242, 231, 219, 0.4);
+    --weather-snow-edge: transparent;
+}
+
+/* A rainy sky cools the paper a little; snow lifts it. Kept faint on purpose:
+   the page should feel the weather, not be taken over by it. */
+html[data-weather="rain"] body,
+html[data-weather="sleet"] body {
+    --weather-wash: rgba(88, 104, 126, 0.05);
+}
+
+html[data-weather="snow"] body {
+    --weather-wash: rgba(226, 234, 244, 0.06);
+}
+
+.weather-ambience {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.weather-ambience::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--weather-wash);
+    transition: background 0.8s ease;
+}
+
+.weather-ambience-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.weather-ambience-canvas.is-visible {
+    opacity: 1;
+}
+
+/* The near layer sits above the page so a few close drops pass in front of the
+   reading surface. It stays faint and blurred, like depth of field. */
+.weather-ambience-canvas--front {
+    position: fixed;
+    z-index: 60;
+    opacity: 0;
+    filter: blur(1.4px);
+}
+
+.weather-ambience-canvas--front.is-visible {
+    opacity: 0.75;
+}
+
+/* No visible switch yet: whatever ends up sitting on the footer rule can take
+   that job by carrying data-weather-toggle. Until then the animation is off
+   for anyone who asked their system for reduced motion, and ?weather=off
+   silences it for a single visit. */
+
+@media (prefers-reduced-motion: reduce) {
+    .weather-ambience-canvas {
+        display: none;
+    }
+}
