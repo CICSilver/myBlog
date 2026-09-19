@@ -517,11 +517,25 @@
 
 /* The number alone means nothing until you know the scale, so the selected
    step spells itself out beside the label. */
-.fit-rpe-label {
+.fit-rpe-label,
+.fit-field-label {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 10px;
+}
+
+.fit-field-hint {
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+    font-style: normal;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+/* 三个数字挤在一排时 10 个 RPE 按钮就太窄了，让它独占一行。 */
+.fit-rpe-block {
+    grid-column: 1 / -1;
 }
 
 .fit-rpe-hint {

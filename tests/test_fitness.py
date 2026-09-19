@@ -195,6 +195,20 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.database.metrics[-1].weight_kg, 64.6)
 
+    def test_waist_can_be_saved_on_its_own(self):
+        response = self.client.post("/fitness/body", json={"waist_cm": 86.5},
+                                    headers={"X-CSRF-Token": "token"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.database.metrics[-1].waist_cm, 86.5)
+        self.assertIsNone(self.database.metrics[-1].weight_kg)
+
+    def test_waist_field_does_not_prefill_a_stale_reading(self):
+        # 填着上次的数字会看着像今天量过；旧值只作为标签旁的提示出现。
+        self.database.metrics.append(BodyMetric(measured_date="2026-09-06", waist_cm=88))
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn('data-body-field="waist_cm" value=""', html)
+        self.assertIn("上次 88", html)
+
     def test_body_metric_rejects_an_empty_payload(self):
         response = self.client.post("/fitness/body", json={},
                                     headers={"X-CSRF-Token": "token"})

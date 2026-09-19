@@ -573,9 +573,13 @@ def save_fitness():
     workout.updated_at = now
     result = dbHelper.save_workout(workout, today_date)
 
+    # 这两个平时由 /fitness/body 在改动时就存掉了；这里再收一次，
+    # 是为了那次请求失败（离线之类）时不至于把数字丢了。
     body_weight = _parse_number(payload.get("weight_kg"), 20, 300, "体重")
-    if body_weight is not None:
-        dbHelper.save_body_metric(BodyMetric(measured_date=today_date, weight_kg=body_weight))
+    waist = _parse_number(payload.get("waist_cm"), 30, 200, "腰围")
+    if body_weight is not None or waist is not None:
+        dbHelper.save_body_metric(BodyMetric(
+            measured_date=today_date, weight_kg=body_weight, waist_cm=waist))
 
     return jsonify({**result, "totals": workout_totals(workout)})
 

@@ -214,16 +214,23 @@
 
             <p class="fit-subhead">身体与体感</p>
             <div class="fit-inline-fields">
+              {# 体重和腰围不跟训练绑定：改一下就单独落库，不用等训练保存。
+                 腰围不预填旧值——填着数字会像今天量过；上次的数放在标签旁边，
+                 让人自己判断要不要再量一次。 #}
               <label class="fit-labeled">
                 <span>今日体重</span>
-                <span class="fit-field"><input data-field="weight_kg" value="{{ body_metrics.weight.weight_kg if body_metrics.weight and body_metrics.weight.measured_date == today_date else '' }}" placeholder="—" inputmode="decimal"><em>kg</em></span>
+                <span class="fit-field"><input data-field="weight_kg" data-body-field="weight_kg" value="{{ body_metrics.weight.weight_kg if body_metrics.weight and body_metrics.weight.measured_date == today_date else '' }}" placeholder="—" inputmode="decimal"><em>kg</em></span>
+              </label>
+              <label class="fit-labeled">
+                <span class="fit-field-label">腰围{% if body_metrics.waist and body_metrics.waist.measured_date != today_date %}<em class="fit-field-hint">上次 {{ body_metrics.waist.waist_cm }}（{{ body_metrics.waist.measured_date[5:7] | int }}/{{ body_metrics.waist.measured_date[8:10] | int }}）</em>{% else %}<em class="fit-field-hint">偶尔量</em>{% endif %}</span>
+                <span class="fit-field"><input data-field="waist_cm" data-body-field="waist_cm" value="{{ body_metrics.waist.waist_cm if body_metrics.waist and body_metrics.waist.measured_date == today_date else '' }}" placeholder="—" inputmode="decimal"><em>cm</em></span>
               </label>
               <label class="fit-labeled">
                 <span>训练时长</span>
                 <span class="fit-field"><input data-field="duration_min" value="{{ today_workout.duration_min if today_workout and today_workout.duration_min else '' }}" placeholder="—" inputmode="numeric"><em>分钟</em></span>
               </label>
-              <div class="fit-labeled" style="grid-column: span 2;">
-                <span class="fit-rpe-label">整体强度 RPE<em class="fit-rpe-hint" data-rpe-hint>还没选</em></span>
+              <div class="fit-labeled fit-rpe-block">
+                <span class="fit-field-label">整体强度 RPE<em class="fit-rpe-hint" data-rpe-hint>还没选</em></span>
                 <div class="fit-rpe-scale" role="group" aria-label="整体强度" data-rpe>
                   {% for value in range(1, 11) %}
                     <button type="button" data-value="{{ value }}" class="{{ 'is-active' if today_workout and today_workout.rpe == value }}">{{ value }}</button>

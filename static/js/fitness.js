@@ -489,6 +489,7 @@
             duration_min: value('[data-field="duration_min"]'),
             rpe: number(activeValue(form.querySelector("[data-rpe]"))),
             weight_kg: value('[data-field="weight_kg"]'),
+            waist_cm: value('[data-field="waist_cm"]'),
             note: note ? note.value : "",
         };
     }
@@ -557,6 +558,7 @@
         };
         fill('[data-field="duration_min"]', draft.duration_min);
         fill('[data-field="weight_kg"]', draft.weight_kg);
+        fill('[data-field="waist_cm"]', draft.waist_cm);
         const note = form.querySelector('[data-field="note"]');
         if (note) note.value = draft.note || "";
 
@@ -601,33 +603,42 @@
         });
     })();
 
-    // ------------------------------------------------------------ 体重直存 ----
-    /* 体重是早上称的，训练是晚上练的。称出来的数字已经是定数，不是半成品，
-       所以它不走草稿，改一下就直接存进 body_metrics——换台设备打开也在。 */
-    (function bodyWeight() {
-        const input = form.querySelector('[data-field="weight_kg"]');
-        if (!input) return;
-        let lastSent = input.value.trim();
-        input.addEventListener("change", async function () {
-            const value = input.value.trim();
-            if (value === lastSent) return;
-            if (!value) { lastSent = value; return; }
-            try {
-                const response = await fetch("/fitness/body", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-Token": window.BLOG_CSRF_TOKEN || "",
-                    },
-                    body: JSON.stringify({ weight_kg: number(value) }),
-                });
-                const result = await response.json().catch(function () { return {}; });
-                if (!response.ok) throw new Error(result.message || "体重没记上。");
-                lastSent = value;
-                say("体重 " + value + " kg 已单独记下，不用等训练保存。", "ok");
-            } catch (error) {
-                say(error.message, "error");
-            }
+    // ------------------------------------------------------ 身体数据直存 ----
+    /* 体重是早上称的，腰围是偶尔量的，训练是晚上练的。这些数字量出来就已经
+       是定数，不是半成品，所以不走草稿：改一下就直接落进 body_metrics，
+       不用先凑出一次完整的训练，换台设备打开也还在。 */
+    (function bodyMetrics() {
+        const inputs = form.querySelectorAll("[data-body-field]");
+        if (!inputs.length) return;
+        const LABELS = { weight_kg: ["体重", "kg"], waist_cm: ["腰围", "cm"] };
+
+        inputs.forEach(function (input) {
+            let lastSent = input.value.trim();
+            input.addEventListener("change", async function () {
+                const value = input.value.trim();
+                if (value === lastSent) return;
+                if (!value) { lastSent = value; return; }   // 留空就是没量，不是要清掉
+                const field = input.dataset.bodyField;
+                const label = LABELS[field] || [field, ""];
+                const body = {};
+                body[field] = number(value);
+                try {
+                    const response = await fetch("/fitness/body", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-Token": window.BLOG_CSRF_TOKEN || "",
+                        },
+                        body: JSON.stringify(body),
+                    });
+                    const result = await response.json().catch(function () { return {}; });
+                    if (!response.ok) throw new Error(result.message || label[0] + "没记上。");
+                    lastSent = value;
+                    say(label[0] + " " + value + " " + label[1] + " 已单独记下，不用等训练保存。", "ok");
+                } catch (error) {
+                    say(error.message, "error");
+                }
+            });
         });
     })();
 
