@@ -22,6 +22,23 @@ def render_service(root, config):
             "KillSignal=SIGTERM\nKillMode=mixed\nTimeoutStopSec=90s\n")
 
 
+def render_backup_units(root, config):
+    """A daily off-site backup, timed after the 04:00 diary day boundary so the
+    captured day is already closed. Written but never enabled automatically."""
+    command = str(Path(config["MYBLOG_TOOLS_DIR"]) / "backup_to_drive.py").replace('%', '%%')
+    service = ("[Unit]\nDescription=myBlog encrypted off-site backup\n"
+               "After=network-online.target " + config["MYBLOG_SERVICE"] + "\n"
+               "Wants=network-online.target\n\n"
+               "[Service]\nType=oneshot\n"
+               "ExecStart=" + command + " --app-dir " + str(root).replace('%', '%%') + "\n"
+               "Nice=10\nIOSchedulingClass=idle\nTimeoutStartSec=3600\n")
+    timer = ("[Unit]\nDescription=Daily myBlog encrypted off-site backup\n\n"
+             "[Timer]\nOnCalendar=*-*-* 04:30:00\nPersistent=true\n"
+             "RandomizedDelaySec=900\nAccuracySec=1min\n\n"
+             "[Install]\nWantedBy=timers.target\n")
+    return service, timer
+
+
 def install(root, config, systemd_dir=Path("/etc/systemd/system"), launcher=None, reload=True):
     root = Path(root).resolve()
     inspect_database(config["BLOG_DB_PATH"])
@@ -55,12 +72,15 @@ def install(root, config, systemd_dir=Path("/etc/systemd/system"), launcher=None
     tools = Path(config["MYBLOG_TOOLS_DIR"])
     tools.mkdir(parents=True, exist_ok=True)
     os.chmod(tools, 0o700)
-    for name in ["create_recovery_bundle.py", "verify_recovery_bundle.py", "maintenance.py"]:
+    for name in ["create_recovery_bundle.py", "verify_recovery_bundle.py", "maintenance.py", "backup_to_drive.py"]:
         content = ("#!/usr/bin/env python3\nimport json, os\nfrom pathlib import Path\n"
                    "root = Path(" + repr(str(root)) + ")\n"
                    "c = json.loads((root / 'instance/runtime.json').read_text())\n"
                    "os.execv(c['MYBLOG_PYTHON'], [c['MYBLOG_PYTHON'], str(root / 'scripts' / " + repr(name) + "), *os.sys.argv[1:]])\n")
         atomic_bytes(tools / name, content.encode(), 0o700)
+    backup_service, backup_timer = render_backup_units(root, config)
+    atomic_bytes(Path(systemd_dir) / "myblog-backup.service", backup_service.encode(), 0o644)
+    atomic_bytes(Path(systemd_dir) / "myblog-backup.timer", backup_timer.encode(), 0o644)
     launcher = Path(launcher or root.parent / "update_myblog.sh")
     content = ("#!/bin/sh\nset -eu\nexport MYBLOG_APP_DIR=" + shlex.quote(str(root)) +
                "\nexport MYBLOG_BOOTSTRAP_PYTHON=" + shlex.quote(config["MYBLOG_PYTHON"]) +

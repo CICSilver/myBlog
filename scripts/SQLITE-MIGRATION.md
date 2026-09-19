@@ -95,4 +95,8 @@ For a strict maintenance baseline, use `--stop-service` instead.
 Upload archives only through `myblog_crypt:`. Download/decrypt, compare archive
 and file hashes, and run `verify_recovery_bundle.py` before considering a
 backup verified. The crypt keys and Google tokens remain outside the archive.
-No scheduler or automatic cloud-retention policy is introduced by migration.
+
+Routine off-site backup is now `backup_to_drive.py`, run daily by
+`myblog-backup.timer`; it applies the retention policy recorded in
+`runtime.json`. See `DEPLOYMENT.md`. Migration itself still introduces no
+schema change and no automatic database migration.
