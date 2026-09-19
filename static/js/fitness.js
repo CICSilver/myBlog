@@ -313,6 +313,13 @@
         return card;
     }
 
+    // 按下去的一瞬间焦点会从输入框跳到按钮，那一行的空备注随即收起，底下的东西
+    // 跟着往上跳——松手时点的已经不是原来那个按钮了，click 根本不发，得再点一次。
+    // 这里的按钮都不需要焦点，索性别让它们抢：布局不动，一下就点到。
+    form.addEventListener("mousedown", function (event) {
+        if (event.target.closest("button")) event.preventDefault();
+    });
+
     // 点击代理：动作卡是动态的，逐个绑监听会漏掉后加的。
     form.addEventListener("click", function (event) {
         const check = event.target.closest("[data-set-check]");
