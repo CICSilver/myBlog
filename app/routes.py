@@ -32,7 +32,6 @@ from app.fitness_model import (
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from app.diary_policy import diary_date, location_needs_retry, better_location
 from app.diary_metadata import fetch_diary_metadata
-from app.weather import visitor_weather
 from app.diary_activity import (
     activity_summary,
     build_activity_calendar,
@@ -185,19 +184,6 @@ def _parse_diary_coordinates(latitude, longitude, accuracy):
 @main.route('/')
 def index():
     return init_index_with_blogs(dbHelper.get_recent_blogs())
-
-@main.route('/api/weather', methods=['GET'])
-def api_weather():
-    """Weather where this visitor is, for the ambient rain/snow layer."""
-    payload = visitor_weather(
-        _get_client_ip(),
-        current_app.config["BLOG_AMAP_WEB_SERVICE_KEY"],
-    )
-
-    response = jsonify(payload)
-    response.headers["Cache-Control"] = "private, max-age=600"
-    return response
-
 
 @main.route('/media/covers/<path:filename>')
 def media_cover(filename):

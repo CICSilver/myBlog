@@ -24,7 +24,6 @@ output/
 
 # Editor and diagnostic noise
 .vscode/
-.claude/
 *.log
 
 # Local scratch/reference files

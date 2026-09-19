@@ -28,12 +28,6 @@ class FooterParser(HTMLParser):
             self.text.append(data)
 
 
-def fake_url_for(endpoint, filename=None, **kwargs):
-    if filename is not None:
-        return "/static/" + filename
-    return "/" + endpoint.split(".")[-1]
-
-
 class SiteFooterTest(unittest.TestCase):
     def test_shared_layout_renders_icp_link(self):
         root = Path(__file__).resolve().parents[1]
@@ -45,7 +39,7 @@ class SiteFooterTest(unittest.TestCase):
             '{% extends "base.html" %}{% block site_header %}{% endblock %}'
         )
         html = template.render(
-            url_for=fake_url_for,
+            url_for=lambda endpoint, filename, **kwargs: "/static/" + filename,
             csrf_token=lambda: "test-token",
         )
         parser = FooterParser()
