@@ -212,6 +212,14 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertNotIn("duration_min", html)
         self.assertNotIn("训练时长", html)
 
+    def test_the_session_note_is_not_the_first_set_note(self):
+        # 组备注和整场备注共用 data-field="note"，按属性取会先撞上第一条
+        # 组备注，把它当成这一场的总结存下去。
+        javascript = (Path(__file__).resolve().parents[1]
+                      / "static" / "js" / "fitness.js").read_text(encoding="utf-8")
+        self.assertNotIn("""const note = form.querySelector('[data-field="note"]')""", javascript)
+        self.assertEqual(javascript.count('form.querySelector("#fit-note")'), 2)
+
     def test_sidebar_keeps_the_wrapper_the_sticky_logic_needs(self):
         # 外层撑满整行、内层位移——少了这层包裹，方向感知吸附就没有位移
         # 空间，会安静地失效而不报错。

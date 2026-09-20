@@ -390,7 +390,9 @@
 
     form.addEventListener("input", function (event) {
         if (event.target.dataset.field === "note") {
-            event.target.closest(".fit-set").classList.toggle("has-note", !!event.target.value.trim());
+            // 整场备注也叫 note，但它不在任何一组里；没有行就只长高，别去摸 null。
+            const row = event.target.closest(".fit-set");
+            if (row) row.classList.toggle("has-note", !!event.target.value.trim());
             growNote(event.target);
         }
         const card = event.target.closest(".fit-exercise");
@@ -476,7 +478,8 @@
             const input = form.querySelector(selector);
             return input ? number(input.value) : null;
         };
-        const note = form.querySelector('[data-field="note"]');
+        // 组备注和整场备注共用 data-field；按 id 取，别让第一条组备注冒充这一场的总结。
+        const note = form.querySelector("#fit-note");
         return {
             entry_date: form.dataset.entryDate,
             day_type: activeValue(form.querySelector("[data-day-type]")),
@@ -552,7 +555,7 @@
         };
         fill('[data-field="weight_kg"]', draft.weight_kg);
         fill('[data-field="waist_cm"]', draft.waist_cm);
-        const note = form.querySelector('[data-field="note"]');
+        const note = form.querySelector("#fit-note");
         if (note) note.value = draft.note || "";
 
         const rpeGroup = form.querySelector("[data-rpe]");
