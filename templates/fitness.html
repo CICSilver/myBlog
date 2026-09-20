@@ -171,15 +171,15 @@
                   <div class="fit-sets" data-sets>
                     <div class="fit-set-head" aria-hidden="true">
                       {% if row.kind == 'static' %}
-                        <span>组</span><span>时长<i>秒</i></span><span></span><span></span>
+                        <span>组</span><span>时长<i>秒</i></span><span></span>
                       {% elif row.kind == 'unilateral' %}
-                        <span>组</span><span>重量<i>kg</i></span><span class="is-side">左<i>次</i></span><span class="is-side">右<i>次</i></span><span></span><span></span>
+                        <span>组</span><span>重量<i>kg</i></span><span class="is-side">左<i>次</i></span><span class="is-side">右<i>次</i></span><span></span>
                       {% else %}
-                        <span>组</span><span>重量<i>kg</i></span><span>次数</span><span></span><span></span>
+                        <span>组</span><span>重量<i>kg</i></span><span>次数</span><span></span>
                       {% endif %}
                     </div>
                     {% for entry in exercise.sets %}
-                      <div class="fit-set is-done{% if entry.note %} has-note{% endif %}" data-set>
+                      <div class="fit-set{% if entry.note %} has-note{% endif %}" data-set>
                         <span class="fit-set-index">{{ loop.index }}</span>
                         {% if row.kind == 'static' %}
                           <label class="fit-field"><input value="{{ entry.seconds if entry.seconds is not none }}" data-field="seconds" inputmode="numeric" aria-label="第 {{ loop.index }} 组时长"></label>
@@ -190,9 +190,6 @@
                             <label class="fit-field"><input value="{{ entry.right if entry.right is not none }}" data-field="right" inputmode="numeric" placeholder="右" aria-label="第 {{ loop.index }} 组右侧次数"></label>
                           {% endif %}
                         {% endif %}
-                        <button class="fit-set-check" type="button" data-set-check aria-pressed="true" aria-label="第 {{ loop.index }} 组已完成">
-                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>
-                        </button>
                         <button class="fit-set-remove" type="button" data-remove-set aria-label="删除第 {{ loop.index }} 组" title="删除这一组">×</button>
                         <textarea class="fit-set-note" data-field="note" rows="1" maxlength="120" placeholder="这一组的备注" aria-label="第 {{ loop.index }} 组备注">{{ entry.note or '' }}</textarea>
                       </div>
@@ -224,10 +221,6 @@
               <label class="fit-labeled">
                 <span class="fit-field-label">腰围{% if body_metrics.waist and body_metrics.waist.measured_date != today_date %}<em class="fit-field-hint">上次 {{ body_metrics.waist.waist_cm }}（{{ body_metrics.waist.measured_date[5:7] | int }}/{{ body_metrics.waist.measured_date[8:10] | int }}）</em>{% else %}<em class="fit-field-hint">偶尔量</em>{% endif %}</span>
                 <span class="fit-field"><input data-field="waist_cm" data-body-field="waist_cm" value="{{ body_metrics.waist.waist_cm if body_metrics.waist and body_metrics.waist.measured_date == today_date else '' }}" placeholder="—" inputmode="decimal"><em>cm</em></span>
-              </label>
-              <label class="fit-labeled">
-                <span>训练时长</span>
-                <span class="fit-field"><input data-field="duration_min" value="{{ today_workout.duration_min if today_workout and today_workout.duration_min else '' }}" placeholder="—" inputmode="numeric"><em>分钟</em></span>
               </label>
               <div class="fit-labeled fit-rpe-block">
                 <span class="fit-field-label">整体强度 RPE<em class="fit-rpe-hint" data-rpe-hint>还没选</em></span>
@@ -276,7 +269,6 @@
                   {% elif workout.totals.partial %}
                     <span>容量未记录</span>
                   {% endif %}
-                  {% if workout.duration_min %}<span>{{ diary_icon("clock") }}{{ workout.duration_min }} 分钟</span>{% endif %}
                   {% if workout.rpe %}<span>RPE {{ workout.rpe }}</span>{% endif %}
                 </div>
                 {% if workout.exercise_rows %}

@@ -5,6 +5,7 @@
     const KINDS = {
         深蹲: "bilateral", 臀桥: "bilateral", 提踵: "bilateral", 侧平举: "bilateral",
         弯举: "unilateral", 划船: "unilateral", 卧推: "unilateral", 抬腕: "unilateral",
+        飞鸟: "unilateral",
         平板支撑: "static",
     };
 
@@ -22,7 +23,6 @@
         10: "力竭 · 一次也加不动",
     };
 
-    const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>';
     const REMOVE_BTN = '<button class="fit-set-remove" type="button" data-remove-set'
         + ' aria-label="删除这一组" title="删除这一组">×</button>';
     function noteInput(value) {
@@ -183,7 +183,7 @@
         if (saveState) saveState.textContent = "未保存";
     }
 
-    // 点击类的改动（加减组、勾完成、切类型/RPE）也要落进草稿。
+    // 点击类的改动（加减组、切类型/RPE）也要落进草稿。
     form.addEventListener("click", function (event) {
         if (event.target.closest("button")) scheduleDraft();
     });
@@ -276,13 +276,11 @@
         return "<span>组</span><span>重量<i>kg</i></span><span>次数</span><span></span>";
     }
 
-    function setHTML(kind, values, done) {
+    function setHTML(kind, values) {
         values = values || {};
         const note = values.note || "";
-        return '<div class="fit-set' + (done ? " is-done" : "") + (note ? " has-note" : "") + '" data-set>'
+        return '<div class="fit-set' + (note ? " has-note" : "") + '" data-set>'
             + '<span class="fit-set-index"></span>' + fieldHTML(kind, values)
-            + '<button class="fit-set-check" type="button" data-set-check aria-pressed="'
-            + (done ? "true" : "false") + '" aria-label="标记完成">' + CHECK_SVG + "</button>"
             + REMOVE_BTN + noteInput(note) + "</div>";
     }
 
@@ -294,7 +292,7 @@
         card.dataset.exercise = name;
         card.dataset.kind = kind;
         const rows = (sets && sets.length ? sets : [{}])
-            .map(function (values) { return setHTML(kind, values, !!(values && values.done)); }).join("");
+            .map(function (values) { return setHTML(kind, values); }).join("");
         card.innerHTML =
             '<div class="fit-exercise-head"><span class="fit-exercise-index"></span><h3>' + name + "</h3>"
             + '<span class="fit-exercise-sides"></span>'
@@ -322,14 +320,6 @@
 
     // 点击代理：动作卡是动态的，逐个绑监听会漏掉后加的。
     form.addEventListener("click", function (event) {
-        const check = event.target.closest("[data-set-check]");
-        if (check) {
-            const row = check.closest(".fit-set");
-            const done = row.classList.toggle("is-done");
-            check.setAttribute("aria-pressed", String(done));
-            markDirty();
-            return;
-        }
         const addSet = event.target.closest("[data-add-set]");
         if (addSet) {
             const card = addSet.closest(".fit-exercise");
@@ -341,7 +331,7 @@
                 const weight = last.querySelector('[data-field="weight"]');
                 if (weight) carry.weight = weight.value;
             }
-            addSet.insertAdjacentHTML("beforebegin", setHTML(card.dataset.kind, carry, false));
+            addSet.insertAdjacentHTML("beforebegin", setHTML(card.dataset.kind, carry));
             refresh(card);
             markDirty();
             const next = card.querySelectorAll("[data-set]");
@@ -469,7 +459,6 @@
                         sets.push({
                             seconds: seconds,
                             note: staticNote ? staticNote.value.trim() : "",
-                            done: row.classList.contains("is-done"),
                         });
                     }
                     return;
@@ -479,7 +468,6 @@
                 const entry = { weight: field("weight"), left: field("left"), note: note };
                 entry.right = kind === "unilateral" ? field("right") : null;
                 if (entry.weight == null && entry.left == null && entry.right == null && !note) return;
-                entry.done = row.classList.contains("is-done");   // 只给草稿用，服务端不读
                 sets.push(entry);
             });
             if (sets.length) exercises.push({ name: card.dataset.exercise, sets: sets });
@@ -493,7 +481,6 @@
             entry_date: form.dataset.entryDate,
             day_type: activeValue(form.querySelector("[data-day-type]")),
             exercises: exercises,
-            duration_min: value('[data-field="duration_min"]'),
             rpe: number(activeValue(form.querySelector("[data-rpe]"))),
             weight_kg: value('[data-field="weight_kg"]'),
             waist_cm: value('[data-field="waist_cm"]'),
@@ -563,7 +550,6 @@
             const input = form.querySelector(selector);
             if (input) input.value = value == null ? "" : value;
         };
-        fill('[data-field="duration_min"]', draft.duration_min);
         fill('[data-field="weight_kg"]', draft.weight_kg);
         fill('[data-field="waist_cm"]', draft.waist_cm);
         const note = form.querySelector('[data-field="note"]');

@@ -642,7 +642,6 @@ def _parse_workout_payload(payload, today_date):
         entry_date=today_date,
         day_type=day_type,
         exercises=exercises,
-        duration_min=_parse_number(payload.get("duration_min"), 1, 600, "训练时长", integer=True),
         rpe=_parse_number(payload.get("rpe"), 1, 10, "RPE", integer=True),
         note=str(payload.get("note") or "")[:2000],
     )

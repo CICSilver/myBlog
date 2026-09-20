@@ -307,14 +307,14 @@
 .fit-set-head,
 .fit-set {
     display: grid;
-    grid-template-columns: 30px 108px 108px 36px 26px;
+    grid-template-columns: 30px 108px 108px 26px;
     align-items: center;
     gap: 8px;
 }
 
 .fit-exercise.is-unilateral .fit-set-head,
 .fit-exercise.is-unilateral .fit-set {
-    grid-template-columns: 30px 108px 108px 108px 36px 26px;
+    grid-template-columns: 30px 108px 108px 108px 26px;
 }
 
 /* Units live in the column header, not in every field: with a left and a
@@ -377,51 +377,6 @@
     border-color: var(--focus-border);
     background: var(--control-focus-surface);
     box-shadow: var(--focus-ring);
-}
-
-/* A set is only "done" once both sides are in, so one check per row. */
-.fit-set-check {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
-    background: transparent;
-    color: transparent;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.fit-set-check svg {
-    width: 13px;
-    height: 13px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.fit-set-check:hover {
-    border-color: var(--success-line);
-    color: var(--success-line);
-}
-
-.fit-set.is-done .fit-set-check {
-    border-color: transparent;
-    background: var(--success);
-    color: var(--surface-strong);
-}
-
-.fit-set.is-done .fit-field {
-    border-color: transparent;
-    background: transparent;
-}
-
-.fit-set.is-done .fit-field input {
-    color: var(--ink-soft);
 }
 
 .fit-ghost-button {
@@ -1097,13 +1052,13 @@
 
     .fit-set-head,
     .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 30px 24px;
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 24px;
         gap: 6px;
     }
 
     .fit-exercise.is-unilateral .fit-set-head,
     .fit-exercise.is-unilateral .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 30px 24px;
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 24px;
     }
 
     .fit-exercise-sides {
@@ -1423,7 +1378,7 @@ html[data-theme="dark"] .fit-volume-chart {
 /* Static holds (plank): no weight, no reps — just seconds. */
 .fit-exercise.is-static .fit-set-head,
 .fit-exercise.is-static .fit-set {
-    grid-template-columns: 30px 108px 36px 26px;
+    grid-template-columns: 30px 108px 26px;
 }
 
 .fit-set-note,

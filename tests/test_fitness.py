@@ -7,7 +7,14 @@ from app import create_app
 from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
 from app.database import BodyMetric, Workout
 from app.fitness_activity import activity_summary, build_chart
-from app.fitness_model import balance, exercise_totals, records, trend_points, workout_totals
+from app.fitness_model import (
+    balance,
+    exercise_totals,
+    movement_kind,
+    records,
+    trend_points,
+    workout_totals,
+)
 import app.routes as routes_module
 
 
@@ -65,6 +72,12 @@ class FitnessModelTest(unittest.TestCase):
         self.assertEqual((rows[0]["left"], rows[0]["right"]), (90, 110))
         self.assertEqual(rows[0]["bias"], 20)   # 右侧领先 20 个百分点
         self.assertTrue(rows[0]["off"])
+
+    def test_flye_is_logged_one_side_at_a_time(self):
+        totals = exercise_totals(unilateral("飞鸟", (5.5, 12, 12)))
+        self.assertEqual(movement_kind("飞鸟"), "unilateral")
+        self.assertEqual(totals["reps"], 24)          # 左右各 12
+        self.assertEqual(totals["volume"], 5.5 * 24)
 
     def test_a_unilateral_record_needs_both_sides(self):
         best = dict(records([workout("2026-09-18", "上肢", [unilateral("卧推", (10, 14, 8))])]))
@@ -181,6 +194,24 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertIn('data-move="弯举" data-kind="unilateral" hidden', html)
         self.assertIn('data-move="划船" data-kind="unilateral">', html)
 
+    def test_a_saved_set_carries_no_completion_state(self):
+        # 组是做完之后补录的，不存在“未完成的组”，勾去掉了；表头的占位
+        # 也要跟着少一列，不然表头和组行会错开。
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from app.diary_policy import diary_date
+        today = diary_date(datetime.now(ZoneInfo(self.app.config["BLOG_TIMEZONE"]))).isoformat()
+        self.database.workouts[today] = workout(today, "上肢", [unilateral("飞鸟", (5.5, 12, 12))])
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn('data-move="飞鸟" data-kind="unilateral" hidden', html)
+        self.assertNotIn("data-set-check", html)
+        self.assertNotIn("is-done", html)
+
+    def test_the_log_no_longer_asks_how_long_it_took(self):
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertNotIn("duration_min", html)
+        self.assertNotIn("训练时长", html)
+
     def test_sidebar_keeps_the_wrapper_the_sticky_logic_needs(self):
         # 外层撑满整行、内层位移——少了这层包裹，方向感知吸附就没有位移
         # 空间，会安静地失效而不报错。
@@ -290,7 +321,7 @@ class FitnessRouteTest(unittest.TestCase):
             "entry_date": self.today(),
             "day_type": "上肢",
             "exercises": [{"name": "弯举", "sets": [{"weight": 8, "left": 11, "right": 10}]}],
-            "duration_min": 42, "rpe": 7, "weight_kg": 64.6, "note": "自测",
+            "rpe": 7, "weight_kg": 64.6, "note": "自测",
         })
         self.assertEqual(response.status_code, 200)
         saved = self.database.saved[0]
