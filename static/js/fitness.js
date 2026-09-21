@@ -52,30 +52,33 @@
 
     // ---------------------------------------------------------------- 图表 ----
     (function chart() {
-        const figure = document.querySelector(".fit-chart-figure");
-        if (!figure) return;
-        const tip = figure.querySelector("[data-chart-tip]");
-        const volume = tip.querySelector("[data-tip-vol]");
-        const meta = tip.querySelector("[data-tip-meta]");
+        const card = document.querySelector("[data-chart-card]");
+        if (!card) return;
 
-        figure.querySelectorAll(".fit-chart-hit").forEach(function (hit) {
-            hit.addEventListener("mousemove", function (event) {
-                const empty = hit.dataset.vol === "—";
-                volume.textContent = empty ? "未训练" : hit.dataset.vol;
-                meta.textContent = empty
-                    ? hit.dataset.date
-                    : hit.dataset.date + " · " + hit.dataset.part + " · " + hit.dataset.sets + " 组";
-                const box = figure.getBoundingClientRect();
-                const half = tip.offsetWidth / 2 + 4;
-                tip.style.left = Math.min(Math.max(event.clientX - box.left, half), box.width - half) + "px";
-                tip.style.top = Math.max(event.clientY - box.top - 12, tip.offsetHeight) + "px";
-                tip.classList.add("is-on");
+        card.querySelectorAll(".fit-chart-figure").forEach(function (figure) {
+            const tip = figure.querySelector("[data-chart-tip]");
+            const volume = tip.querySelector("[data-tip-vol]");
+            const meta = tip.querySelector("[data-tip-meta]");
+
+            figure.querySelectorAll(".fit-chart-hit").forEach(function (hit) {
+                hit.addEventListener("mousemove", function (event) {
+                    const empty = hit.dataset.vol === "—";
+                    volume.textContent = empty ? "未训练" : hit.dataset.vol;
+                    // 身体那张图一个读数就是一条说明，服务端已经拼好了。
+                    meta.textContent = hit.dataset.meta || (empty
+                        ? hit.dataset.date
+                        : hit.dataset.date + " · " + hit.dataset.part + " · " + hit.dataset.sets + " 组");
+                    const box = figure.getBoundingClientRect();
+                    const half = tip.offsetWidth / 2 + 4;
+                    tip.style.left = Math.min(Math.max(event.clientX - box.left, half), box.width - half) + "px";
+                    tip.style.top = Math.max(event.clientY - box.top - 12, tip.offsetHeight) + "px";
+                    tip.classList.add("is-on");
+                });
             });
+            figure.addEventListener("mouseleave", function () { tip.classList.remove("is-on"); });
         });
-        figure.addEventListener("mouseleave", function () { tip.classList.remove("is-on"); });
 
-        const card = document.querySelector(".fit-volume-chart");
-        const keys = card.querySelectorAll(".fit-chart-key");
+        const keys = card.querySelectorAll("button.fit-chart-key");
         keys.forEach(function (key) {
             key.addEventListener("click", function () {
                 const on = key.getAttribute("aria-pressed") === "true";
@@ -86,6 +89,23 @@
                 key.setAttribute("aria-pressed", on ? "false" : "true");
                 card.classList.toggle("hide-" + key.dataset.series, on);
             });
+        });
+
+        // 训练量和身体数据换着看：标题、图、图例整块一起换。
+        const switcher = card.querySelector("[data-chart-switch]");
+        if (!switcher) return;
+        const tabs = switcher.querySelectorAll("[data-chart-tab]");
+        function show(name) {
+            tabs.forEach(function (tab) {
+                tab.setAttribute("aria-selected", String(tab.dataset.chartTab === name));
+            });
+            card.querySelectorAll("[data-chart-view], [data-chart-title]").forEach(function (block) {
+                const owner = block.dataset.chartView || block.dataset.chartTitle;
+                block.hidden = owner !== name;
+            });
+        }
+        tabs.forEach(function (tab) {
+            tab.addEventListener("click", function () { show(tab.dataset.chartTab); });
         });
     })();
 

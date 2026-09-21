@@ -266,3 +266,131 @@ def _round_ceiling(value):
         if value <= step * 4:
             return int(-(-value // step) * step)
     return int(-(-value // 10000) * 10000)
+
+
+# 身体数据的两条线。体重是公斤、腰围是厘米，两种量纲共用一根纵轴的话，
+# 谁高谁低是排版凑出来的，不是数据里的——所以各占一格，只共用时间轴。
+BODY_LEFT, BODY_RIGHT = 44.0, 1006.0
+BODY_PANEL_TOP, BODY_PANEL_HEIGHT, BODY_PANEL_GAP = 24.0, 52.0, 40.0
+BODY_SERIES = (
+    ("weight", "weight_kg", "体重", "kg", 0.6),
+    ("waist", "waist_cm", "腰围", "cm", 1.0),
+)
+
+
+def build_body_chart(metrics, today):
+    """体重、腰围各一格，共用时间轴；一个读数也画得住，没有读数就不画。"""
+    panels = []
+    for key, field, label, unit, least_pad in BODY_SERIES:
+        points = [
+            (date.fromisoformat(metric.measured_date), getattr(metric, field))
+            for metric in metrics
+            if metric.measured_date and getattr(metric, field)
+        ]
+        if points:
+            panels.append({"key": key, "label": label, "unit": unit,
+                           "points": sorted(points), "pad": least_pad})
+    if not panels:
+        return None
+
+    start = min(panel["points"][0][0] for panel in panels)
+    chart = _with_body_geometry(panels, start, today)
+    chart["rows"] = _body_rows(metrics)
+    return chart
+
+
+def _body_rows(metrics):
+    """表格按日期倒序，跟训练记录那张一致。"""
+    rows = []
+    for metric in metrics:
+        if not metric.measured_date or not (metric.weight_kg or metric.waist_cm):
+            continue
+        day = date.fromisoformat(metric.measured_date)
+        rows.append({
+            "label": "%d月%d日" % (day.month, day.day),
+            "weight": _body_value(metric.weight_kg) if metric.weight_kg else None,
+            "waist": _body_value(metric.waist_cm) if metric.waist_cm else None,
+        })
+    return list(reversed(rows))
+
+
+def _with_body_geometry(panels, start, today):
+    span = max((today - start).days, 1)
+
+    def x_of(day):
+        return BODY_LEFT + (day - start).days / float(span) * (BODY_RIGHT - BODY_LEFT)
+
+    dates = sorted({day for panel in panels for day, _ in panel["points"]})
+    for index, panel in enumerate(panels):
+        top = BODY_PANEL_TOP + index * (BODY_PANEL_HEIGHT + BODY_PANEL_GAP)
+        _place_panel(panel, top, x_of)
+
+    bottom = BODY_PANEL_TOP + len(panels) * (BODY_PANEL_HEIGHT + BODY_PANEL_GAP) - BODY_PANEL_GAP
+    return {
+        "panels": panels,
+        "ticks": _body_ticks(dates, x_of),
+        "tick_y": bottom + 22,
+        "viewbox": "0 0 %d %.0f" % (CHART_WIDTH, bottom + 28),
+        "span_label": "%d月%d日以来" % (start.month, start.day),
+        "readings": len(dates),
+    }
+
+
+def _body_ticks(dates, x_of):
+    """标在真实的读数日上，而不是均分——但挨太近的就只留最后那个。
+
+    读数之间的间隔本来就不均匀，硬按位置隔一个取一个会把连着量的两天
+    压成一团墨。
+    """
+    kept = []
+    for day in dates:
+        x = x_of(day)
+        while kept and x - kept[-1][0] < 72:
+            kept.pop()
+        kept.append((x, day))
+    return [{"x": round(x, 1), "label": "%d月%d日" % (day.month, day.day)} for x, day in kept]
+
+
+def _place_panel(panel, top, x_of):
+    values = [value for _, value in panel["points"]]
+    low, high = min(values), max(values)
+    pad = max((high - low) * 0.35, panel["pad"])
+    floor, ceiling = low - pad, high + pad
+    base = top + BODY_PANEL_HEIGHT
+
+    def y_of(value):
+        return base - (value - floor) / (ceiling - floor) * BODY_PANEL_HEIGHT
+
+    marks = [
+        {"x": round(x_of(day), 1), "y": round(y_of(value), 1), "value": value,
+         "label": "%d月%d日" % (day.month, day.day), "text": _body_value(value)}
+        for day, value in panel["points"]
+    ]
+    panel["top"] = top
+    panel["base"] = base
+    panel["title_y"] = round(top - 12, 1)
+    panel["marks"] = marks
+    panel["latest"] = marks[-1]
+    # 最新那个数直接标在点上；点贴着格子顶的时候标到下面去，别压着标题。
+    panel["latest_label_y"] = round(
+        marks[-1]["y"] + 15 if marks[-1]["y"] - top < 14 else marks[-1]["y"] - 8, 1)
+    panel["path"] = ("M%.1f %.1f " % (marks[0]["x"], marks[0]["y"])
+                     + " ".join("L%.1f %.1f" % (mark["x"], mark["y"]) for mark in marks[1:])
+                     ) if len(marks) > 1 else None
+    # 刻度标真实的最高最低，不标那条留白后的边界——读数才对得上点。
+    panel["grid"] = [
+        {"y": round(y_of(value), 1), "label": _body_value(value)}
+        for value in ([low, high] if high > low else [low])
+    ]
+    # 命中区比点大得多：读数之间隔着好几天，指到哪天都该有反应。
+    panel["hits"] = [
+        {"x": round(mark["x"] - 14, 1), "y": round(top - 6, 1),
+         "width": 28, "height": round(BODY_PANEL_HEIGHT + 12, 1),
+         "value": "%s %s" % (mark["text"], panel["unit"]), "meta": mark["label"]}
+        for mark in marks
+    ]
+
+
+def _body_value(value):
+    """63.0 读起来像精确到 0.1 其实不是；整数就写整数。"""
+    return ("%g" % round(float(value), 1))

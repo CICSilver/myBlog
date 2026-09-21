@@ -6,7 +6,7 @@ from pathlib import Path
 from app import create_app
 from app.auth import ADMIN_SESSION_KEY, CSRF_SESSION_KEY
 from app.database import BodyMetric, Workout
-from app.fitness_activity import activity_summary, build_chart
+from app.fitness_activity import activity_summary, build_body_chart, build_chart
 from app.fitness_model import (
     balance,
     exercise_totals,
@@ -120,6 +120,63 @@ class FitnessChartTest(unittest.TestCase):
         self.assertEqual(summary["week_streak"], 3)
 
 
+class FitnessBodyChartTest(unittest.TestCase):
+    def setUp(self):
+        self.today = date(2026, 9, 20)
+        self.metrics = [
+            BodyMetric(measured_date="2026-09-06", waist_cm=88),
+            BodyMetric(measured_date="2026-09-09", weight_kg=65),
+            BodyMetric(measured_date="2026-09-19", weight_kg=63.4, waist_cm=84),
+            BodyMetric(measured_date="2026-09-20", weight_kg=63.5),
+        ]
+
+    def test_each_quantity_gets_its_own_scale(self):
+        # 公斤和厘米共用一根纵轴的话，谁高谁低是排版凑出来的，不是数据里的。
+        # 所以两格各自铺满自己的值域：各自的最低点都落在同一个相对位置。
+        chart = build_body_chart(self.metrics, self.today)
+        weight, waist = chart["panels"]
+        self.assertEqual((weight["key"], waist["key"]), ("weight", "waist"))
+        # 刻度标各自的最高最低，不是一根共用的轴。
+        self.assertEqual([line["label"] for line in weight["grid"]], ["63.4", "65"])
+        self.assertEqual([line["label"] for line in waist["grid"]], ["84", "88"])
+        # 两格上下分开，画布上不重叠——否则又成了两条线挤一根轴。
+        self.assertLess(weight["base"], waist["top"])
+        for panel in (weight, waist):
+            highest = min(panel["marks"], key=lambda mark: mark["y"])
+            lowest = max(panel["marks"], key=lambda mark: mark["y"])
+            self.assertGreater(highest["value"], lowest["value"])
+            self.assertGreaterEqual(highest["y"], panel["top"])
+            self.assertLessEqual(lowest["y"], panel["base"])
+
+    def test_the_two_panels_share_one_timeline(self):
+        chart = build_body_chart(self.metrics, self.today)
+        weight, waist = chart["panels"]
+        same_day = [mark for mark in weight["marks"] if mark["label"] == "9月19日"][0]
+        self.assertEqual(same_day["x"], waist["marks"][-1]["x"])
+        # 起点是最早的那次读数（腰围 9/6），终点是今天。
+        self.assertEqual(waist["marks"][0]["x"], 44.0)
+        self.assertEqual(weight["marks"][-1]["x"], 1006.0)
+
+    def test_a_single_reading_still_draws(self):
+        chart = build_body_chart([BodyMetric(measured_date="2026-09-20", weight_kg=63.4)], self.today)
+        panel = chart["panels"][0]
+        self.assertIsNone(panel["path"])       # 一个点连不成线
+        self.assertEqual(len(panel["marks"]), 1)
+        self.assertEqual(panel["latest"]["text"], "63.4")
+
+    def test_readings_on_consecutive_days_do_not_stack_their_labels(self):
+        chart = build_body_chart(self.metrics, self.today)
+        positions = [tick["x"] for tick in chart["ticks"]]
+        self.assertEqual(positions, sorted(positions))
+        self.assertTrue(all(second - first >= 72
+                            for first, second in zip(positions, positions[1:])))
+        self.assertEqual(positions[-1], 1006.0)   # 最后一次读数一定标出来
+
+    def test_no_readings_means_no_chart(self):
+        self.assertIsNone(build_body_chart([], self.today))
+        self.assertIsNone(build_body_chart([BodyMetric(measured_date="2026-09-20")], self.today))
+
+
 class FitnessRouteDatabase:
     def __init__(self, workouts=()):
         self.workouts = {item.entry_date: item for item in workouts}
@@ -219,6 +276,33 @@ class FitnessRouteTest(unittest.TestCase):
                       / "static" / "js" / "fitness.js").read_text(encoding="utf-8")
         self.assertNotIn("""const note = form.querySelector('[data-field="note"]')""", javascript)
         self.assertEqual(javascript.count('form.querySelector("#fit-note")'), 2)
+
+    def test_the_body_chart_only_appears_once_something_was_measured(self):
+        self.database.metrics = []
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertNotIn('data-chart-view="body"', html)
+        self.assertNotIn("data-chart-switch", html)   # 只有一张图就不给切换
+
+        self.database.metrics = [
+            BodyMetric(measured_date="2026-09-16", weight_kg=63.4, waist_cm=84),
+        ]
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn('data-chart-view="body"', html)
+        self.assertIn("data-chart-switch", html)
+        self.assertIn("体重与腰围", html)
+
+    def test_the_volume_chart_is_the_one_showing_first(self):
+        self.database.metrics = [BodyMetric(measured_date="2026-09-16", weight_kg=63.4)]
+        html = self.client.get("/fitness").get_data(as_text=True)
+        volume = html.index('data-chart-view="volume"')
+        body = html.index('data-chart-view="body"')
+        self.assertNotIn("hidden", html[volume:volume + 120])
+        self.assertIn("hidden", html[body:body + 120])
+
+    def test_the_chart_is_called_the_training_volume_not_the_capacity(self):
+        html = self.client.get("/fitness").get_data(as_text=True)
+        self.assertIn("每日训练量", html)
+        self.assertNotIn("每日训练容量", html)
 
     def test_sidebar_keeps_the_wrapper_the_sticky_logic_needs(self):
         # 外层撑满整行、内层位移——少了这层包裹，方向感知吸附就没有位移

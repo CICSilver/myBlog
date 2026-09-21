@@ -12,6 +12,7 @@ from flask import (
 from app.database import BodyMetric, DatabaseHelper, Blog, Diary, Workout, normalize_cover_url
 from app.fitness_activity import (
     build_activity_calendar as build_fitness_calendar,
+    build_body_chart,
     build_chart,
     build_month_calendar as build_fitness_month,
     build_year_overview as build_fitness_year,
@@ -522,6 +523,7 @@ def fitness():
         month_calendar=build_fitness_month(volumes, archive_year, archive_month, today),
         year_overview=build_fitness_year(volumes, archive_year, today),
         chart=build_chart(workouts, FITNESS_CHART_DAYS, today),
+        body_chart=build_body_chart(metrics, today),
         balance_rows=balance(workouts),
         record_rows=records(workouts),
         body_metrics=_body_metric_tiles(metrics, workouts),

@@ -1100,6 +1100,8 @@
 
 .fit-volume-chart {
     --chart-ink: #a25b33;
+    --chart-weight: #a25b33;
+    --chart-waist: #1e6f9e;
     /* A grid item defaults to min-width:auto, so the svg's min-width would push
        the whole page wider instead of scrolling inside its own box. */
     min-width: 0;
@@ -1111,6 +1113,8 @@
 
 html[data-theme="dark"] .fit-volume-chart {
     --chart-ink: #c48252;
+    --chart-weight: #c48252;
+    --chart-waist: #3a97d0;
 }
 
 .fit-chart-head {
@@ -1309,6 +1313,129 @@ html[data-theme="dark"] .fit-volume-chart {
     height: 4px;
     border-radius: 999px;
     opacity: 0.45;
+}
+
+/* ---------- 身体数据：体重一格、腰围一格 ---------- */
+
+/* 两条线一根纵轴是排版凑出来的相关性，所以是切换不是叠加。 */
+.fit-chart-switch {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-muted);
+}
+
+.fit-chart-switch button {
+    min-height: 26px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fit-chart-switch button:hover {
+    color: var(--ink);
+}
+
+.fit-chart-switch button[aria-selected="true"] {
+    background: var(--surface-strong);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(36, 28, 24, 0.1);
+}
+
+.fit-chart-switch button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* 每格的标题就是图例：颜色旁边永远有名字，不靠颜色单独认。 */
+.fit-body-label {
+    fill: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.fit-body-unit {
+    fill: var(--ink-faint);
+    font-weight: 400;
+}
+
+.fit-body-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fit-body-panel.is-weight .fit-body-line,
+.fit-body-panel.is-weight .fit-body-dot,
+.fit-body-panel.is-weight .fit-body-key {
+    stroke: var(--chart-weight);
+    fill: none;
+}
+
+.fit-body-panel.is-waist .fit-body-line,
+.fit-body-panel.is-waist .fit-body-dot,
+.fit-body-panel.is-waist .fit-body-key {
+    stroke: var(--chart-waist);
+    fill: none;
+}
+
+.fit-body-dot,
+.fit-body-key {
+    stroke-width: 2;
+}
+
+.fit-body-panel.is-weight .fit-body-key,
+.fit-body-panel.is-waist .fit-body-key {
+    /* 图例那个点是实心的，图上的点是空心的——量出来的读数不该看着像填上去的。 */
+    stroke: none;
+}
+
+.fit-body-panel.is-weight .fit-body-key {
+    fill: var(--chart-weight);
+}
+
+.fit-body-panel.is-waist .fit-body-key {
+    fill: var(--chart-waist);
+}
+
+.fit-body-dot {
+    fill: var(--surface-strong);
+}
+
+.fit-chart-key.is-static {
+    border-style: none;
+    padding-left: 0;
+}
+
+.fit-chart-key.is-weight i,
+.fit-chart-key i.is-weight {
+    background: var(--chart-weight);
+}
+
+.fit-chart-key i.is-waist {
+    background: var(--chart-waist);
+}
+
+/* 区间说明靠右，跟图例分在两头，一行里不挤成一团。 */
+.fit-chart-note .fit-chart-span {
+    margin-left: auto;
+}
+
+@media (max-width: 720px) {
+    .fit-chart-note .fit-chart-span {
+        margin-left: 0;
+    }
 }
 
 .fit-chart-table {

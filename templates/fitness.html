@@ -55,76 +55,168 @@
       </div>
     </section>
 
-    {% if chart.trend_path or chart.bars | selectattr("recorded") | list %}
-      <section class="fit-volume-chart" aria-labelledby="fit-vol-title">
+    {% set has_volume = chart.trend_path or chart.bars | selectattr("recorded") | list %}
+    {% set chart_view = "volume" if has_volume else "body" %}
+    {% if has_volume or body_chart %}
+      <section class="fit-volume-chart" data-chart-card>
         <div class="fit-chart-head">
-          <div>
-            <p class="section-label">Volume</p>
-            <h2 id="fit-vol-title">每日训练容量</h2>
-          </div>
-          <span class="fit-chart-span">近 {{ chart.days }} 天</span>
+          {% if has_volume %}
+            <div class="fit-chart-title" data-chart-title="volume"{% if chart_view != "volume" %} hidden{% endif %}>
+              <p class="section-label">Volume</p>
+              <h2 id="fit-vol-title">每日训练量</h2>
+            </div>
+          {% endif %}
+          {% if body_chart %}
+            <div class="fit-chart-title" data-chart-title="body"{% if chart_view != "body" %} hidden{% endif %}>
+              <p class="section-label">Body</p>
+              <h2 id="fit-body-title">体重与腰围</h2>
+            </div>
+          {% endif %}
+          {% if has_volume and body_chart %}
+            {# 两张图量纲不同，不叠在一起看，用切换整块换掉。 #}
+            <div class="fit-chart-switch" role="tablist" aria-label="选择图表" data-chart-switch>
+              <button type="button" role="tab" id="fit-tab-volume" data-chart-tab="volume"
+                      aria-selected="true" aria-controls="fit-chart-volume">训练量</button>
+              <button type="button" role="tab" id="fit-tab-body" data-chart-tab="body"
+                      aria-selected="false" aria-controls="fit-chart-body">身体</button>
+            </div>
+          {% endif %}
         </div>
 
-        <figure class="fit-chart-figure">
-          <div class="fit-chart-scroll">
-            <svg class="fit-chart-svg" viewBox="{{ chart.viewbox }}" role="img"
-                 aria-label="每日训练容量，近 {{ chart.days }} 天，纵轴最高 {{ chart.max }} 公斤">
-              {% for line in chart.grid %}
-                <line class="fit-chart-grid" x1="36" y1="{{ line.y }}" x2="1032" y2="{{ line.y }}"></line>
-                <text class="fit-chart-tick" x="28" y="{{ line.y + 3.5 }}" text-anchor="end">{{ line.label }}</text>
-              {% endfor %}
-              {% if chart.trend_path %}
-                <path class="fit-chart-area" d="{{ chart.area_path }}"></path>
-                <path class="fit-chart-line" d="{{ chart.trend_path }}"></path>
-              {% endif %}
-              {% for bar in chart.bars if bar.path %}
-                <path class="fit-chart-col{% if bar.partial %} is-unknown{% endif %}{% if bar.today %} is-today{% endif %}" d="{{ bar.path }}"></path>
-              {% endfor %}
-              {% for bar in chart.bars if bar.is_peak %}
-                <text class="fit-chart-peak" x="{{ bar.centre }}" y="{{ bar.label_y }}" text-anchor="middle">{{ bar.volume | round | int }} kg</text>
-              {% endfor %}
-              {% for tick in chart.ticks %}
-                <text class="fit-chart-tick" x="{{ tick.x }}" y="138" text-anchor="middle">{{ tick.label }}</text>
-              {% endfor %}
-              {% for bar in chart.bars %}
-                <rect class="fit-chart-hit" x="{{ bar.x | round(1) }}" y="{{ chart.hit_top }}"
-                      width="{{ bar.width | round(1) }}" height="{{ chart.hit_height }}"
-                      data-date="{{ bar.label }}"
-                      data-part="{{ bar.day_type or '未训练' }}"
-                      data-vol="{% if not bar.recorded %}—{% elif bar.partial %}未记录重量{% else %}{{ bar.volume | round | int }} kg{% endif %}"
-                      data-sets="{{ bar.sets or '—' }}"></rect>
-              {% endfor %}
-            </svg>
-          </div>
-          <div class="fit-chart-tip" data-chart-tip>
-            <strong data-tip-vol></strong>
-            <span data-tip-meta></span>
-          </div>
-        </figure>
-
-        <p class="fit-chart-note">
-          <button type="button" class="fit-chart-key" data-series="cols" aria-pressed="true"><i></i>当天容量</button>
-          <button type="button" class="fit-chart-key is-mean" data-series="mean" aria-pressed="true"><i></i>近 3 次平均</button>
-        </p>
-
-        <details class="fit-chart-table">
-          <summary>查看数据</summary>
-          <div class="fit-chart-table-scroll">
-            <table>
-              <thead><tr><th>日期</th><th>部位</th><th>组数</th><th>容量 kg</th></tr></thead>
-              <tbody>
-                {% for bar in chart.bars | selectattr("recorded") | reverse %}
-                  <tr>
-                    <td>{{ bar.label }}</td>
-                    <td>{{ bar.day_type }}</td>
-                    <td>{{ bar.sets }}</td>
-                    <td>{% if bar.partial %}未记录{% else %}{{ bar.volume | round | int }}{% endif %}</td>
-                  </tr>
+        {% if has_volume %}
+        <div class="fit-chart-view" id="fit-chart-volume" data-chart-view="volume"
+             {% if body_chart %}role="tabpanel" aria-labelledby="fit-tab-volume"{% endif %}{% if chart_view != "volume" %} hidden{% endif %}>
+          <figure class="fit-chart-figure">
+            <div class="fit-chart-scroll">
+              <svg class="fit-chart-svg" viewBox="{{ chart.viewbox }}" role="img"
+                   aria-label="每日训练量，近 {{ chart.days }} 天，纵轴最高 {{ chart.max }} 公斤">
+                {% for line in chart.grid %}
+                  <line class="fit-chart-grid" x1="36" y1="{{ line.y }}" x2="1032" y2="{{ line.y }}"></line>
+                  <text class="fit-chart-tick" x="28" y="{{ line.y + 3.5 }}" text-anchor="end">{{ line.label }}</text>
                 {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </details>
+                {% if chart.trend_path %}
+                  <path class="fit-chart-area" d="{{ chart.area_path }}"></path>
+                  <path class="fit-chart-line" d="{{ chart.trend_path }}"></path>
+                {% endif %}
+                {% for bar in chart.bars if bar.path %}
+                  <path class="fit-chart-col{% if bar.partial %} is-unknown{% endif %}{% if bar.today %} is-today{% endif %}" d="{{ bar.path }}"></path>
+                {% endfor %}
+                {% for bar in chart.bars if bar.is_peak %}
+                  <text class="fit-chart-peak" x="{{ bar.centre }}" y="{{ bar.label_y }}" text-anchor="middle">{{ bar.volume | round | int }} kg</text>
+                {% endfor %}
+                {% for tick in chart.ticks %}
+                  <text class="fit-chart-tick" x="{{ tick.x }}" y="138" text-anchor="middle">{{ tick.label }}</text>
+                {% endfor %}
+                {% for bar in chart.bars %}
+                  <rect class="fit-chart-hit" x="{{ bar.x | round(1) }}" y="{{ chart.hit_top }}"
+                        width="{{ bar.width | round(1) }}" height="{{ chart.hit_height }}"
+                        data-date="{{ bar.label }}"
+                        data-part="{{ bar.day_type or '未训练' }}"
+                        data-vol="{% if not bar.recorded %}—{% elif bar.partial %}未记录重量{% else %}{{ bar.volume | round | int }} kg{% endif %}"
+                        data-sets="{{ bar.sets or '—' }}"></rect>
+                {% endfor %}
+              </svg>
+            </div>
+            <div class="fit-chart-tip" data-chart-tip>
+              <strong data-tip-vol></strong>
+              <span data-tip-meta></span>
+            </div>
+          </figure>
+
+          <p class="fit-chart-note">
+            <button type="button" class="fit-chart-key" data-series="cols" aria-pressed="true"><i></i>当天容量</button>
+            <button type="button" class="fit-chart-key is-mean" data-series="mean" aria-pressed="true"><i></i>近 3 次平均</button>
+            <span class="fit-chart-span">近 {{ chart.days }} 天</span>
+          </p>
+
+          <details class="fit-chart-table">
+            <summary>查看数据</summary>
+            <div class="fit-chart-table-scroll">
+              <table>
+                <thead><tr><th>日期</th><th>部位</th><th>组数</th><th>容量 kg</th></tr></thead>
+                <tbody>
+                  {% for bar in chart.bars | selectattr("recorded") | reverse %}
+                    <tr>
+                      <td>{{ bar.label }}</td>
+                      <td>{{ bar.day_type }}</td>
+                      <td>{{ bar.sets }}</td>
+                      <td>{% if bar.partial %}未记录{% else %}{{ bar.volume | round | int }}{% endif %}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        {% endif %}
+
+        {% if body_chart %}
+        {# 公斤和厘米各占一格：两种量纲共用一根纵轴的话，谁高谁低是排版凑出来的。 #}
+        <div class="fit-chart-view" id="fit-chart-body" data-chart-view="body"
+             {% if has_volume %}role="tabpanel" aria-labelledby="fit-tab-body"{% endif %}{% if chart_view != "body" %} hidden{% endif %}>
+          <figure class="fit-chart-figure">
+            <div class="fit-chart-scroll">
+              <svg class="fit-chart-svg" viewBox="{{ body_chart.viewbox }}" role="img"
+                   aria-label="体重与腰围，{{ body_chart.span_label }}共 {{ body_chart.readings }} 次读数">
+                {% for panel in body_chart.panels %}
+                  <g class="fit-body-panel is-{{ panel.key }}">
+                    <circle class="fit-body-key" cx="46" cy="{{ panel.title_y - 4 }}" r="3.5"></circle>
+                    <text class="fit-body-label" x="56" y="{{ panel.title_y }}">{{ panel.label }}<tspan class="fit-body-unit"> {{ panel.unit }}</tspan></text>
+                    {% for line in panel.grid %}
+                      <line class="fit-chart-grid" x1="44" y1="{{ line.y }}" x2="1006" y2="{{ line.y }}"></line>
+                      <text class="fit-chart-tick" x="38" y="{{ line.y + 3.5 }}" text-anchor="end">{{ line.label }}</text>
+                    {% endfor %}
+                    {% if panel.path %}
+                      <path class="fit-body-line" d="{{ panel.path }}"></path>
+                    {% endif %}
+                    {% for mark in panel.marks %}
+                      <circle class="fit-body-dot" cx="{{ mark.x }}" cy="{{ mark.y }}" r="3.2"></circle>
+                    {% endfor %}
+                    <text class="fit-chart-peak" x="{{ panel.latest.x }}" y="{{ panel.latest_label_y }}"
+                          text-anchor="end">{{ panel.latest.text }} {{ panel.unit }}</text>
+                    {% for hit in panel.hits %}
+                      <rect class="fit-chart-hit" x="{{ hit.x }}" y="{{ hit.y }}"
+                            width="{{ hit.width }}" height="{{ hit.height }}"
+                            data-vol="{{ hit.value }}" data-meta="{{ panel.label }} · {{ hit.meta }}"></rect>
+                    {% endfor %}
+                  </g>
+                {% endfor %}
+                {% for tick in body_chart.ticks %}
+                  <text class="fit-chart-tick" x="{{ tick.x }}" y="{{ body_chart.tick_y }}" text-anchor="middle">{{ tick.label }}</text>
+                {% endfor %}
+              </svg>
+            </div>
+            <div class="fit-chart-tip" data-chart-tip>
+              <strong data-tip-vol></strong>
+              <span data-tip-meta></span>
+            </div>
+          </figure>
+
+          <p class="fit-chart-note">
+            <span class="fit-chart-key is-static"><i class="is-weight"></i>体重 kg</span>
+            <span class="fit-chart-key is-static"><i class="is-waist"></i>腰围 cm</span>
+            <span class="fit-chart-span">{{ body_chart.span_label }} · {{ body_chart.readings }} 次</span>
+          </p>
+
+          <details class="fit-chart-table">
+            <summary>查看数据</summary>
+            <div class="fit-chart-table-scroll">
+              <table>
+                <thead><tr><th>日期</th><th>体重 kg</th><th>腰围 cm</th></tr></thead>
+                <tbody>
+                  {% for row in body_chart.rows %}
+                    <tr>
+                      <td>{{ row.label }}</td>
+                      <td>{{ row.weight or '—' }}</td>
+                      <td>{{ row.waist or '—' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        {% endif %}
       </section>
     {% endif %}
 
