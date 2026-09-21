@@ -6,6 +6,7 @@
         深蹲: "bilateral", 臀桥: "bilateral", 提踵: "bilateral", 侧平举: "bilateral",
         弯举: "unilateral", 划船: "unilateral", 卧推: "unilateral", 抬腕: "unilateral",
         飞鸟: "unilateral", 反向飞鸟: "unilateral",
+        俯卧撑: "bodyweight",
         平板支撑: "static",
     };
 
@@ -22,6 +23,10 @@
         9: "很吃力 · 还能再做 1 次",
         10: "力竭 · 一次也加不动",
     };
+
+    // 俯卧撑换个手距就是另一回事，所以做法记在每一组上。只有负重那档有重量。
+    const VARIANTS = ["标准", "窄距", "钻石", "跪式", "负重"];
+    const WEIGHTED = "负重";
 
     const REMOVE_BTN = '<button class="fit-set-remove" type="button" data-remove-set'
         + ' aria-label="删除这一组" title="删除这一组">×</button>';
@@ -241,6 +246,11 @@
                 seconds += field("seconds") || 0;
                 return;
             }
+            if (kind === "bodyweight") {
+                left += field("left") || 0;
+                return;
+            }
+
             const weight = field("weight");
             const l = field("left");
             const r = kind === "unilateral" ? field("right") : null;
@@ -266,7 +276,10 @@
             }
         }
         const volumeCell = card.querySelector("[data-exercise-volume]");
-        if (volumeCell) volumeCell.textContent = (kind === "static" || !complete) ? "—" : format(volume) + " kg";
+        if (volumeCell) {
+            const noLoad = kind === "static" || kind === "bodyweight";
+            volumeCell.textContent = (noLoad || !complete) ? "—" : format(volume) + " kg";
+        }
     }
 
     function renumber() {
@@ -284,6 +297,19 @@
                 + (list ? ' list="fit-weight-steps"' : "") + ' aria-label="' + placeholder + '"></label>';
         };
         if (kind === "static") return box("seconds", "秒", values.seconds, "numeric");
+        if (kind === "bodyweight") {
+            const chosen = VARIANTS.indexOf(values.variant) >= 0 ? values.variant : VARIANTS[0];
+            const options = VARIANTS.map(function (name) {
+                return '<option value="' + name + '"' + (name === chosen ? " selected" : "") + ">"
+                    + name + "</option>";
+            }).join("");
+            return box("left", "次", values.left, "numeric")
+                + '<label class="fit-field is-variant"><select data-field="variant"'
+                + ' aria-label="这一组的做法">' + options + "</select></label>"
+                + '<label class="fit-field is-added"><input data-field="weight" placeholder="加重"'
+                + ' inputmode="decimal" list="fit-weight-steps" aria-label="加了多少公斤" value="'
+                + (chosen === WEIGHTED && values.weight != null ? values.weight : "") + '"></label>';
+        }
         const weight = box("weight", "kg", values.weight, "decimal", true);
         if (kind === "unilateral") {
             return weight + box("left", "左", values.left, "numeric") + box("right", "右", values.right, "numeric");
@@ -293,6 +319,10 @@
 
     function headHTML(kind) {
         if (kind === "static") return "<span>组</span><span>时长<i>秒</i></span><span></span>";
+        if (kind === "bodyweight") {
+            return "<span>组</span><span>次数</span><span>做法</span>"
+                + "<span>加重<i>kg</i></span><span></span>";
+        }
         if (kind === "unilateral") {
             return "<span>组</span><span>重量<i>kg</i></span>"
                 + '<span class="is-side">左<i>次</i></span><span class="is-side">右<i>次</i></span><span></span>';
@@ -303,7 +333,9 @@
     function setHTML(kind, values) {
         values = values || {};
         const note = values.note || "";
-        return '<div class="fit-set' + (note ? " has-note" : "") + '" data-set>'
+        const weighted = kind === "bodyweight" && values.variant === WEIGHTED;
+        return '<div class="fit-set' + (note ? " has-note" : "")
+            + (weighted ? " is-weighted" : "") + '" data-set>'
             + '<span class="fit-set-index"></span>' + fieldHTML(kind, values)
             + REMOVE_BTN + noteInput(note) + "</div>";
     }
@@ -312,7 +344,9 @@
         const kind = KINDS[name] || "bilateral";
         const card = document.createElement("article");
         card.className = "fit-exercise"
-            + (kind === "unilateral" ? " is-unilateral" : kind === "static" ? " is-static" : "");
+            + (kind === "unilateral" ? " is-unilateral"
+                : kind === "static" ? " is-static"
+                : kind === "bodyweight" ? " is-bodyweight" : "");
         card.dataset.exercise = name;
         card.dataset.kind = kind;
         const rows = (sets && sets.length ? sets : [{}])
@@ -406,6 +440,21 @@
         }
     });
 
+    // 选了负重才露出重量框；换回别的做法，刚填的重量就不该留在那儿。
+    form.addEventListener("change", function (event) {
+        if (event.target.dataset.field !== "variant") return;
+        const row = event.target.closest(".fit-set");
+        const weighted = event.target.value === WEIGHTED;
+        row.classList.toggle("is-weighted", weighted);
+        const added = row.querySelector('.is-added [data-field="weight"]');
+        if (added && !weighted) added.value = "";
+        if (added && weighted) added.focus();
+        const card = row.closest(".fit-exercise");
+        if (card) refresh(card);
+        markDirty();
+        scheduleDraft();
+    });
+
     // 备注框跟着内容长高，别让长备注藏在一行里。
     function growNote(note) {
         note.style.height = "auto";
@@ -478,6 +527,22 @@
                     const input = row.querySelector('[data-field="' + name + '"]');
                     return input ? number(input.value) : null;
                 };
+                if (kind === "bodyweight") {
+                    const reps = field("left");
+                    if (reps != null) {
+                        const repsNote = row.querySelector('[data-field="note"]');
+                        const picker = row.querySelector('[data-field="variant"]');
+                        const variant = picker ? picker.value : VARIANTS[0];
+                        sets.push({
+                            weight: variant === WEIGHTED ? field("weight") : null,
+                            left: reps,
+                            right: null,
+                            variant: variant,
+                            note: repsNote ? repsNote.value.trim() : "",
+                        });
+                    }
+                    return;
+                }
                 if (kind === "static") {
                     const seconds = field("seconds");
                     if (seconds != null) {

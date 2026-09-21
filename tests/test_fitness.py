@@ -30,6 +30,10 @@ def unilateral(name, *triples):
     return {"name": name, "sets": [{"weight": w, "left": l, "right": r} for w, l, r in triples]}
 
 
+def bodyweight(name, *reps):
+    return {"name": name, "sets": [{"weight": None, "left": count, "right": None} for count in reps]}
+
+
 class FitnessModelTest(unittest.TestCase):
     def test_bilateral_reps_are_the_whole_set(self):
         totals = exercise_totals(bilateral("深蹲", (10, 15), (10, 12)))
@@ -79,6 +83,32 @@ class FitnessModelTest(unittest.TestCase):
         self.assertEqual(movement_kind("反向飞鸟"), "unilateral")
         self.assertEqual(totals["reps"], 24)          # 左右各 12
         self.assertEqual(totals["volume"], 5.5 * 24)
+
+    def test_bodyweight_reps_count_but_carry_no_volume(self):
+        # 俯卧撑没有重量可填，所以容量是 None——这跟"忘了记重量"不是一回事。
+        totals = exercise_totals(bodyweight("俯卧撑", 20, 18))
+        self.assertEqual(movement_kind("俯卧撑"), "bodyweight")
+        self.assertEqual(totals["reps"], 38)
+        self.assertIsNone(totals["volume"])
+        self.assertEqual(totals["weights"], [])
+
+    def test_bodyweight_does_not_drag_the_day_into_unknown(self):
+        # 关键的一条：哑铃动作算得出容量的那天，不能因为顺手做了几组
+        # 俯卧撑就整天变成"容量未记录"。静力动作本来就是这么处理的。
+        session = workout("2026-09-21", "上肢", [
+            bilateral("深蹲", (10, 15)),
+            bodyweight("俯卧撑", 20),
+        ])
+        totals = workout_totals(session)
+        self.assertEqual(totals["volume"], 150)
+        self.assertFalse(totals["partial"])
+        self.assertEqual(totals["sets"], 2)
+
+    def test_the_bodyweight_record_is_the_biggest_set(self):
+        best = dict(records([workout("2026-09-21", "上肢", [bodyweight("俯卧撑", 15, 22, 18)])]))
+        self.assertEqual(best["俯卧撑"]["reps"], 22)
+        self.assertIsNone(best["俯卧撑"]["weight"])
+        self.assertEqual(best["俯卧撑"]["unit"], "次")
 
     def test_a_unilateral_record_needs_both_sides(self):
         best = dict(records([workout("2026-09-18", "上肢", [unilateral("卧推", (10, 14, 8))])]))
@@ -437,6 +467,69 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertEqual(saved.rpe, 7)
         self.assertEqual(saved.exercises[0]["sets"][0]["right"], 10)
         self.assertEqual(self.database.metrics[0].weight_kg, 64.6)
+
+    def test_a_bodyweight_set_is_stored_with_reps_and_no_weight(self):
+        response = self.post({
+            "entry_date": self.today(),
+            "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [{"left": 20}, {"left": 18}]}],
+        })
+        self.assertEqual(response.status_code, 200)
+        sets = self.database.saved[0].exercises[0]["sets"]
+        self.assertEqual([entry["left"] for entry in sets], [20, 18])
+        self.assertEqual([entry["weight"] for entry in sets], [None, None])
+
+    def test_a_bodyweight_set_without_reps_is_refused(self):
+        response = self.post({
+            "entry_date": self.today(),
+            "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [{"note": "忘了数"}]}],
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_a_weight_sent_for_a_bodyweight_movement_is_dropped(self):
+        # 界面上没有重量框，真送上来也不存——不然容量会被它算进去。
+        response = self.post({
+            "entry_date": self.today(),
+            "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [{"weight": 63.4, "left": 20}]}],
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(self.database.saved[0].exercises[0]["sets"][0]["weight"])
+
+    def test_each_bodyweight_set_remembers_how_it_was_done(self):
+        response = self.post({
+            "entry_date": self.today(),
+            "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [
+                {"left": 20, "variant": "标准"},
+                {"left": 12, "variant": "钻石"},
+                {"left": 8, "variant": "负重", "weight": 10},
+            ]}],
+        })
+        self.assertEqual(response.status_code, 200)
+        sets = self.database.saved[0].exercises[0]["sets"]
+        self.assertEqual([entry["variant"] for entry in sets], ["标准", "钻石", "负重"])
+        self.assertEqual([entry["weight"] for entry in sets], [None, None, 10])
+
+    def test_a_set_without_a_stated_variant_is_the_plain_one(self):
+        self.post({"entry_date": self.today(), "day_type": "上肢",
+                   "exercises": [{"name": "俯卧撑", "sets": [{"left": 20}]}]})
+        self.assertEqual(self.database.saved[0].exercises[0]["sets"][0]["variant"], "标准")
+
+    def test_choosing_weighted_without_a_weight_is_refused(self):
+        response = self.post({
+            "entry_date": self.today(), "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [{"left": 8, "variant": "负重"}]}],
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_an_invented_variant_is_refused(self):
+        response = self.post({
+            "entry_date": self.today(), "day_type": "上肢",
+            "exercises": [{"name": "俯卧撑", "sets": [{"left": 8, "variant": "倒立"}]}],
+        })
+        self.assertEqual(response.status_code, 400)
 
     def test_saving_another_day_is_refused(self):
         self.assertEqual(self.post({"entry_date": "2020-01-01", "day_type": "休息",

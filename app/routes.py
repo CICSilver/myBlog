@@ -20,8 +20,10 @@ from app.fitness_activity import (
     month_summary,
 )
 from app.fitness_model import (
+    BODYWEIGHT_VARIANTS,
     DAY_TYPES,
     MOVEMENTS,
+    WEIGHTED_VARIANT,
     balance,
     exercise_totals,
     movement_kind,
@@ -528,6 +530,8 @@ def fitness():
         record_rows=records(workouts),
         body_metrics=_body_metric_tiles(metrics, workouts),
         movements=MOVEMENTS,
+        bodyweight_variants=BODYWEIGHT_VARIANTS,
+        weighted_variant=WEIGHTED_VARIANT,
         day_types=DAY_TYPES,
         weight_steps=weight_options(workouts),
         previous_month_value=previous_month.strftime("%Y-%m") if previous_month else None,
@@ -658,6 +662,23 @@ def _parse_set(entry, kind, name):
         if seconds is None:
             raise ValueError("「%s」需要填时长。" % name)
         return {"seconds": seconds, "note": note}
+
+    if kind == "bodyweight":
+        reps = _parse_number(entry.get("left"), 1, 500, "「%s」的次数" % name, integer=True)
+        if reps is None:
+            raise ValueError("「%s」需要填次数。" % name)
+        variant = str(entry.get("variant") or BODYWEIGHT_VARIANTS[0])
+        if variant not in BODYWEIGHT_VARIANTS:
+            raise ValueError("「%s」没有「%s」这种做法。" % (name, variant))
+        # 只有负重那档有重量可填；别的做法就算送了重量也不收，
+        # 不然同一个动作有时候算得出容量有时候算不出。
+        added = None
+        if variant == WEIGHTED_VARIANT:
+            added = _parse_number(entry.get("weight"), 0.5, 200, "「%s」加的重量" % name)
+            if added is None:
+                raise ValueError("「%s」选了负重，要填加了多少公斤。" % name)
+        return {"weight": added, "left": reps, "right": None,
+                "variant": variant, "note": note}
 
     weight = _parse_number(entry.get("weight"), 0.5, 200, "「%s」的重量" % name)
     left = _parse_number(entry.get("left"), 1, 500, "「%s」的次数" % name, integer=True)

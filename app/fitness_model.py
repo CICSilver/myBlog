@@ -5,6 +5,7 @@
 
     bilateral   双侧同时完成，reps 是这一组的总次数（深蹲、臀桥、提踵、侧平举）
     unilateral  单侧轮流完成，左右各记一个次数（弯举、划船、卧推、抬腕、飞鸟、反向飞鸟）
+    bodyweight  自重，只有次数，没有重量可填（俯卧撑）
     static      静力保持，只有秒数，没有重量和次数（平板支撑）
 """
 
@@ -23,8 +24,17 @@ MOVEMENTS = (
     ("飞鸟", "unilateral", "上肢"),
     ("反向飞鸟", "unilateral", "上肢"),
     ("侧平举", "bilateral", "上肢"),
+    ("俯卧撑", "bodyweight", "上肢"),
     ("平板支撑", "static", "核心"),
 )
+
+# 这两种记法压根没有重量可填，容量对它们没有意义——不是“忘了记”。
+NO_LOAD_KINDS = ("bodyweight", "static")
+
+# 自重动作的做法。同一个动作换个手距就是另一回事，所以记在每一组上，
+# 而不是整块动作上。只有“负重”那档才允许填重量。
+BODYWEIGHT_VARIANTS = ("标准", "窄距", "钻石", "跪式", "负重")
+WEIGHTED_VARIANT = "负重"
 
 MOVEMENT_KIND = {name: kind for name, kind, _ in MOVEMENTS}
 MOVEMENT_PART = {name: part for name, _, part in MOVEMENTS}
@@ -52,7 +62,7 @@ def weight_options(workouts=()):
 
 def set_volume(entry, kind):
     """一组搬起的公斤数；缺重量或缺次数时返回 None，而不是当成 0。"""
-    if kind == "static" or entry.get("weight") is None:
+    if kind in NO_LOAD_KINDS or entry.get("weight") is None:
         return None
     left, right = entry.get("left"), entry.get("right")
     if kind == "unilateral":
@@ -86,14 +96,17 @@ def exercise_totals(exercise):
         "name": exercise.get("name"),
         "kind": kind,
         "sets": len(entries),
-        # 静力动作没有容量可言，是 None 而不是 0——0 会读成“举了 0 公斤”。
-        "volume": None if kind == "static" else (volume if complete else None),
+        # 自重和静力动作没有容量可言，是 None 而不是 0——0 会读成“举了 0 公斤”。
+        "volume": None if kind in NO_LOAD_KINDS else (volume if complete else None),
         "left": left,
         "right": right,
         "seconds": seconds,
         "reps": left if kind == "bilateral" else total,
         "imbalance": (abs(left - right) * 200.0 / total) if (kind == "unilateral" and total) else 0.0,
         "weights": sorted({entry["weight"] for entry in entries if entry.get("weight")}),
+        # 自重动作按做法归类，顺序跟动作库一致，不跟着录入顺序跑。
+        "variants": [name for name in BODYWEIGHT_VARIANTS
+                     if any(entry.get("variant") == name for entry in entries)],
         "notes": [entry["note"] for entry in entries if entry.get("note")],
     }
 
@@ -103,7 +116,8 @@ def workout_totals(workout):
     for exercise in workout.exercises:
         totals = exercise_totals(exercise)
         sets += totals["sets"]
-        if totals["kind"] == "static":
+        # 自重和静力动作本来就没有容量，跳过；它们不该把这一天拖成“未记录”。
+        if totals["kind"] in NO_LOAD_KINDS:
             continue
         if totals["volume"] is None:
             complete = False
@@ -161,6 +175,19 @@ def records(workouts):
                     value = entry.get("seconds")
                     if value and value > (best.get(name, {}).get("reps") or 0):
                         best[name] = {"weight": None, "reps": value, "unit": "秒",
+                                      "date": workout.entry_date}
+                    continue
+                if kind == "bodyweight":
+                    # 负重的那组压过纯自重的，同样负重再比次数。
+                    reps = entry.get("left")
+                    if not reps:
+                        continue
+                    added = entry.get("weight")
+                    current = best.get(name)
+                    if (current is None
+                            or (added or 0) > (current["weight"] or 0)
+                            or ((added or 0) == (current["weight"] or 0) and reps > current["reps"])):
+                        best[name] = {"weight": added, "reps": reps, "unit": "次",
                                       "date": workout.entry_date}
                     continue
                 if entry.get("weight") is None:

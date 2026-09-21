@@ -13,6 +13,7 @@
 
 {% macro load_label(row) -%}
   {% if row.kind == "static" %}自重
+  {% elif row.kind == "bodyweight" %}{{ row.variants | join(" · ") or "自重" }}{% if row.weights %} {{ row.weights[-1] }} kg{% endif %}
   {% elif not row.weights %}未记录
   {% elif row.weights | length == 1 %}{{ row.weights[0] | round(1) | int if row.weights[0] == row.weights[0] | int else row.weights[0] }} kg
   {% else %}{{ row.weights[0] }}–{{ row.weights[-1] }} kg{% endif %}
@@ -250,7 +251,7 @@
             <div class="fit-exercise-stack" data-exercise-stack>
               {% for exercise in (today_workout.exercises if today_workout else []) %}
                 {% set row = today_workout.exercise_rows[loop.index0] %}
-                <article class="fit-exercise{% if row.kind == 'unilateral' %} is-unilateral{% elif row.kind == 'static' %} is-static{% endif %}" data-exercise="{{ row.name }}" data-kind="{{ row.kind }}">
+                <article class="fit-exercise{% if row.kind == 'unilateral' %} is-unilateral{% elif row.kind == 'static' %} is-static{% elif row.kind == 'bodyweight' %} is-bodyweight{% endif %}" data-exercise="{{ row.name }}" data-kind="{{ row.kind }}">
                   <div class="fit-exercise-head">
                     <span class="fit-exercise-index">{{ '%02d' % loop.index }}</span>
                     <h3>{{ row.name }}</h3>
@@ -264,6 +265,8 @@
                     <div class="fit-set-head" aria-hidden="true">
                       {% if row.kind == 'static' %}
                         <span>组</span><span>时长<i>秒</i></span><span></span>
+                      {% elif row.kind == 'bodyweight' %}
+                        <span>组</span><span>次数</span><span>做法</span><span>加重<i>kg</i></span><span></span>
                       {% elif row.kind == 'unilateral' %}
                         <span>组</span><span>重量<i>kg</i></span><span class="is-side">左<i>次</i></span><span class="is-side">右<i>次</i></span><span></span>
                       {% else %}
@@ -271,10 +274,18 @@
                       {% endif %}
                     </div>
                     {% for entry in exercise.sets %}
-                      <div class="fit-set{% if entry.note %} has-note{% endif %}" data-set>
+                      <div class="fit-set{% if entry.note %} has-note{% endif %}{% if row.kind == 'bodyweight' and entry.variant == weighted_variant %} is-weighted{% endif %}" data-set>
                         <span class="fit-set-index">{{ loop.index }}</span>
                         {% if row.kind == 'static' %}
                           <label class="fit-field"><input value="{{ entry.seconds if entry.seconds is not none }}" data-field="seconds" inputmode="numeric" aria-label="第 {{ loop.index }} 组时长"></label>
+                        {% elif row.kind == 'bodyweight' %}
+                          <label class="fit-field"><input value="{{ entry.left if entry.left is not none }}" data-field="left" inputmode="numeric" placeholder="次" aria-label="第 {{ loop.index }} 组次数"></label>
+                          <label class="fit-field is-variant"><select data-field="variant" aria-label="第 {{ loop.index }} 组做法">
+                            {% for name in bodyweight_variants %}
+                              <option value="{{ name }}"{% if (entry.variant or bodyweight_variants[0]) == name %} selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                          </select></label>
+                          <label class="fit-field is-added"><input value="{{ entry.weight if entry.weight is not none }}" data-field="weight" inputmode="decimal" placeholder="加重" list="fit-weight-steps" aria-label="第 {{ loop.index }} 组加了多少公斤"></label>
                         {% else %}
                           <label class="fit-field"><input value="{{ entry.weight if entry.weight is not none }}" data-field="weight" inputmode="decimal" placeholder="kg" aria-label="第 {{ loop.index }} 组重量"></label>
                           <label class="fit-field"><input value="{{ entry.left if entry.left is not none }}" data-field="left" inputmode="numeric" placeholder="{{ '左' if row.kind == 'unilateral' else '次' }}" aria-label="第 {{ loop.index }} 组{{ '左侧' if row.kind == 'unilateral' }}次数"></label>

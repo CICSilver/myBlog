@@ -1061,6 +1061,7 @@
         grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 24px;
     }
 
+
     .fit-exercise-sides {
         display: none;
     }
@@ -1508,6 +1509,35 @@ html[data-theme="dark"] .fit-volume-chart {
     grid-template-columns: 30px 108px 26px;
 }
 
+/* Bodyweight (push-ups): reps plus which way you did them. The load column is
+   always in the grid so rows stay lined up when only some sets are weighted;
+   it just has nothing in it until a set says 负重. */
+.fit-exercise.is-bodyweight .fit-set-head,
+.fit-exercise.is-bodyweight .fit-set {
+    grid-template-columns: 30px 86px 88px 74px 26px;
+}
+
+.fit-field.is-variant {
+    padding: 0 4px 0 8px;
+}
+
+.fit-field.is-variant select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.fit-set:not(.is-weighted) .fit-field.is-added {
+    /* 占着位置但不显示：同一张卡里有的组负重有的组不负重，列不能错开。 */
+    visibility: hidden;
+}
+
 .fit-set-note,
 .fit-exercise-notes {
     color: var(--ink-faint);
@@ -1677,6 +1707,15 @@ html[data-theme="dark"] .fit-volume-chart {
     .fit-set-remove {
         width: 24px;
         height: 24px;
+    }
+}
+
+/* 同理：自重那五列的基础规则在上面，这条得排在它后面。窄屏按比例分，
+   做法那列留得宽一点——"钻石"比"20"占地方。 */
+@media (max-width: 720px) {
+    .fit-exercise.is-bodyweight .fit-set-head,
+    .fit-exercise.is-bodyweight .fit-set {
+        grid-template-columns: 22px minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 24px;
     }
 }
 
