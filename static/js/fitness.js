@@ -205,6 +205,10 @@
 
     // 点击类的改动（加减组、切类型/RPE）也要落进草稿。
     form.addEventListener("click", function (event) {
+        // 草稿提示条上那两个按钮管的是草稿本身，不是表单内容。它们的处理
+        // 跑在前面（目标阶段），这里再排一次写入的话，刚丢弃的草稿 600ms
+        // 后又回来了。
+        if (event.target.closest(".fit-draft-bar")) return;
         if (event.target.closest("button")) scheduleDraft();
     });
 
@@ -546,6 +550,9 @@
     }
 
     function dropDraft() {
+        // 先把待写的那次掐掉。点"丢弃"、点"保存"都是点按钮，按钮一律排一次
+        // 草稿；不取消的话 600ms 后它又把刚删掉的草稿原样写回来。
+        window.clearTimeout(draftTimer);
         try { localStorage.removeItem(DRAFT_KEY); } catch (error) { /* 同上 */ }
     }
 
@@ -680,6 +687,8 @@
             const partial = result.totals && result.totals.partial;
             say((result.message || "已保存。")
                 + (partial ? " 有组没填完，今天的容量算不出来。" : ""), partial ? "error" : "ok");
+            // 存进去了，草稿就没有意义了；留着它下次进来会弹"有一份未保存草稿"。
+            dropDraft();
             if (saveState) saveState.textContent = "已保存";
             submit.textContent = "更新训练";
         } catch (error) {

@@ -270,6 +270,22 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertNotIn("duration_min", html)
         self.assertNotIn("训练时长", html)
 
+    def test_saving_clears_the_draft_instead_of_leaving_it_behind(self):
+        # 存完不删草稿的话，下次进来页面顶上会一直挂着"有一份未保存草稿"。
+        # 而且"丢弃"和"保存"都是点按钮，按钮一律排一次草稿写入——不把那个
+        # 定时器掐掉，600ms 后它又把刚删掉的写回来，点多少次都没用。
+        javascript = (Path(__file__).resolve().parents[1]
+                      / "static" / "js" / "fitness.js").read_text(encoding="utf-8")
+        drop = javascript[javascript.index("function dropDraft()"):]
+        drop = drop[:drop.index("}")]
+        self.assertIn("window.clearTimeout(draftTimer)", drop)
+        self.assertIn("removeItem(DRAFT_KEY)", drop)
+        # 存成功那条路径上也得删一次，不然记录已经更新了草稿还挂着。
+        saved = javascript[javascript.index("submit.addEventListener"):]
+        self.assertIn("dropDraft();", saved)
+        # 提示条自己那两个按钮不该再排一次写入。
+        self.assertIn('if (event.target.closest(".fit-draft-bar")) return;', javascript)
+
     def test_the_session_note_is_not_the_first_set_note(self):
         # 组备注和整场备注共用 data-field="note"，按属性取会先撞上第一条
         # 组备注，把它当成这一场的总结存下去。
