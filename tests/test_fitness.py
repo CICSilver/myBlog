@@ -76,6 +76,7 @@ class FitnessModelTest(unittest.TestCase):
     def test_flye_is_logged_one_side_at_a_time(self):
         totals = exercise_totals(unilateral("飞鸟", (5.5, 12, 12)))
         self.assertEqual(movement_kind("飞鸟"), "unilateral")
+        self.assertEqual(movement_kind("反向飞鸟"), "unilateral")
         self.assertEqual(totals["reps"], 24)          # 左右各 12
         self.assertEqual(totals["volume"], 5.5 * 24)
 

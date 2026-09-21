@@ -5,7 +5,7 @@
     const KINDS = {
         深蹲: "bilateral", 臀桥: "bilateral", 提踵: "bilateral", 侧平举: "bilateral",
         弯举: "unilateral", 划船: "unilateral", 卧推: "unilateral", 抬腕: "unilateral",
-        飞鸟: "unilateral",
+        飞鸟: "unilateral", 反向飞鸟: "unilateral",
         平板支撑: "static",
     };
 
