@@ -1533,6 +1533,15 @@ html[data-theme="dark"] .fit-volume-chart {
     cursor: pointer;
 }
 
+/* 展开的那一层是系统画的，它用的是 option 自己的颜色，不跟着 color-scheme
+   走。option 背景是透明的话弹层按白底画，而字继承的是浅色的 --ink——深色
+   模式下就是一片看不清的白底白字。所以这几个值要写实。 */
+.fit-field.is-variant option {
+    background-color: var(--surface-strong);
+    color: var(--ink);
+    font-family: var(--font-body);
+}
+
 .fit-set:not(.is-weighted) .fit-field.is-added {
     /* 占着位置但不显示：同一张卡里有的组负重有的组不负重，列不能错开。 */
     visibility: hidden;
