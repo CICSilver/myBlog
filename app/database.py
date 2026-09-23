@@ -1,3 +1,4 @@
+from app.diary_policy import better_location
 from app import blog_db
 from app.content_history import snapshot_content_db
 from app.ip_location import resolve_ip_location, with_ip_location_defaults
@@ -393,6 +394,87 @@ class Blog:
         self.time = data.get('time')
 
 
+class Workout:
+    """一天的训练。动作与组直接存成文档，不拆关系表——一天的记录总是整存整取。
+
+    每组的形状由动作决定（见 fitness_model）：双侧只用 left 当总次数，
+    单侧左右各记一个，静力只有 seconds。缺失的数字存 None 而不是 0，
+    “那天没记重量”和“那天举了 0 公斤”不是一回事。
+    """
+
+    def __init__(
+        self,
+        entry_date="",
+        day_type="",
+        exercises=None,
+        duration_min=None,
+        rpe=None,
+        note="",
+        image_url="",
+        created_at="",
+        updated_at="",
+    ):
+        self.entry_date = entry_date or ""
+        self.day_type = day_type or ""
+        self.exercises = exercises or []
+        self.duration_min = duration_min
+        self.rpe = rpe
+        self.note = note or ""
+        self.image_url = image_url or ""
+        self.created_at = created_at or ""
+        self.updated_at = updated_at or ""
+
+    def to_dict(self):
+        return {
+            'entry_date': self.entry_date,
+            'day_type': self.day_type,
+            'exercises': self.exercises or [],
+            'duration_min': self.duration_min,
+            'rpe': self.rpe,
+            'note': self.note,
+            'image_url': self.image_url,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
+
+    def from_dict(self, data):
+        self.entry_date = data.get('entry_date') or ""
+        self.day_type = data.get('day_type') or ""
+        self.exercises = data.get('exercises') or []
+        self.duration_min = data.get('duration_min')
+        self.rpe = data.get('rpe')
+        self.note = data.get('note') or ""
+        self.image_url = data.get('image_url') or ""
+        self.created_at = data.get('created_at') or ""
+        self.updated_at = data.get('updated_at') or ""
+        return self
+
+
+class BodyMetric:
+    """某天量到的身体数据。两三个读数不画趋势线，界面上是数字卡片。"""
+
+    def __init__(self, measured_date="", weight_kg=None, waist_cm=None, note=""):
+        self.measured_date = measured_date or ""
+        self.weight_kg = weight_kg
+        self.waist_cm = waist_cm
+        self.note = note or ""
+
+    def to_dict(self):
+        return {
+            'measured_date': self.measured_date,
+            'weight_kg': self.weight_kg,
+            'waist_cm': self.waist_cm,
+            'note': self.note,
+        }
+
+    def from_dict(self, data):
+        self.measured_date = data.get('measured_date') or ""
+        self.weight_kg = data.get('weight_kg')
+        self.waist_cm = data.get('waist_cm')
+        self.note = data.get('note') or ""
+        return self
+
+
 class Diary:
     def __init__(
         self,
@@ -476,6 +558,10 @@ class DatabaseHelper:
         self.blog_table = self.db.table('blogs')
         # 日记表，按日期存储每日一条日记
         self.diary_table = self.db.table('diaries')
+        # 训练表，按日期存储每日一次训练
+        self.workout_table = self.db.table('workouts')
+        # 身体数据表，按日期存储体重/腰围
+        self.body_metric_table = self.db.table('body_metrics')
         # 文章访问记录表，存储每一次文章详情页访问
         self.article_view_table = self.db.table('article_views')
         # 浏览量排除 IP 表，存储后台手动维护的测试机/异常 IP
@@ -810,6 +896,8 @@ class DatabaseHelper:
                 updated_data = diary.to_dict()
                 updated_data["created_at"] = existing.get("created_at")
                 for field in ("location", "weather"):
+                    if field == "location" and better_location(existing.get(field) or {}, updated_data[field]):
+                        continue
                     merged_data = dict(existing.get(field) or {})
                     for key, value in updated_data[field].items():
                         if (
@@ -853,6 +941,86 @@ class DatabaseHelper:
                 "operation": "inserted",
                 "message": "今日日记保存成功。",
             }
+
+    # --------------------------- 训练记录 ---------------------------
+    def get_workout_by_date(self, entry_date):
+        if entry_date is None:
+            raise ValueError("entry_date cannot be None")
+        data = self.workout_table.get(Query().entry_date == entry_date)
+        return None if data is None else Workout().from_dict(data)
+
+    def get_all_workouts(self):
+        """全部训练，日期最新的在前面。"""
+        workouts = [Workout().from_dict(data) for data in self.workout_table.all()]
+        workouts.sort(key=lambda workout: workout.entry_date, reverse=True)
+        return workouts
+
+    def get_workouts_by_month(self, year, month):
+        prefix = "{0:04d}-{1:02d}-".format(int(year), int(month))
+        return [
+            workout for workout in self.get_all_workouts()
+            if workout.entry_date.startswith(prefix)
+        ]
+
+    def save_workout(self, workout: Workout, today):
+        """保存当天训练；同一天已有记录时整条替换。
+
+        和日记一样只允许写当天：训练是当场记的，补记历史走导入脚本。
+        """
+        with self.db.transaction():
+            if not isinstance(workout, Workout):
+                raise TypeError("Expected a Workout instance")
+            if workout.entry_date != today:
+                raise ValueError("只能保存当天的训练。")
+
+            existing = self.workout_table.get(Query().entry_date == workout.entry_date)
+            if existing:
+                data = workout.to_dict()
+                data["created_at"] = existing.get("created_at")
+                _snapshot_history("pre-update-workout", store=self.db)
+                self.workout_table.update(data, doc_ids=[existing.doc_id])
+                _snapshot_history("post-update-workout", store=self.db)
+                return {"status": "success", "operation": "updated", "message": "今日训练更新成功。"}
+
+            _snapshot_history("pre-insert-workout", store=self.db)
+            self._insert_with_random_id(self.workout_table, workout.to_dict())
+            _snapshot_history("post-insert-workout", store=self.db)
+            return {"status": "success", "operation": "inserted", "message": "今日训练保存成功。"}
+
+    def get_body_metrics(self):
+        """全部身体数据，日期从早到晚。"""
+        metrics = [BodyMetric().from_dict(data) for data in self.body_metric_table.all()]
+        metrics.sort(key=lambda metric: metric.measured_date)
+        return metrics
+
+    def save_body_metric(self, metric: BodyMetric):
+        """写入某天的身体数据；只覆盖本次给出的字段，没给的保持原样。"""
+        with self.db.transaction():
+            if not metric.measured_date:
+                raise ValueError("身体数据需要日期。")
+            existing = self.body_metric_table.get(Query().measured_date == metric.measured_date)
+            data = metric.to_dict()
+            if existing:
+                merged = dict(existing)
+                for key, value in data.items():
+                    if value is not None and value != "":
+                        merged[key] = value
+                self.body_metric_table.update(merged, doc_ids=[existing.doc_id])
+                return "updated"
+            self._insert_with_random_id(self.body_metric_table, data)
+            return "inserted"
+
+    def _insert_with_random_id(self, table, data):
+        """文档 ID 随机取，避免并发插入撞上同一个自增号。"""
+        last_error = None
+        for _ in range(_DIARY_INSERT_ATTEMPTS):
+            try:
+                return table.insert(Document(data, doc_id=secrets.randbits(63) or 1))
+            except ValueError as exc:
+                if "Document with ID" not in str(exc):
+                    raise
+                last_error = exc
+        raise last_error
 
     def record_article_view(self, blog: Blog, ip, path, viewed_at=None):
         """

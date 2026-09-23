@@ -102,9 +102,32 @@ quarantines current DB/journals, restores, and restarts if previously active.
 The low-level Flask `history-restore --service-stopped` also rejects an active
 production service; it is not the recovery entry point for a missing database.
 
-Full backup remains manually invoked with `create_recovery_bundle.py --online`
-and explicit output directory, followed by encrypted upload and download
-verification. No timer or automatic cloud-retention policy is enabled here.
+`backup_to_drive.py` performs the whole off-site cycle: it captures with
+`create_recovery_bundle.py --online`, verifies the local archives and every
+member against their manifests, uploads through `myblog_crypt:`, reads each
+object back and compares its SHA-256, writes the receipt, and only then prunes.
+It inherits the maintenance lock it already holds into the capture child, so an
+update and a backup can never interleave. Any failure exits non-zero and prunes
+nothing; an object that fails read-back is deleted rather than left posing as a
+backup.
+
+    /opt/myblog-backup/backup_to_drive.py            # capture, upload, verify, prune
+    /opt/myblog-backup/backup_to_drive.py --no-prune # keep every existing copy
+
+`install_runtime.py` writes `myblog-backup.service` and `myblog-backup.timer`
+(daily 04:30 local, `Persistent=true`, randomized delay) but never enables them;
+review and `systemctl enable --now myblog-backup.timer` deliberately.
+
+Retention lives in `runtime.json`: `MYBLOG_BACKUP_KEEP_DAILY` newest, plus the
+newest of each of the last `MYBLOG_BACKUP_KEEP_WEEKLY` ISO weeks, plus every
+stamp in `MYBLOG_BACKUP_PINNED`, and never fewer than `MYBLOG_BACKUP_MIN_REMOTE`
+remote baselines. The newest baseline is never pruned. Locally only
+`MYBLOG_BACKUP_KEEP_LOCAL` bundles and the pinned ones survive; the bundler's
+uncompressed staging trees are removed once their archives verify.
+
+Off-site backups are useless without the crypt keys, which live only in
+`/etc/myblog-backup/rclone.conf` on this host and in the offline recovery kit.
+Keep that kit current and independently verified; see `RECOVERY.md`.
 
 ## Verification boundaries
 

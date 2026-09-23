@@ -165,6 +165,10 @@ function navigateToDiary() {
     window.location.href = '/diary';
 }
 
+function navigateToFitness() {
+    window.location.href = '/fitness';
+}
+
 function navigateToManage() {
     window.location.href = '/manage';
 }

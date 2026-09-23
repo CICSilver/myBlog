@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sqlite3
 import subprocess
+import tarfile
 import tempfile
 
 
@@ -27,6 +28,15 @@ def runtime(root):
     result.setdefault("MYBLOG_BIND", "0.0.0.0:8900")
     result.setdefault("MYBLOG_WORKERS", 2)
     result.setdefault("MYBLOG_PIP_INDEX_URL", "https://pypi.org/simple")
+    result.setdefault("MYBLOG_RCLONE", "/opt/myblog-backup/run-rclone")
+    result.setdefault("MYBLOG_BACKUP_OUTPUT", "/var/backups/myblog")
+    result.setdefault("MYBLOG_BACKUP_REMOTE", "myblog_crypt:baselines")
+    result.setdefault("MYBLOG_BACKUP_KEEP_DAILY", 7)
+    result.setdefault("MYBLOG_BACKUP_KEEP_WEEKLY", 4)
+    result.setdefault("MYBLOG_BACKUP_KEEP_LOCAL", 2)
+    # Never pruned: the reviewed pre-migration and post-migration baselines.
+    result.setdefault("MYBLOG_BACKUP_PINNED", ["20260914T064414Z", "20260914T071041Z", "20260914T084554Z"])
+    result.setdefault("MYBLOG_BACKUP_MIN_REMOTE", 3)
     return result
 
 
@@ -68,6 +78,35 @@ def database_backup(source, target):
         with closing(sqlite3.connect(target)) as dst:
             src.backup(dst, pages=256, sleep=0.05)
     return inspect_database(target)
+
+
+def verify_bundle_archives(items):
+    """Check each archive's own digest and every member against its manifest."""
+    for item in items:
+        path = Path(item["archive"])
+        if path.stat().st_size != item["size"]:
+            raise ValueError("Recovery archive size mismatch: " + path.name)
+        with path.open("rb") as stream:
+            if hashlib.file_digest(stream, "sha256").hexdigest() != item["sha256"]:
+                raise ValueError("Recovery archive checksum mismatch")
+        with tarfile.open(path) as archive:
+            manifests = [member for member in archive.getmembers() if member.name.endswith("/BACKUP-MANIFEST.json")]
+            if len(manifests) != 1:
+                raise ValueError("Recovery manifest missing")
+            manifest = json.load(archive.extractfile(manifests[0]))
+            prefix = manifests[0].name.rsplit("/", 1)[0]
+            for name, entry in manifest.items():
+                stream = archive.extractfile(prefix + "/" + name.replace("\\", "/"))
+                if stream is None or hashlib.file_digest(stream, "sha256").hexdigest() != entry["sha256"]:
+                    raise ValueError("Recovery member checksum mismatch")
+    if len(items) != 2:
+        raise ValueError("Both full and history recovery archives are required")
+    return items
+
+
+def verify_bundle_output(output):
+    """Verify the archives named on create_recovery_bundle.py's stdout."""
+    return verify_bundle_archives([json.loads(line) for line in output.splitlines() if line.startswith('{"archive":')])
 
 
 def contract(root, version):

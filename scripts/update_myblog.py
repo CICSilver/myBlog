@@ -1,7 +1,6 @@
 """Fast-forward deployment with preflight, verified backup, and code-only rollback."""
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import io
 import json
 import os
@@ -11,7 +10,7 @@ import subprocess
 import tarfile
 import time
 
-from deployment_support import atomic_bytes, contract, database_backup, health, inspect_database, maintenance_lock, run, runtime, service
+from deployment_support import atomic_bytes, contract, database_backup, health, inspect_database, maintenance_lock, run, runtime, service, verify_bundle_output
 from install_runtime import install
 
 
@@ -60,32 +59,6 @@ def adopt_deployed(root, target, run_dir):
     except BaseException:
         shutil.copy2(run_dir / "index.before-adopt", root / ".git/index")
         raise
-
-
-def verify_bundle_output(output):
-    receipts = []
-    for line in output.splitlines():
-        if not line.startswith('{"archive":'):
-            continue
-        item = json.loads(line)
-        path = Path(item["archive"])
-        with path.open("rb") as stream:
-            if hashlib.file_digest(stream, "sha256").hexdigest() != item["sha256"]:
-                raise ValueError("Recovery archive checksum mismatch")
-        with tarfile.open(path) as archive:
-            manifests = [member for member in archive.getmembers() if member.name.endswith("/BACKUP-MANIFEST.json")]
-            if len(manifests) != 1:
-                raise ValueError("Recovery manifest missing")
-            manifest = json.load(archive.extractfile(manifests[0]))
-            prefix = manifests[0].name.rsplit("/", 1)[0]
-            for name, entry in manifest.items():
-                stream = archive.extractfile(prefix + "/" + name.replace("\\", "/"))
-                if stream is None or hashlib.file_digest(stream, "sha256").hexdigest() != entry["sha256"]:
-                    raise ValueError("Recovery member checksum mismatch")
-        receipts.append(item)
-    if len(receipts) != 2:
-        raise ValueError("Both full and history recovery archives are required")
-    return receipts
 
 
 def rollback(root, old, target, changed, old_config, quarantine=None):

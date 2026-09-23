@@ -80,7 +80,8 @@ class DiaryRouteDatabase:
                 image_url=diary.image_url,
                 created_at=existing.created_at,
                 updated_at=diary.updated_at,
-                location=self._merge(existing.location, diary.location),
+                location=(dict(diary.location) if routes_module.better_location(existing.location, diary.location)
+                          else self._merge(existing.location, diary.location)),
                 weather=self._merge(existing.weather, diary.weather),
             )
             operation = "updated"
@@ -122,7 +123,7 @@ class DiaryRouteTest(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def today(self):
-        return datetime.now(timezone.utc).date()
+        return routes_module.diary_date(datetime.now(timezone.utc))
 
     def login(self, client, csrf_token="csrf-token"):
         with client.session_transaction() as session:
@@ -185,6 +186,67 @@ class DiaryRouteTest(unittest.TestCase):
             headers={"X-CSRF-Token": "csrf-token"},
             data=form_data,
         )
+
+    def test_diary_day_rollover_across_year_and_stale_form(self):
+        with self.app.test_client() as client:
+            self.login(client)
+            for hour, minute, second, expected in [
+                (0, 0, 0, "2026-12-31"),
+                (4, 0, 59, "2026-12-31"),
+                (4, 1, 0, "2027-01-01"),
+            ]:
+                with self.subTest(hour=hour, minute=minute):
+                    with patch("app.routes.datetime", wraps=datetime) as clock:
+                        clock.now.return_value = datetime(2027, 1, 1, hour, minute, second, tzinfo=timezone.utc)
+                        page = client.get("/diary")
+                        self.assertIn(('name="entry_date" value="' + expected + '"').encode(), page.data)
+                        self.assertEqual(self.post_diary(client).status_code, 200)
+                        self.assertEqual(self.db.save_calls[-1].entry_date, expected)
+                        calendar = client.get("/diary/activity")
+                        self.assertIn(expected.encode(), calendar.data)
+            with patch("app.routes.datetime", wraps=datetime) as clock:
+                clock.now.return_value = datetime(2027, 1, 1, 4, 1, tzinfo=timezone.utc)
+                count = len(self.db.save_calls)
+                self.assertEqual(self.post_diary(client, {"entry_date": "2026-12-31"}).status_code, 409)
+                self.assertEqual(len(self.db.save_calls), count)
+
+    def test_coarse_location_retries_and_keeps_best_complete_result(self):
+        day = self.today().isoformat()
+        old = self.metadata_result(accuracy=2000)
+        # 旧定位精度 2000 米已不可信：更准的读数、或远到无法自洽的读数都应该取代它，
+        # 只有落在原地附近的更粗读数才保留旧记录。
+        for latitude, accuracy, complete, replaced in [
+            (32, 20, True, True),
+            (32, 3000, True, True),
+            (31.21, 3000, True, False),
+            (32, 20, False, False),
+        ]:
+            with self.subTest(latitude=latitude, accuracy=accuracy, complete=complete):
+                self.db.add(self.make_diary(day, location=old["location"], weather=old["weather"]))
+                result = self.metadata_result(latitude=latitude, accuracy=accuracy)
+                if not complete:
+                    result["location"].pop("formatted_address")
+                with self.app.test_client() as client:
+                    self.login(client)
+                    self.assertIn(b'data-needs-location="true"', client.get("/diary").data)
+                    with patch("app.routes.fetch_diary_metadata", return_value=result) as fetch:
+                        response = self.post_diary(client, {"latitude": str(latitude), "longitude": "118.7", "accuracy": str(accuracy)})
+                    self.assertEqual(response.status_code, 200)
+                    fetch.assert_called_once_with(float(latitude), 118.7, float(accuracy), "test-amap-key")
+                stored = self.db.get_diary_by_date(day)
+                self.assertEqual(stored.location, result["location"] if replaced else old["location"])
+                self.assertEqual(stored.weather, old["weather"])
+
+    def test_coarse_location_permission_failure_still_saves(self):
+        day = self.today().isoformat()
+        old = self.metadata_result(accuracy=2000)
+        self.db.add(self.make_diary(day, location=old["location"], weather=old["weather"]))
+        with self.app.test_client() as client:
+            self.login(client)
+            with patch("app.routes.fetch_diary_metadata") as fetch:
+                self.assertEqual(self.post_diary(client).status_code, 200)
+                fetch.assert_not_called()
+        self.assertEqual(self.db.get_diary_by_date(day).location, old["location"])
 
     def test_routes_require_admin_login(self):
         today = self.today()
@@ -332,7 +394,7 @@ class DiaryRouteTest(unittest.TestCase):
                     client,
                     {
                         "content": "第一次保存",
-                        "entry_date": "1999-01-01",
+                        "entry_date": today.isoformat(),
                         "latitude": "31.2",
                         "longitude": "118.7",
                         "accuracy": "9",
@@ -612,7 +674,7 @@ class DiaryRouteTest(unittest.TestCase):
 
         stored = self.db.get_diary_by_date(today.isoformat())
         self.assertEqual(response.status_code, 200)
-        fetch.assert_called_once_with(31.2, 118.7, None, "test-amap-key")
+        fetch.assert_called_once_with(30.0, 110.0, 100.0, "test-amap-key")
         self.assertEqual(stored.weather["condition"], "晴")
         self.assertEqual(stored.weather["temperature_c"], "26")
 

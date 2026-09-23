@@ -1,0 +1,1774 @@
+/* Fitness log: overview, today composer, month stream, sidebar panels.
+   Reuses the site tokens in style.css; adds only .fit-* classes. */
+
+.fit-shell {
+    display: grid;
+    gap: 22px;
+    width: min(100%, 1080px);
+    margin: 0 auto;
+}
+
+/* ---------- Overview ---------- */
+
+.fit-overview {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 4px 0 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.fit-date-display {
+    display: grid;
+    gap: 5px;
+}
+
+.fit-date-display h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1.05;
+}
+
+.fit-date-note {
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
+.fit-kpis {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.fit-kpi {
+    display: grid;
+    gap: 2px;
+    padding: 0 18px;
+    border-left: 1px solid var(--line);
+    text-align: right;
+}
+
+.fit-kpi:first-child {
+    border-left: 0;
+}
+
+.fit-kpi b {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.fit-kpi b i {
+    margin-left: 2px;
+    color: var(--ink-soft);
+    font-style: normal;
+    font-size: 0.9rem;
+}
+
+.fit-kpi span {
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+}
+
+.fit-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 372px;
+    gap: 28px;
+    align-items: start;
+}
+
+.fit-main {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
+}
+
+/* 侧栏比视口高（面板加起来一千多像素），普通的 top 吸附会把下半截锁在
+   视口外。位移逻辑在 fitness.js 里（方向感知吸附）；这里只负责给它腾出
+   位移空间：外层撑满整行，内层才动得了。 */
+.fit-side {
+    align-self: stretch;
+}
+
+.fit-side-inner {
+    display: grid;
+    gap: 14px;
+}
+
+/* ---------- Today composer ---------- */
+
+.fit-composer {
+    display: grid;
+    gap: 14px;
+    padding: 18px 22px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.fit-composer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.fit-composer-date {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fit-composer-date strong {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.1;
+}
+
+.fit-composer-date span {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.fit-type-switch {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--control-surface-soft);
+}
+
+.fit-type-switch button {
+    min-height: 28px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fit-type-switch button:hover {
+    color: var(--ink);
+}
+
+.fit-type-switch button.is-active {
+    background: var(--accent);
+    color: var(--button-ink);
+    font-weight: 600;
+}
+
+/* Body-part chips */
+
+.fit-chip-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fit-chip-label {
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+}
+
+.fit-chip {
+    min-height: 28px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fit-chip:hover {
+    border-color: var(--focus-border);
+    color: var(--ink);
+}
+
+.fit-chip.is-active {
+    border-color: transparent;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
+/* Exercise blocks */
+
+.fit-exercise-stack {
+    display: grid;
+    gap: 10px;
+}
+
+.fit-exercise {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--control-surface-soft);
+}
+
+.fit-exercise-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.fit-exercise-index {
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+}
+
+.fit-exercise-head h3 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fit-exercise-sides {
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fit-exercise-sides.is-off {
+    color: var(--warning);
+}
+
+.fit-exercise-volume {
+    padding-left: 10px;
+    border-left: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fit-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fit-icon-button:hover {
+    background: var(--ghost-hover);
+    color: var(--danger);
+}
+
+.fit-icon-button svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+}
+
+/* Set grid */
+
+.fit-sets {
+    display: grid;
+    gap: 2px;
+    padding: 8px 12px 10px;
+}
+
+/* Two row shapes, picked by the movement's own unilateral flag — never by
+   anything the user chooses while logging. Bilateral is the default. */
+.fit-set-head,
+.fit-set {
+    display: grid;
+    grid-template-columns: 30px 108px 108px 26px;
+    align-items: center;
+    gap: 8px;
+}
+
+.fit-exercise.is-unilateral .fit-set-head,
+.fit-exercise.is-unilateral .fit-set {
+    grid-template-columns: 30px 108px 108px 108px 26px;
+}
+
+/* Units live in the column header, not in every field: with a left and a
+   right column per set there is no width left for inline unit labels. */
+.fit-set-head span {
+    color: var(--ink-faint);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+}
+
+.fit-set-head span i {
+    margin-left: 3px;
+    font-style: normal;
+    opacity: 0.7;
+}
+
+.fit-set-head .is-side {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.fit-set-index {
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.fit-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--control-surface);
+}
+
+.fit-field input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+}
+
+.fit-field em {
+    flex: none;
+    color: var(--ink-faint);
+    font-style: normal;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.fit-field:focus-within {
+    border-color: var(--focus-border);
+    background: var(--control-focus-surface);
+    box-shadow: var(--focus-ring);
+}
+
+.fit-ghost-button {
+    justify-self: start;
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.fit-ghost-button:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+/* Exercise picker: the movement list is fixed, so this is a chip row rather
+   than a free-text field. Chips already used today drop out of the row. */
+.fit-add-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
+}
+
+.fit-add-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--line);
+}
+
+.fit-chip.is-muted {
+    border-style: dashed;
+    color: var(--ink-faint);
+}
+
+/* Body metrics */
+
+.fit-subhead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.fit-subhead::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--divider-line);
+    opacity: 0.4;
+}
+
+.fit-inline-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.fit-labeled {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.fit-labeled > span {
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+}
+
+.fit-select {
+    min-height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--control-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.92rem;
+}
+
+/* The number alone means nothing until you know the scale, so the selected
+   step spells itself out beside the label. */
+.fit-rpe-label,
+.fit-field-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fit-field-hint {
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+    font-style: normal;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+/* 三个数字挤在一排时 10 个 RPE 按钮就太窄了，让它独占一行。 */
+.fit-rpe-block {
+    grid-column: 1 / -1;
+}
+
+.fit-rpe-hint {
+    color: var(--ink-faint);
+    font-size: 0.74rem;
+    font-style: normal;
+    opacity: 0.85;
+    text-align: right;
+}
+
+.fit-rpe-scale {
+    display: flex;
+    gap: 3px;
+}
+
+.fit-rpe-scale button {
+    flex: 1;
+    height: 32px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--control-surface);
+    color: var(--ink-faint);
+    font: inherit;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.fit-rpe-scale button:hover {
+    border-color: var(--focus-border);
+    color: var(--ink);
+}
+
+.fit-rpe-scale button.is-active {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--button-ink);
+    font-weight: 700;
+}
+
+.fit-note {
+    width: 100%;
+    min-height: 84px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--control-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.96rem;
+    line-height: 1.7;
+    resize: vertical;
+}
+
+.fit-note:focus {
+    outline: none;
+    border-color: var(--focus-border);
+    background: var(--control-focus-surface);
+    box-shadow: var(--focus-ring);
+}
+
+.fit-form-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    min-height: 42px;
+}
+
+.fit-form-footer .fit-status {
+    flex: 1;
+    min-width: 0;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+}
+
+.fit-save-button {
+    min-height: 38px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--button-ink);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--button-shadow);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.fit-save-button:hover {
+    background: var(--accent-strong);
+    transform: translateY(-1px);
+}
+
+/* ---------- Month stream ---------- */
+
+.fit-log-list {
+    display: grid;
+    gap: 12px;
+}
+
+.fit-list-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 4px;
+}
+
+.fit-list-heading h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.fit-list-heading > span {
+    color: var(--ink-faint);
+    font-size: 0.86rem;
+}
+
+.fit-log {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 20px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.fit-log:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-1px);
+}
+
+.fit-log-date {
+    display: grid;
+    gap: 1px;
+    justify-items: center;
+    align-content: start;
+    padding-top: 2px;
+}
+
+.fit-log-date strong {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.fit-log-date span {
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+}
+
+.fit-log-main {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fit-log-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+}
+
+.fit-log-meta svg {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+    vertical-align: -2px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fit-tag {
+    min-height: 22px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.fit-tag.is-lower {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.fit-tag.is-upper {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.fit-tag.is-full {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.fit-tag.is-rest {
+    background: var(--ghost-hover);
+    color: var(--ink-faint);
+}
+
+.fit-log-moves {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+}
+
+.fit-log-moves li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto 30px;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+}
+
+.fit-log-moves b {
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fit-log-moves span {
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fit-log-moves .fit-load {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.fit-side-count {
+    min-width: 108px;
+    text-align: right;
+}
+
+.fit-side-count.is-off {
+    color: var(--warning);
+}
+
+.fit-pr-flag {
+    justify-self: end;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.fit-log-note {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.fit-log.is-rest {
+    border-style: dashed;
+    background: var(--bg-soft);
+}
+
+/* ---------- Sidebar panels ---------- */
+
+.fit-panel {
+    padding: 12px 16px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--control-surface);
+}
+
+.fit-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fit-panel-head h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.fit-panel-head span {
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+}
+
+/* Left / right balance — only a unilateral log can show this, so it earns
+   the sidebar slot the weekly-plan panel used to hold. */
+
+.fit-balance-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fit-balance-list li {
+    display: grid;
+    grid-template-columns: 3.4em minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.88rem;
+}
+
+.fit-balance-list li:last-child {
+    border-bottom: 0;
+}
+
+.fit-balance-list b {
+    font-weight: 500;
+}
+
+.fit-balance-gauge {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-muted);
+}
+
+.fit-balance-gauge::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    left: 50%;
+    width: 1px;
+    background: var(--line-strong);
+}
+
+.fit-balance-gauge i {
+    position: absolute;
+    top: 50%;
+    /* --bias: percentage points the right side leads by (negative = left). */
+    left: calc(50% + var(--bias) * 1.6%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    transition: left 0.3s ease;
+}
+
+.fit-balance-gauge.is-off i {
+    background: var(--warning);
+}
+
+.fit-balance-count {
+    min-width: 92px;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.fit-balance-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: var(--ink-faint);
+    font-size: 0.76rem;
+}
+
+/* PR list */
+
+.fit-pr-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fit-pr-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+}
+
+.fit-pr-list li:last-child {
+    border-bottom: 0;
+}
+
+.fit-pr-list b {
+    font-weight: 500;
+}
+
+.fit-pr-value {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fit-pr-value i {
+    margin: 0 1px 0 2px;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 0.74rem;
+    font-weight: 400;
+}
+
+.fit-pr-value s {
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 400;
+    text-decoration: none;
+}
+
+.fit-pr-delta {
+    min-width: 58px;
+    color: var(--success);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.fit-pr-delta.is-flat {
+    color: var(--ink-faint);
+}
+
+/* Weight trend */
+
+.fit-weight-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.fit-weight-head strong {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.fit-weight-head span {
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+}
+
+.fit-weight-head em {
+    margin-left: auto;
+    color: var(--success);
+    font-style: normal;
+    font-size: 0.82rem;
+}
+
+.fit-spark {
+    display: block;
+    width: 100%;
+    height: 64px;
+}
+
+.fit-spark path.line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fit-spark path.area {
+    fill: var(--accent-soft);
+    stroke: none;
+}
+
+.fit-spark circle {
+    fill: var(--accent-strong);
+}
+
+.fit-spark-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1080px) {
+    .fit-columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* 单栏布局下没有“侧”可言，外层退回内容高度，
+       位移逻辑会因为没有余量而自动停工。 */
+    .fit-side {
+        align-self: start;
+    }
+}
+
+@media (max-width: 720px) {
+    .fit-date-display h2 {
+        font-size: 2rem;
+    }
+
+    .fit-kpis {
+        width: 100%;
+    }
+
+    .fit-kpi {
+        flex: 1;
+        padding: 0 10px;
+        text-align: left;
+    }
+
+    .fit-composer {
+        padding: 14px 14px 16px;
+    }
+
+    /* Let the draft note take its own line instead of being squeezed into a
+       one-word-wide column beside the buttons. */
+    .fit-form-footer .fit-status {
+        flex: 1 0 100%;
+    }
+
+    .fit-inline-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fit-set-head,
+    .fit-set {
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 24px;
+        gap: 6px;
+    }
+
+    .fit-exercise.is-unilateral .fit-set-head,
+    .fit-exercise.is-unilateral .fit-set {
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 24px;
+    }
+
+
+    .fit-exercise-sides {
+        display: none;
+    }
+
+    .fit-log {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 12px;
+        padding: 14px;
+    }
+
+    /* Four columns do not fit a phone: split each move onto two lines. */
+    .fit-log-moves li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+    }
+
+    .fit-log-moves b {
+        flex: 1;
+    }
+
+    .fit-side-count {
+        min-width: 0;
+        text-align: left;
+    }
+
+    .fit-log-moves span:not(.fit-pr-flag) {
+        order: 2;
+    }
+}
+
+/* ---------- Daily volume chart ----------
+   One series, so one hue and no legend: the columns are the sessions, the wash
+   behind them is a 7-day trailing mean. Both steps were run through the palette
+   validator against this page's own surfaces (light PASS, dark re-stepped from
+   the same ramp rather than flipped). */
+
+.fit-volume-chart {
+    --chart-ink: #a25b33;
+    --chart-weight: #a25b33;
+    --chart-waist: #1e6f9e;
+    /* A grid item defaults to min-width:auto, so the svg's min-width would push
+       the whole page wider instead of scrolling inside its own box. */
+    min-width: 0;
+    padding: 14px 20px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+html[data-theme="dark"] .fit-volume-chart {
+    --chart-ink: #c48252;
+    --chart-weight: #c48252;
+    --chart-waist: #3a97d0;
+}
+
+.fit-chart-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-bottom: 8px;
+}
+
+.fit-chart-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.fit-chart-span {
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+}
+
+/* The scroll box is inside the figure so the tooltip, which sits on the
+   figure, is never clipped by it. */
+.fit-chart-figure {
+    position: relative;
+    margin: 0;
+}
+
+.fit-chart-scroll {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.fit-chart-svg {
+    display: block;
+    width: 100%;
+    min-width: 720px;
+    height: auto;
+    overflow: visible;
+}
+
+/* Marks */
+.fit-chart-grid {
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.fit-chart-tick {
+    fill: var(--ink-faint);
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+.fit-chart-area {
+    fill: var(--chart-ink);
+    opacity: 0.1;
+}
+
+.fit-chart-line {
+    fill: none;
+    stroke: var(--chart-ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.45;
+}
+
+.fit-chart-col {
+    fill: var(--chart-ink);
+}
+
+/* Today is still being logged, so it reads as provisional. */
+.fit-chart-col.is-today {
+    fill: var(--chart-ink);
+    opacity: 0.4;
+}
+
+.fit-chart-peak {
+    fill: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.fit-chart-hit {
+    fill: transparent;
+}
+
+.fit-chart-hit:hover {
+    fill: var(--accent-soft);
+}
+
+/* A one-line pill, not a stacked card: the plot band is only ~150px tall, so a
+   tall tooltip would sit on top of the chart header instead of near the mark. */
+.fit-chart-tip {
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 5px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-strong);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.12s ease;
+}
+
+.fit-chart-tip.is-on {
+    opacity: 1;
+}
+
+.fit-chart-tip strong {
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.fit-chart-tip span {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.fit-chart-note {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 8px;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+}
+
+/* The legend keys double as toggles: the columns are the data, the mean is the
+   overlay, and either can be switched off — but never the last one, which would
+   leave an empty plot. */
+.fit-chart-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0 10px 0 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.fit-chart-key:hover {
+    border-color: var(--focus-border);
+    background: var(--ghost-hover);
+}
+
+.fit-chart-key:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.fit-chart-key[aria-pressed="false"] {
+    border-style: dashed;
+    opacity: 0.55;
+}
+
+.fit-chart-key[aria-pressed="false"] i {
+    background: var(--ink-faint);
+}
+
+.fit-volume-chart.hide-cols .fit-chart-col,
+.fit-volume-chart.hide-cols .fit-chart-peak {
+    display: none;
+}
+
+.fit-volume-chart.hide-mean .fit-chart-line,
+.fit-volume-chart.hide-mean .fit-chart-area {
+    display: none;
+}
+
+.fit-chart-key i {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--chart-ink);
+}
+
+.fit-chart-key.is-mean i {
+    height: 4px;
+    border-radius: 999px;
+    opacity: 0.45;
+}
+
+/* ---------- 身体数据：体重一格、腰围一格 ---------- */
+
+/* 两条线一根纵轴是排版凑出来的相关性，所以是切换不是叠加。 */
+.fit-chart-switch {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-muted);
+}
+
+.fit-chart-switch button {
+    min-height: 26px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fit-chart-switch button:hover {
+    color: var(--ink);
+}
+
+.fit-chart-switch button[aria-selected="true"] {
+    background: var(--surface-strong);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(36, 28, 24, 0.1);
+}
+
+.fit-chart-switch button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* 每格的标题就是图例：颜色旁边永远有名字，不靠颜色单独认。 */
+.fit-body-label {
+    fill: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.fit-body-unit {
+    fill: var(--ink-faint);
+    font-weight: 400;
+}
+
+.fit-body-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fit-body-panel.is-weight .fit-body-line,
+.fit-body-panel.is-weight .fit-body-dot,
+.fit-body-panel.is-weight .fit-body-key {
+    stroke: var(--chart-weight);
+    fill: none;
+}
+
+.fit-body-panel.is-waist .fit-body-line,
+.fit-body-panel.is-waist .fit-body-dot,
+.fit-body-panel.is-waist .fit-body-key {
+    stroke: var(--chart-waist);
+    fill: none;
+}
+
+.fit-body-dot,
+.fit-body-key {
+    stroke-width: 2;
+}
+
+.fit-body-panel.is-weight .fit-body-key,
+.fit-body-panel.is-waist .fit-body-key {
+    /* 图例那个点是实心的，图上的点是空心的——量出来的读数不该看着像填上去的。 */
+    stroke: none;
+}
+
+.fit-body-panel.is-weight .fit-body-key {
+    fill: var(--chart-weight);
+}
+
+.fit-body-panel.is-waist .fit-body-key {
+    fill: var(--chart-waist);
+}
+
+.fit-body-dot {
+    fill: var(--surface-strong);
+}
+
+.fit-chart-key.is-static {
+    border-style: none;
+    padding-left: 0;
+}
+
+.fit-chart-key.is-weight i,
+.fit-chart-key i.is-weight {
+    background: var(--chart-weight);
+}
+
+.fit-chart-key i.is-waist {
+    background: var(--chart-waist);
+}
+
+/* 区间说明靠右，跟图例分在两头，一行里不挤成一团。 */
+.fit-chart-note .fit-chart-span {
+    margin-left: auto;
+}
+
+@media (max-width: 720px) {
+    .fit-chart-note .fit-chart-span {
+        margin-left: 0;
+    }
+}
+
+.fit-chart-table {
+    margin-top: 6px;
+}
+
+.fit-chart-table summary {
+    display: inline-block;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.fit-chart-table-scroll {
+    max-height: 220px;
+    margin-top: 8px;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.fit-chart-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+
+.fit-chart-table th,
+.fit-chart-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+
+.fit-chart-table th {
+    position: sticky;
+    top: 0;
+    background: var(--table-head-surface);
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.fit-chart-table td:nth-child(3),
+.fit-chart-table td:nth-child(4) {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.fit-chart-table th:nth-child(3),
+.fit-chart-table th:nth-child(4) {
+    text-align: right;
+}
+
+@media (max-width: 720px) {
+    .fit-volume-chart {
+        padding: 12px 14px;
+    }
+
+    .fit-chart-head h2 {
+        font-size: 1.25rem;
+    }
+}
+
+/* ---------- Shapes the real log turned out to need ---------- */
+
+/* Static holds (plank): no weight, no reps — just seconds. */
+.fit-exercise.is-static .fit-set-head,
+.fit-exercise.is-static .fit-set {
+    grid-template-columns: 30px 108px 26px;
+}
+
+/* Bodyweight (push-ups): reps plus which way you did them. The load column is
+   always in the grid so rows stay lined up when only some sets are weighted;
+   it just has nothing in it until a set says 负重. */
+.fit-exercise.is-bodyweight .fit-set-head,
+.fit-exercise.is-bodyweight .fit-set {
+    grid-template-columns: 30px 86px 88px 74px 26px;
+}
+
+.fit-field.is-variant {
+    padding: 0 4px 0 8px;
+}
+
+.fit-field.is-variant select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 展开的那一层是系统画的，它用的是 option 自己的颜色，不跟着 color-scheme
+   走。option 背景是透明的话弹层按白底画，而字继承的是浅色的 --ink——深色
+   模式下就是一片看不清的白底白字。所以这几个值要写实。 */
+.fit-field.is-variant option {
+    background-color: var(--surface-strong);
+    color: var(--ink);
+    font-family: var(--font-body);
+}
+
+.fit-set:not(.is-weighted) .fit-field.is-added {
+    /* 占着位置但不显示：同一张卡里有的组负重有的组不负重，列不能错开。 */
+    visibility: hidden;
+}
+
+.fit-set-note,
+.fit-exercise-notes {
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    line-height: 1.6;
+}
+
+.fit-set-note {
+    grid-column: 2 / -1;
+    display: none;
+    overflow: hidden;
+    width: 100%;
+    margin-top: -2px;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px dashed transparent;
+    background: transparent;
+    font: inherit;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--ink-faint);
+    outline: none;
+    resize: none;
+}
+
+.fit-set.has-note .fit-set-note,
+.fit-set:focus-within .fit-set-note {
+    display: block;
+}
+
+.fit-set-note:focus {
+    border-bottom-color: var(--focus-border);
+    color: var(--ink-soft);
+}
+
+/* 删除这一组。常驻但很轻，hover 才变红——误删一组的代价比看着乱要大。 */
+.fit-set-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-faint);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 0.45;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.fit-set-remove:hover,
+.fit-set-remove:focus-visible {
+    background: var(--danger-soft);
+    color: var(--danger);
+    opacity: 1;
+}
+
+.fit-exercise-notes {
+    padding: 0 12px 10px;
+}
+
+/* Trained, but the log has no weight for it — a stub at the baseline, never a
+   zero-height column that would read as a rest day. */
+.fit-chart-col.is-unknown {
+    fill: var(--line-strong);
+}
+
+.diary-day.is-partial {
+    border: 1px dashed var(--line-strong);
+    background: transparent;
+}
+
+/* Two or three readings are a number, not a trend line. */
+.fit-metric-tiles {
+    display: grid;
+    gap: 2px;
+}
+
+.fit-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.fit-metric:last-child {
+    border-bottom: 0;
+}
+
+.fit-metric > span {
+    min-width: 4.6em;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+}
+
+.fit-metric strong {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.fit-metric strong i {
+    margin-left: 2px;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 0.72rem;
+    font-weight: 400;
+}
+
+.fit-metric em {
+    margin-left: auto;
+    color: var(--ink-faint);
+    font-style: normal;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* A note belongs to the movement it was written about, not to the whole day. */
+.fit-move-note {
+    grid-column: 1 / -1;
+    margin: 2px 0 2px;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    font-style: normal;
+    line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+    .fit-move-note {
+        flex: 1 0 100%;
+        order: 3;
+    }
+}
+
+.fit-readonly-note {
+    padding: 18px 22px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+}
+
+.fit-save-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+}
+
+.fit-status.is-error {
+    color: var(--danger);
+}
+
+.fit-status.is-ok {
+    color: var(--success);
+}
+
+/* 这条要放在 .fit-set-remove 的基础规则之后才压得住它。
+   24px 是触摸目标的下限；再小就点不准，再大又容易误删。 */
+@media (max-width: 720px) {
+    .fit-set-remove {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* 同理：自重那五列的基础规则在上面，这条得排在它后面。窄屏按比例分，
+   做法那列留得宽一点——"钻石"比"20"占地方。 */
+@media (max-width: 720px) {
+    .fit-exercise.is-bodyweight .fit-set-head,
+    .fit-exercise.is-bodyweight .fit-set {
+        grid-template-columns: 22px minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 24px;
+    }
+}
+
+/* 草稿提示条：服务端已有记录、本地又有草稿时出现，让人自己选，
+   不替他决定哪份是对的。 */
+.fit-draft-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--warning-line);
+    border-radius: 8px;
+    background: var(--warning-soft);
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+}
+
+.fit-draft-bar span {
+    flex: 1;
+    min-width: 12em;
+}
+
+.fit-draft-bar button {
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--control-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.fit-draft-bar button:hover {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+}
+
+.fit-draft-bar button[data-draft-restore] {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--button-ink);
+    font-weight: 600;
+}

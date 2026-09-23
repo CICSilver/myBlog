@@ -7,6 +7,10 @@ copies in restricted directories. Never publish these files or commit them.
 
 1. Use the offline recovery kit on the owner's Windows computer. It contains
    the rclone configuration and crypt keys. These keys are NOT in this archive.
+   The kit was created and independently verified on 2026-09-19: a baseline was
+   listed, downloaded, decrypted and passed `verify_recovery_bundle.py` using
+   the kit alone, on a machine other than the server. Recreate and re-verify it
+   whenever the crypt parameters, Google client or account change.
 2. Download through `myblog_crypt:` with rclone; this decrypts the archive.
    If OAuth has expired or been revoked, reauthorize the same Google client
    and account while preserving the crypt password, salt, and remote path.
@@ -58,8 +62,12 @@ isolated test is not proof of new-host DNS, TLS, or systemd configuration.
 
 ## Retention and Known Limits
 
-This is a manually created, pinned pre-migration baseline. No scheduled backup,
-automatic pruning is performed. Legacy baselines preserve the original data;
+`backup_to_drive.py`, run daily by `myblog-backup.timer`, captures, uploads,
+verifies by reading each object back, and then prunes. Retention keeps the
+newest few days, one baseline per recent ISO week, and a pinned set that is
+never pruned; the newest baseline is never removed and pruning is skipped
+entirely whenever a run fails. `DEPLOYMENT.md` records the exact policy.
+The 2026-09-14 baselines are pinned. Legacy baselines preserve the original data;
 post-migration SQLite baselines include the reviewed derived-category repair.
 Read the database descriptor and migration report to distinguish them.
 Disk copies and backup failures must never be treated as a

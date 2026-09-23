@@ -45,6 +45,17 @@ class DiaryDatabaseTest(unittest.TestCase):
             weather=weather,
         )
 
+    def test_better_location_replaces_whole_record_without_stale_poi(self):
+        day = "2026-09-09"
+        self.helper.save_today_diary(self.make_diary(day, location={
+            "latitude": 31, "longitude": 118, "accuracy_m": 2000,
+            "formatted_address": "old", "poi_name": "old poi",
+        }), day)
+        improved = {"latitude": 32, "longitude": 119, "accuracy_m": 20,
+                    "formatted_address": "new"}
+        self.helper.save_today_diary(self.make_diary(day, location=improved), day)
+        self.assertEqual(self.helper.get_diary_by_date(day).location, improved)
+
     def test_diary_uses_independent_table_and_fixed_fields(self):
         diary = self.make_diary(
             "2026-05-18",
