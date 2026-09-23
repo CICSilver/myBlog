@@ -70,13 +70,14 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         with self.app.test_request_context("/"):
             html = routes_module.init_index_with_blogs(blogs)
 
-        self.assertIn('class="feature-article has-cover"', html)
+        self.assertIn('class="feature-article reveal has-cover"', html)
         self.assertIn('class="feature-cover"', html)
         self.assertIn('src="/static/vendor/editor.md/examples/images/8.jpg"', html)
-        self.assertIn('class="entry-line"', html)
-        self.assertIn('class="entry-line has-cover"', html)
-        self.assertIn('class="entry-cover"', html)
+        self.assertIn('class="trace-entry reveal"', html)
+        self.assertIn('class="trace-entry reveal has-cover"', html)
+        self.assertIn('class="trace-cover"', html)
         self.assertIn("没有封面的文章", html)
+        self.assertNotIn("![正文图片]", html)
 
     def test_invalid_cover_url_is_rejected_before_insert(self):
         with self.app.test_client() as client:
@@ -189,7 +190,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertIn('class="home-cover"', html)
         self.assertIn('aria-label="Archive Note"', html)
         self.assertIn('泥留鸿爪，旧游成文。', html)
-        self.assertIn('class="home-cover-plum"', html)
+        self.assertIn('class="home-cover-mark"', html)
         self.assertIn('class="pull-light-cord"', html)
         self.assertIn('class="admin-bookmark-trigger is-login"', html)
         self.assertIn('href="{0}"'.format(self.app.config["ADMIN_LOGIN_PATH"]), html)
@@ -287,12 +288,12 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         self.assertIn(".cover-remove-button[hidden]", css)
 
     def test_homepage_cover_images_preserve_the_full_image(self):
-        css = (Path(__file__).resolve().parents[1] / "static" / "css" / "style.css").read_text(
+        css = (Path(__file__).resolve().parents[1] / "static" / "css" / "home.css").read_text(
             encoding="utf-8"
         )
 
         cover_images = re.search(
-            r"\.feature-cover img,\s*\.entry-cover img\s*\{(?P<body>[^}]*)\}",
+            r"\.feature-cover img,\s*\.trace-cover img\s*\{(?P<body>[^}]*)\}",
             css,
             re.S,
         )

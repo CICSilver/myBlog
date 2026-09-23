@@ -1,12 +1,12 @@
 /* Diary sidebar: collapsible month calendar, year overview and the word milestone. */
 .diary-calendar,
 .diary-milestone {
-    --activity-empty: #e8ded1;
-    --activity-1: #dec1a2;
-    --activity-2: #c79970;
-    --activity-3: #af7347;
-    --activity-4: #8f4b26;
-    --activity-ink-strong: #fffaf5;
+    --activity-empty: #e7e3d9;
+    --activity-1: #d2ccbf;
+    --activity-2: #a9a396;
+    --activity-3: #6e6a62;
+    --activity-4: #2b2926;
+    --activity-ink-strong: #fbf9f4;
     box-sizing: border-box;
     border: 1px solid var(--line-strong);
     border-radius: 8px;
@@ -16,12 +16,12 @@
 
 html[data-theme="dark"] .diary-calendar,
 html[data-theme="dark"] .diary-milestone {
-    --activity-empty: #392d26;
-    --activity-1: #61432f;
-    --activity-2: #90613e;
-    --activity-3: #ba8456;
-    --activity-4: #e0ad79;
-    --activity-ink-strong: #1d1511;
+    --activity-empty: #23272b;
+    --activity-1: #3a3f44;
+    --activity-2: #676c71;
+    --activity-3: #a2a6a9;
+    --activity-4: #e6e2d9;
+    --activity-ink-strong: #151719;
 }
 
 .diary-calendar {

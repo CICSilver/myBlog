@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{{ site_name }}{% endblock %}
-{% block body_class %}home-page{% endblock %}
+{% block title %}{% if home_filter %}{{ home_filter.title }} · {% endif %}{{ site_name }}{% endblock %}
+{% block body_class %}home-page{% if home_filter %} is-filtered{% endif %}{% endblock %}
 {% block site_header %}
   {% set site_cover_title_id = "home-cover-title" %}
   {% set site_cover_title_tag = "h1" %}
@@ -9,251 +9,347 @@
   {% include "_site_header.html" %}
 {% endblock %}
 
-{% block vendor_styles %}
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css"
->
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v='20260923-xueni') }}">
 {% endblock %}
 
-{% block extra_head %}
-<script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
-{% endblock %}
+{% macro verse_sheet(entry, compact=false) -%}
+  <div class="verse-sheet{% if compact %} is-compact{% endif %}" lang="zh-CN" style="--verse-chars: {{ entry.verse_chars or 14 }}">
+    <div class="verse-sheet-scroll" tabindex="0" aria-label="{{ entry.title }}（竖排）">
+      <div class="verse-sheet-page">
+        <p class="verse-sheet-title">{{ entry.title }}</p>
+        {% for line in entry.verse_lines %}
+          <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro filter_chips(label) -%}
+  {% set total_count = categories | sum(attribute='num') %}
+  <nav class="home-filter" aria-label="{{ label }}">
+    {% set all_active = not home_filter %}
+    <a
+      class="filter-chip{% if all_active %} is-active{% endif %}"
+      href="{{ url_for('main.index') }}"
+      {% if all_active %}aria-current="page"{% endif %}
+    >
+      <span>全部</span>
+      <em>{{ total_count }}</em>
+    </a>
+    {% for category in categories %}
+      {% set category_active = home_filter and home_filter.kind == 'category' and home_filter.category == category.name %}
+      <a
+        class="filter-chip{% if category_active %} is-active{% endif %}"
+        href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
+        {% if category_active %}aria-current="page"{% endif %}
+      >
+        <span>{{ category.name }}</span>
+        <em>{{ category.num }}</em>
+      </a>
+    {% endfor %}
+  </nav>
+{%- endmacro %}
 
 {% block content %}
-  {% if blogs %}
-    {% set featured = blogs[0] %}
-    {% set mobile_blog_count = (categories | sum(attribute='num')) if categories else (blogs | length) %}
-    <section class="mobile-archive-controls" aria-labelledby="mobile-filter-title">
-      <div class="mobile-filter-heading">
-        <h2 id="mobile-filter-title">浏览文章</h2>
-        <span>共 {{ mobile_blog_count }} 篇</span>
+{% set featured = entries[0] if entries and not home_filter else none %}
+{% set stream = entries[1:] if featured else entries %}
+
+<div class="trail-root" data-trail-root>
+  <svg class="trail-layer" data-trail aria-hidden="true" focusable="false">
+    <defs>
+      <g id="trail-claw">
+        <path class="claw-web" d="M0 1 Q-2.8 -2.8 -6.2 -7 Q-3.1 -5.3 0 -6.4 Q3.1 -5.3 6.2 -7 Q2.8 -2.8 0 1 Z" />
+        <path class="claw-toes" d="M0 2.6 L-6.7 -7.9 M0 2.6 L0 -10.4 M0 2.6 L6.7 -7.9" />
+      </g>
+    </defs>
+    <path class="trail-groove" d="" />
+    <path class="trail-line" d="" />
+    <g class="trail-prints"></g>
+  </svg>
+
+  {% if home_filter %}
+    <section class="home-hero is-compact" aria-labelledby="filter-title">
+      <div class="hero-filter-copy">
+        <p class="eyebrow">{% if home_filter.kind == 'date' %}按月 · Month{% else %}分类 · Category{% endif %}</p>
+        <h2 class="hero-filter-title" id="filter-title">{{ home_filter.title }}</h2>
+        <p class="hero-filter-count">凡 {{ entries | length }} 篇</p>
+        <a class="hero-back-link" href="{{ url_for('main.index') }}"><span aria-hidden="true">←</span> 回到全部文章</a>
       </div>
-      <nav class="mobile-filter-chips" aria-label="文章筛选">
-        {% set all_active = request.endpoint == 'main.index' %}
-        <a
-          class="mobile-filter-chip{% if all_active %} is-active{% endif %}"
-          href="{{ url_for('main.index') }}"
-          {% if all_active %}aria-current="page"{% endif %}
-        >
-          <span>全部</span>
-          <span class="mobile-filter-chip-count">{{ mobile_blog_count }}</span>
-        </a>
-        {% for category in categories %}
-          {% set category_active = request.endpoint == 'main.categorized_blogs' and request.view_args.get('categoryName') == category.name %}
-          <a
-            class="mobile-filter-chip{% if category_active %} is-active{% endif %}"
-            href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
-            {% if category_active %}aria-current="page"{% endif %}
-          >
-            <span>{{ category.name }}</span>
-            <span class="mobile-filter-chip-count">{{ category.num }}</span>
-          </a>
-        {% endfor %}
-        {% for date in dateList %}
-          {% set date_active = request.endpoint == 'main.archived_blogs' and request.view_args.get('year') | string == date.year | string and request.view_args.get('month') | string == date.month | string %}
-          <a
-            class="mobile-filter-chip{% if date_active %} is-active{% endif %}"
-            href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}"
-            {% if date_active %}aria-current="page"{% endif %}
-          >
-            <span>{{ date.year }}.{{ date.month }}</span>
-            <span class="mobile-filter-chip-count">{{ date.num }}</span>
-          </a>
-        {% endfor %}
-      </nav>
+      <div class="hero-filter-aside">
+        {{ filter_chips("文章分类") }}
+      </div>
+      <span class="trail-anchor trail-start" data-trail-start aria-hidden="true"></span>
     </section>
-    <section class="home-body">
-      <aside class="archive-sidebar">
-        <section class="sidebar-block">
-          <div class="sidebar-heading">
-            <h2>分类索引</h2>
-            <span>{{ categories | length }}</span>
-          </div>
-          <ul class="archive-list">
-            {% for category in categories %}
-              <li>
-                <a href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}">
-                  <span>{{ category.name }}</span>
-                  <em>{{ category.num }}</em>
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </section>
+  {% else %}
+    <section class="home-hero" aria-label="卷首">
+      <div class="hero-couplet">
+        <p class="hero-couplet-text" aria-label="泥留鸿爪，旧游成文">
+          <span aria-hidden="true">泥留鸿爪</span>
+          <span aria-hidden="true">旧游成文</span>
+        </p>
+        <span class="hero-seal" aria-hidden="true"><i>雪</i><i>泥</i></span>
+      </div>
 
-        <section class="sidebar-block">
-          <div class="sidebar-heading">
-            <h2>时间归档</h2>
-            <span>{{ dateList | length }}</span>
-          </div>
-          <ul class="archive-list">
-            {% for date in dateList %}
-              <li>
-                <a href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}">
-                  <span>{{ date.year }}.{{ date.month }}</span>
-                  <em>{{ date.num }}</em>
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </section>
-      </aside>
+      <span class="trail-anchor trail-start" data-trail-start aria-hidden="true"></span>
 
-      <section class="entry-stream">
-        <article class="feature-article{% if featured.cover_url %} has-cover{% endif %}">
+      <div class="hero-side">
+        <div class="hero-sky" data-sky>
+          <svg class="hero-moon" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false">
+            <defs>
+              <radialGradient id="moon-glow" r="0.5">
+                <stop offset="0.72" stop-color="currentColor" stop-opacity="0.22" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <circle class="moon-halo" r="60" fill="url(#moon-glow)" />
+            <circle class="moon-disc" r="44" />
+            <path class="moon-lit" data-moon-lit d="" />
+          </svg>
+          <dl class="sky-almanac">
+            <div>
+              <dt>今日</dt>
+              <dd data-sky-date>—</dd>
+            </div>
+            <div>
+              <dt>农历</dt>
+              <dd data-sky-lunar>—</dd>
+            </div>
+            <div>
+              <dt>节气</dt>
+              <dd data-sky-term>—</dd>
+            </div>
+            <div>
+              <dt>月相</dt>
+              <dd data-sky-phase>—</dd>
+            </div>
+          </dl>
+          <p class="sky-pentad" data-sky-pentad></p>
+        </div>
+
+        <div class="hero-intro">
+          <p class="hero-intro-text">{{ personal_intro }}</p>
+          <ul class="hero-stats" aria-label="归档统计">
+            <li><strong>{{ stats.count }}</strong><span>篇文章</span></li>
+            <li><strong>{{ "{:,}".format(stats.chars) }}</strong><span>字</span></li>
+            {% if stats.since %}<li><strong>{{ stats.since }}</strong><span>起笔</span></li>{% endif %}
+          </ul>
+          {{ filter_chips("文章分类") }}
+        </div>
+      </div>
+
+      <svg class="hero-mountains" viewBox="0 0 1600 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="mist-far" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0.09" />
+            <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="mist-mid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0.13" />
+            <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="mist-near" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0.16" />
+            <stop offset="0.9" stop-color="currentColor" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path fill="url(#mist-far)" d="M900 260 C990 236 1070 170 1130 104 C1160 72 1180 50 1200 46 C1222 42 1240 58 1262 84 C1318 150 1400 214 1540 260 Z" />
+        <path fill="url(#mist-far)" d="M0 170 C120 150 210 110 330 128 C430 142 500 96 610 104 C720 112 790 150 900 138 C1010 126 1080 88 1200 96 C1320 104 1400 140 1600 128 L1600 260 L0 260 Z" />
+        <path fill="url(#mist-mid)" d="M0 204 C90 188 170 160 260 170 C360 181 420 140 520 150 C640 162 700 196 820 186 C930 177 1000 150 1110 158 C1230 167 1290 196 1400 188 C1480 182 1540 170 1600 176 L1600 260 L0 260 Z" />
+        <path fill="url(#mist-near)" d="M0 236 C140 224 240 208 380 216 C520 224 600 242 760 234 C900 227 1000 212 1150 220 C1300 228 1420 242 1600 232 L1600 260 L0 260 Z" />
+      </svg>
+    </section>
+  {% endif %}
+
+  {% if entries %}
+    {% if featured %}
+      <article class="feature-article reveal{% if featured.cover_url %} has-cover{% endif %}{% if featured.is_verse %} is-verse{% endif %}" aria-labelledby="latest-title">
+        <div class="feature-head">
+          <p class="eyebrow">最新 · Latest Entry</p>
+          <p class="feature-date">
+            <span class="feature-date-day">{{ featured.day_label }}</span>
+            <span class="feature-date-year">{{ featured.year_label }} · 周{{ featured.weekday }}</span>
+          </p>
+          <h2 class="feature-title" id="latest-title">
+            <a href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}">{{ featured.title }}</a>
+          </h2>
+          <p class="entry-facts">
+            <span>{{ featured.category }}</span>
+            <span>{{ featured.char_count }} 字</span>
+            <span>约 {{ featured.read_minutes }} 分钟</span>
+          </p>
+          <a class="entry-link" href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}">
+            展卷阅读 <span aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <span class="trail-anchor trail-node is-featured" data-trail-node aria-hidden="true"></span>
+
+        <div class="feature-body">
           {% if featured.cover_url %}
             <a
               class="feature-cover"
               href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}"
             >
-              <img
-                src="{{ featured.cover_url }}"
-                alt="{{ featured.title or '文章封面' }}"
-                loading="eager"
-              >
+              <img src="{{ featured.cover_url }}" alt="{{ featured.title or '文章封面' }}" loading="eager">
             </a>
           {% endif %}
-          <div class="stream-heading stream-heading-compact">
-            <p class="section-label">Latest Entry</p>
-            <h2>最新文章</h2>
-          </div>
-          <h3 class="feature-title">
-            <a href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}">
-              {{ featured.title }}
-            </a>
-          </h3>
-          <div class="feature-meta">
-            <span>{{ featured.date }}</span>
-            <span>{{ featured.category }}</span>
-          </div>
-          <div class="feature-preview markdown-body" id="markdown-preview-featured"></div>
-          <textarea id="markdown-content-featured" data-preview-lines="8" hidden>{{ featured.content | safe }}</textarea>
-          <a
-            class="entry-link"
-            href="{{ url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) }}"
-          >
-            进入全文
-          </a>
-        </article>
-
-        <div class="stream-heading">
-          <div class="stream-heading-copy">
-            <p class="section-label">Archive Stream</p>
-            <h2>近期归档</h2>
-          </div>
-          <details class="mobile-archive-details">
-            <summary>分类与时间</summary>
-            <div class="mobile-archive-panel">
-              <section class="mobile-archive-group">
-                <div class="mobile-archive-group-heading">
-                  <h3>分类索引</h3>
-                  <span>{{ categories | length }}</span>
-                </div>
-                <ul class="mobile-archive-list">
-                  {% for category in categories %}
-                    {% set category_active = request.endpoint == 'main.categorized_blogs' and request.view_args.get('categoryName') == category.name %}
-                    <li>
-                      <a
-                        class="mobile-archive-link{% if category_active %} is-active{% endif %}"
-                        href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
-                        {% if category_active %}aria-current="page"{% endif %}
-                      >
-                        <span>{{ category.name }}</span>
-                        <em>{{ category.num }}</em>
-                      </a>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </section>
-
-              <section class="mobile-archive-group">
-                <div class="mobile-archive-group-heading">
-                  <h3>时间归档</h3>
-                  <span>{{ dateList | length }}</span>
-                </div>
-                <ul class="mobile-archive-list">
-                  {% for date in dateList %}
-                    {% set date_active = request.endpoint == 'main.archived_blogs' and request.view_args.get('year') | string == date.year | string and request.view_args.get('month') | string == date.month | string %}
-                    <li>
-                      <a
-                        class="mobile-archive-link{% if date_active %} is-active{% endif %}"
-                        href="{{ url_for('main.archived_blogs', year=date.year, month=date.month) }}"
-                        {% if date_active %}aria-current="page"{% endif %}
-                      >
-                        <span>{{ date.year }}.{{ date.month }}</span>
-                        <em>{{ date.num }}</em>
-                      </a>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </section>
+          {% if featured.is_verse %}
+            {{ verse_sheet(featured) }}
+          {% else %}
+            <div class="feature-excerpt prose">
+              {% for paragraph in featured.excerpt %}
+                <p>{{ paragraph }}</p>
+              {% endfor %}
             </div>
-          </details>
+          {% endif %}
         </div>
+      </article>
+    {% endif %}
 
-        {% if blogs | length > 1 %}
-          {% for blog in blogs %}
-            {% if not loop.first %}
-              <article class="entry-line{% if blog.cover_url %} has-cover{% endif %}">
-                <div class="entry-line-meta">
-                  <span>{{ blog.date }}</span>
-                  <span>{{ blog.category }}</span>
-                </div>
-                {% if blog.cover_url %}
-                  <a
-                    class="entry-cover"
-                    href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
-                  >
-                    <img
-                      src="{{ blog.cover_url }}"
-                      alt="{{ blog.title or '文章封面' }}"
-                      loading="lazy"
-                    >
+    {% if stream %}
+      <section class="home-traces" aria-labelledby="traces-title">
+        <header class="section-heading reveal">
+          <span class="trail-anchor section-node" data-trail-node aria-hidden="true"></span>
+          <p class="eyebrow">{% if home_filter %}由近及远 · Entries{% else %}近期 · Recent Traces{% endif %}</p>
+          <h2 id="traces-title">{% if home_filter %}篇目{% else %}行迹{% endif %}</h2>
+        </header>
+
+        <ol class="trace-list">
+          {% for entry in stream %}
+            {% if loop.first or entry.starts_month %}
+              <li class="trace-month"><span>{{ entry.month_label }}</span></li>
+            {% endif %}
+            {% set entry_url = url_for('main.blog_detail', year=entry.year, month=entry.month, html_title=entry.html_title) %}
+            <li
+              class="trace-entry reveal{% if entry.cover_url %} has-cover{% endif %}{% if entry.is_verse %} is-verse{% endif %}"
+              data-side="{{ 'left' if loop.index is odd else 'right' }}"
+            >
+              <span class="trail-anchor trail-node" data-trail-node aria-hidden="true"></span>
+              <p class="trace-stamp" aria-hidden="true">
+                <span class="trace-stamp-day">{{ entry.day_label }}</span>
+                <span class="trace-stamp-year">{{ entry.year_label }} · 周{{ entry.weekday }}</span>
+              </p>
+              <article class="trace-card">
+                <p class="entry-facts">
+                  <time datetime="{{ entry.date }}">{{ entry.date }}</time>
+                  <span>{{ entry.category }}</span>
+                  <span>{{ entry.char_count }} 字</span>
+                </p>
+                <h3 class="trace-title"><a href="{{ entry_url }}">{{ entry.title }}</a></h3>
+                {% if entry.cover_url %}
+                  <a class="trace-cover" href="{{ entry_url }}" tabindex="-1">
+                    <img src="{{ entry.cover_url }}" alt="{{ entry.title or '文章封面' }}" loading="lazy">
                   </a>
                 {% endif %}
-                <div class="entry-line-main">
-                  <h3 class="entry-line-title">
-                    <a href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}">
-                      {{ blog.title }}
-                    </a>
-                  </h3>
-                  <div class="entry-line-preview markdown-body" id="markdown-preview-stream-{{ loop.index }}"></div>
-                  <textarea id="markdown-content-stream-{{ loop.index }}" hidden>{{ blog.content | safe }}</textarea>
-                  <a
-                    class="entry-link"
-                    href="{{ url_for('main.blog_detail', year=blog.year, month=blog.month, html_title=blog.html_title) }}"
-                  >
-                    阅读全文
-                  </a>
-                </div>
+                {% if entry.is_verse %}
+                  {{ verse_sheet(entry, compact=true) }}
+                {% elif entry.excerpt %}
+                  <div class="trace-excerpt prose">
+                    {% for paragraph in entry.excerpt %}
+                      <p>{{ paragraph }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <a class="entry-link" href="{{ entry_url }}">阅读全文 <span aria-hidden="true">→</span></a>
               </article>
-            {% endif %}
+            </li>
           {% endfor %}
-        {% else %}
-          <div class="empty-stage compact">
-            <p>第一篇文章已经入档，接下来继续写，首页会逐渐长成完整的归档流。</p>
-          </div>
-        {% endif %}
+        </ol>
       </section>
-    </section>
+    {% endif %}
   {% else %}
-    <section class="empty-stage">
-      <p class="section-label">Archive Waiting</p>
-      <h1>归档还是空的</h1>
-      <p>第一篇文章写下去之后，这里会开始长出属于你的时间线。</p>
+    <section class="empty-stage home-empty">
+      <p class="eyebrow">Archive Waiting</p>
+      <h2>归档还是空的</h2>
+      <p>第一篇文章写下去之后，这里会开始长出属于你的行迹。</p>
     </section>
   {% endif %}
+
+  {% if archive_years or categories %}
+    <section class="home-index" id="archive" aria-labelledby="index-title">
+      <header class="section-heading reveal">
+        <span class="trail-anchor section-node" data-trail-node aria-hidden="true"></span>
+        <p class="eyebrow">岁时 · 分类 · Index</p>
+        <h2 id="index-title">旧游</h2>
+      </header>
+
+      <div class="index-grid">
+        <div class="season-map reveal" aria-label="按月归档">
+          {% for year in archive_years %}
+            <div class="season-year">
+              <p class="season-year-label">
+                <span>{{ year.year }}</span>
+                <em>{{ year.total }} 篇</em>
+              </p>
+              <ol class="season-months">
+                {% for month in year.months %}
+                  <li>
+                    {% if month.num %}
+                      <a
+                        class="season-cell level-{{ month.level }}{% if month.active %} is-active{% endif %}"
+                        href="{{ url_for('main.archived_blogs', year=month.year, month=month.month) }}"
+                        title="{{ year.year }}年{{ month.month }}月 · {{ month.num }} 篇"
+                        {% if month.active %}aria-current="page"{% endif %}
+                      >
+                        <i class="season-dot" aria-hidden="true"></i>
+                        <span class="season-label" aria-hidden="true">{{ month.label }}</span>
+                        <span class="visually-hidden">{{ year.year }}年{{ month.month }}月，{{ month.num }} 篇</span>
+                      </a>
+                    {% else %}
+                      <span class="season-cell is-empty" aria-hidden="true">
+                        <i class="season-dot"></i>
+                        <span class="season-label">{{ month.label }}</span>
+                      </span>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ol>
+            </div>
+          {% endfor %}
+        </div>
+
+        <span class="index-gutter" aria-hidden="true"></span>
+
+        <nav class="category-toc reveal" aria-label="分类目录">
+          <ul>
+            {% for category in categories %}
+              {% set category_active = home_filter and home_filter.kind == 'category' and home_filter.category == category.name %}
+              <li>
+                <a
+                  href="{{ url_for('main.categorized_blogs', categoryName=category.name) }}"
+                  {% if category_active %}class="is-active" aria-current="page"{% endif %}
+                >
+                  <span>{{ category.name }}</span>
+                  <i aria-hidden="true"></i>
+                  <em>{{ category.num }}</em>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="home-colophon" aria-label="跋">
+    <span class="trail-anchor trail-end" data-trail-end aria-hidden="true"></span>
+    <svg class="colophon-geese" viewBox="0 0 160 70" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.6">
+        <path d="M18 58 q4 -4 8 -1 q4 -4 8 1" />
+        <path d="M46 44 q4 -4 8 -1 q4 -4 8 1" />
+        <path d="M76 30 q5 -5 10 -1 q5 -5 10 1" />
+        <path d="M112 38 q4 -4 8 -1 q4 -4 8 1" />
+        <path d="M138 50 q3 -3 6 -1 q3 -3 6 1" />
+      </g>
+    </svg>
+    <p class="colophon-verse">泥上偶然留指爪<br>鸿飞那复计东西</p>
+    <p class="colophon-source">苏轼《和子由渑池怀旧》</p>
+  </section>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/preview.js') }}"></script>
-<script>
-  document.querySelectorAll('[id^="markdown-content-"]').forEach((textarea) => {
-    const contentId = textarea.id;
-    const previewId = contentId.replace('content', 'preview');
-
-    renderMarkdownPreview(contentId, previewId);
-  });
-</script>
+<script src="{{ url_for('static', filename='js/home.js', v='20260923-xueni') }}"></script>
 {% endblock %}

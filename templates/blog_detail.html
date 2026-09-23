@@ -22,15 +22,16 @@
 {% endblock %}
 
 {% block content %}
-<section class="reading-shell">
+<section class="reading-shell{% if verse %} is-verse{% endif %}">
   <header class="reading-lead">
-    <p class="section-label">Archive Entry</p>
+    <a class="toolbar-link back-link" href="{{ url_for('main.index') }}"><span aria-hidden="true">←</span> 返回档案首页</a>
+    <p class="section-label">{{ blog.category }}</p>
     <h1 class="reading-title">{{ blog.title }}</h1>
     <div class="reading-meta">
-      <span>{{ blog.date }} {{ blog.time }}</span>
-      <span>{{ blog.category }}</span>
+      <span><time datetime="{{ blog.date }}">{{ date_cn }}</time></span>
+      <span>{{ char_total }} 字</span>
+      <span>{{ blog.time[:5] }}</span>
     </div>
-    <a class="toolbar-link back-link" href="{{ url_for('main.index') }}">返回档案首页</a>
   </header>
 
   {% if blog.cover_url %}
@@ -41,10 +42,24 @@
   </figure>
   {% endif %}
 
-  <article class="reading-article markdown-body" id="markdown-preview">
-    <div class="markdown-fallback" data-markdown-fallback>{{ blog.content }}</div>
-  </article>
+  {% if verse %}
+    <div class="verse-sheet reading-verse" lang="zh-CN" style="--verse-chars: {{ verse_chars }}">
+      <div class="verse-sheet-scroll" tabindex="0" aria-label="{{ blog.title }}（竖排）">
+        <div class="verse-sheet-page">
+          {% for line in verse %}
+            <p>{{ line }}</p>
+          {% endfor %}
+          <p class="verse-sheet-sign">{{ date_cn }} · Silver</p>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <article class="reading-article markdown-body" id="markdown-preview">
+      <div class="markdown-fallback" data-markdown-fallback>{{ blog.content }}</div>
+    </article>
+  {% endif %}
   <textarea id="markdown-content" hidden>{{ blog.content }}</textarea>
+  <p class="reading-end" aria-hidden="true"><span>雪</span><span>泥</span></p>
 </section>
 
 <div class="article-image-viewer" id="article-image-viewer" aria-hidden="true">

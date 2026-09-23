@@ -28,10 +28,19 @@
 
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
+        document.documentElement.classList.add('js');
       })();
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.cn">
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.cn/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Noto+Serif+SC:wght@400;600;900&display=swap"
+      media="print"
+      onload="this.media='all'"
+    >
     {% block vendor_styles %}{% endblock %}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css', v='20260911-diary-calendar') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css', v='20260923-xueni') }}">
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site-footer.css') }}">
   </head>
@@ -51,7 +60,7 @@
     <script>
       window.BLOG_CSRF_TOKEN = "{{ csrf_token() }}";
     </script>
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js', v='20260923') }}"></script>
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>

@@ -12,6 +12,16 @@ from flask import (
 from app.database import DatabaseHelper, Blog, Diary, normalize_cover_url
 from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
 from app.diary_metadata import fetch_diary_metadata
+from app.home_view import (
+    archive_calendar,
+    archive_stats,
+    build_entries,
+    char_count,
+    cn_date,
+    cn_month,
+    cn_year,
+    verse_lines,
+)
 from app.diary_activity import (
     activity_summary,
     build_activity_calendar,
@@ -56,14 +66,19 @@ def get_site_context():
         "personal_intro": PERSONAL_INTRO,
     }
 
-def init_index_with_blogs(_blogs):
-    categories = dbHelper.get_all_categories()
-    dateList = dbHelper.get_all_date()
+def init_index_with_blogs(_blogs, home_filter=None):
+    categories = [category for category in dbHelper.get_all_categories() if category.get("num")]
+    all_blogs = dbHelper.get_all_blogs()
+    active_year = home_filter.get("year") if home_filter else None
+    active_month = home_filter.get("month") if home_filter else None
     return render_template(
         'index.html',
         blogs=_blogs,
+        entries=build_entries(_blogs),
         categories=categories,
-        dateList=dateList,
+        archive_years=archive_calendar(all_blogs, active_year, active_month),
+        stats=archive_stats(all_blogs),
+        home_filter=home_filter,
         **get_site_context(),
     )
 
@@ -549,9 +564,14 @@ def blog_detail(year, month, html_title):
         return render_template('404.html', **get_site_context()), 404
 
     article_view_tracking = _article_view_tracking_config(blog)
+    verse = verse_lines(blog.content)
     return render_template(
         'blog_detail.html',
         blog=blog,
+        verse=verse,
+        verse_chars=max([len(line) for line in verse] + [len(cn_date(blog.date)) + 4]) if verse else 0,
+        date_cn=cn_date(blog.date),
+        char_total=char_count(blog.content),
         article_view_tracking=article_view_tracking,
         **get_site_context(),
     )
@@ -728,14 +748,27 @@ def logout():
 def categorized_blogs(categoryName):
     blogs = dbHelper.get_blogs_by_category(categoryName)
     # 按最新时间排序blogs
-    blogs.reverse()    
-    return init_index_with_blogs(blogs)
+    blogs.reverse()
+    return init_index_with_blogs(blogs, {
+        "kind": "category",
+        "title": categoryName,
+        "category": categoryName,
+    })
 
 @main.route('/date_blogs/<string:year>/<string:month>')
 def archived_blogs(year, month):
     blogs = dbHelper.get_blogs_by_date(year, month)
     blogs.reverse()  # 按最新时间排序blogs
-    return init_index_with_blogs(blogs)
+    try:
+        title = "{0}年{1}".format(cn_year(year), cn_month(month))
+    except (IndexError, ValueError):
+        title = "{0}.{1}".format(year, month)
+    return init_index_with_blogs(blogs, {
+        "kind": "date",
+        "title": title,
+        "year": year,
+        "month": month,
+    })
 
 # 添加评论
 def add_comment(blog_id, comment):

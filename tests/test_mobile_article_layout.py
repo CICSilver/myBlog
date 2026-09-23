@@ -17,13 +17,9 @@ class MobileArticleLayoutTest(unittest.TestCase):
         self.mobile_styles = self.stylesheet.split("@media (max-width: 760px)", 1)[1]
         self.desktop_styles = self.stylesheet.split("@media (max-width: 760px)", 1)[0]
 
-    def test_detail_header_hides_only_its_mobile_note(self):
+    def test_shared_header_hides_its_note_on_mobile(self):
         self.assertIn(
-            ".detail-page .home-cover-note {\n        display: none",
-            self.mobile_styles,
-        )
-        self.assertIn(
-            '.detail-page .home-cover-main {\n        grid-template-columns: minmax(0, 1fr) 76px',
+            ".home-cover-note {\n        display: none",
             self.mobile_styles,
         )
         self.assertNotIn("detail-page", self.index_template)
@@ -60,15 +56,13 @@ class MobileArticleLayoutTest(unittest.TestCase):
         self.assertIn("margin: 1.2rem auto", self.mobile_styles)
         self.assertIn("border-radius: 8px", self.mobile_styles)
 
-    def test_desktop_cards_and_article_template_remain_intact(self):
+    def test_desktop_article_is_an_open_reading_column(self):
         self.assertIn(
-            ".hero-copyblock,\n.feature-article,\n.sidebar-block,\n.reading-lead,\n.reading-article,",
+            ".reading-shell {\n    display: grid;\n    gap: 44px;\n    max-width: 720px",
             self.desktop_styles,
         )
-        self.assertIn(
-            ".reading-lead,\n.reading-article {\n    padding: clamp(24px, 4vw, 40px)",
-            self.desktop_styles,
-        )
+        self.assertNotIn(".hero-copyblock,\n.reading-lead", self.desktop_styles)
+        self.assertIn(".reading-article.markdown-body {\n    font-family: var(--font-serif)", self.desktop_styles)
         self.assertIn('class="reading-lead"', self.detail_template)
         self.assertIn('class="reading-article markdown-body"', self.detail_template)
 

@@ -62,6 +62,13 @@ function initThemeToggle() {
         button.addEventListener("click", () => {
             const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
             applyTheme(currentTheme === "dark" ? "light" : "dark", true);
+
+            button.classList.remove("is-pulled");
+            void button.offsetWidth;
+            button.classList.add("is-pulled");
+        });
+        button.addEventListener("animationend", () => {
+            button.classList.remove("is-pulled");
         });
     });
 

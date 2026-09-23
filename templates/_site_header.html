@@ -4,22 +4,24 @@
 {% set archive_note = site_cover_note | default("泥留鸿爪，旧游成文。") %}
 {% set admin_bookmark_menu_id = site_cover_menu_id | default("site-admin-bookmark-menu") %}
 <header class="home-cover" aria-labelledby="{{ cover_title_id }}">
-  <span class="home-cover-plum" aria-hidden="true"></span>
   <div class="home-cover-main">
     <a class="home-cover-brand" href="{{ url_for('main.index') }}">
-      <span class="home-cover-kicker">Creative Writing Archive</span>
-      {% if cover_title_tag == "h1" %}
-        <h1 class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</h1>
-      {% else %}
-        <span class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</span>
-      {% endif %}
+      <span class="home-cover-mark" aria-hidden="true"></span>
+      <span class="home-cover-words">
+        {% if cover_title_tag == "h1" %}
+          <h1 class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</h1>
+        {% else %}
+          <span class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</span>
+        {% endif %}
+        <span class="home-cover-kicker">Creative Writing Archive</span>
+      </span>
       {% if cover_section_title %}
         <span class="home-cover-section-title">{{ cover_section_title }}</span>
       {% endif %}
     </a>
 
     <div class="home-cover-note" aria-label="Archive Note">
-      <span aria-hidden="true">“</span>
+      <span aria-hidden="true"></span>
       <p>{{ archive_note }}</p>
     </div>
 
