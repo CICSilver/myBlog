@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_diary_icons.html" import diary_icon %}
+{% from "_page_seal.html" import page_seal %}
 
 {% block title %}日记 | {{ site_name }}{% endblock %}
 {% block body_class %}diary-page{% endblock %}
@@ -18,21 +19,17 @@
 
 {% block content %}
   <main class="diary-shell" aria-labelledby="diary-page-title">
-    <section class="diary-overview">
-      <div class="diary-date-display">
+    <header class="page-masthead diary-overview">
+      <div class="page-masthead-copy diary-date-display">
         {% if is_current_month %}
-          <p class="section-label">Daily Notes</p>
+          <p class="eyebrow">日记 · Daily Notes</p>
         {% else %}
-          <p class="section-label">Month Archive</p>
+          <p class="eyebrow">月录 · Month Archive</p>
         {% endif %}
-        <h2 id="diary-page-title">
-          {% if is_current_month %}
-            写下此刻
-          {% else %}
-            {{ archive_year }} 年 {{ archive_month }} 月
-          {% endif %}
+        <h2 id="diary-page-title" class="page-masthead-title">
+          {% if is_current_month %}写下此刻{% else %}{{ archive_year }} 年 {{ archive_month }} 月{% endif %}{{ page_seal("日记") }}
         </h2>
-        <p class="diary-date-note">
+        <p class="page-masthead-note diary-date-note">
           {% if is_current_month %}
             {{ today_date }} · {{ today_weekday }}
           {% else %}
@@ -40,10 +37,11 @@
           {% endif %}
         </p>
       </div>
-      <p class="diary-overview-stats">
-        {{ '今年' if archive_year == today_month[:4] | int else archive_year ~ ' 年' }}记录 <b>{{ activity.recorded_days }}</b> 天 · 连续 <b>{{ activity.current_streak }}</b> 天
-      </p>
-    </section>
+      <ul class="page-masthead-stats diary-overview-stats" aria-label="记录统计">
+        <li><strong>{{ activity.recorded_days }}</strong><span>{{ '今年' if archive_year == today_month[:4] | int else archive_year ~ ' 年' }}记录 · 天</span></li>
+        <li><strong>{{ activity.current_streak }}</strong><span>连续 · 天</span></li>
+      </ul>
+    </header>
 
     <div class="diary-columns">
       <div class="diary-main">
@@ -104,7 +102,7 @@
                   </button>
                 </div>
                 <p id="diary-status" class="diary-status" role="status" aria-live="polite"></p>
-                <button id="diary-submit" class="diary-save-button" type="submit" title="{% if today_diary %}更新日记{% else %}存入日记{% endif %}">
+                <button id="diary-submit" class="diary-save-button seal-button" type="submit" title="{% if today_diary %}更新日记{% else %}存入日记{% endif %}">
                   {% if today_diary %}更新日记{% else %}存入日记{% endif %}
                 </button>
               </div>
@@ -116,12 +114,10 @@
 
         <section class="diary-entry-list" aria-labelledby="diary-entry-list-title">
           {% if is_current_month %}
-            <div class="diary-list-heading">
-              <div>
-                <p class="section-label">Month Archive</p>
-                <h2 id="diary-entry-list-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
-              </div>
-              <span>{{ archive_count }} 篇</span>
+            <div class="diary-list-heading inner-heading">
+              <h2 id="diary-entry-list-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
+              <p class="eyebrow">月录 · Month Archive</p>
+              <span class="inner-heading-aside">凡 {{ archive_count }} 篇</span>
             </div>
           {% else %}
             <h2 id="diary-entry-list-title" class="visually-hidden">{{ archive_year }} 年 {{ archive_month }} 月的日记</h2>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_diary_icons.html" import diary_icon %}
+{% from "_page_seal.html" import page_seal %}
 
 {% macro side_count(row) -%}
   {% if row.kind == "static" %}
@@ -38,23 +39,23 @@
 
 {% block content %}
   <main class="fit-shell" aria-labelledby="fit-page-title">
-    <section class="fit-overview">
-      <div class="fit-date-display">
-        <p class="section-label">Training Log</p>
-        <h2 id="fit-page-title">
-          {% if is_current_month %}今天练什么{% else %}{{ archive_year }} 年 {{ archive_month }} 月{% endif %}
+    <header class="page-masthead fit-overview">
+      <div class="page-masthead-copy fit-date-display">
+        <p class="eyebrow">健身 · Training Log</p>
+        <h2 id="fit-page-title" class="page-masthead-title">
+          {% if is_current_month %}今天练什么{% else %}{{ archive_year }} 年 {{ archive_month }} 月{% endif %}{{ page_seal("健身") }}
         </h2>
-        <p class="fit-date-note">
+        <p class="page-masthead-note fit-date-note">
           {% if is_current_month %}{{ today_date }} · {{ today_weekday }} · {{ last_session }}
           {% else %}{{ month_stats.count }} 次训练 · {{ month_stats.sets }} 组{% endif %}
         </p>
       </div>
-      <div class="fit-kpis">
-        <div class="fit-kpi"><b>{{ month_stats.count }}</b><span>本月训练</span></div>
-        <div class="fit-kpi"><b>{{ month_stats.sets }}</b><span>本月组数</span></div>
-        <div class="fit-kpi"><b>{{ activity.week_streak }}</b><span>连续周</span></div>
-      </div>
-    </section>
+      <ul class="page-masthead-stats fit-kpis" aria-label="本月统计">
+        <li><strong>{{ month_stats.count }}</strong><span>本月训练</span></li>
+        <li><strong>{{ month_stats.sets }}</strong><span>本月组数</span></li>
+        <li><strong>{{ activity.week_streak }}</strong><span>连续周</span></li>
+      </ul>
+    </header>
 
     {% set has_volume = chart.trend_path or chart.bars | selectattr("recorded") | list %}
     {% set chart_view = "volume" if has_volume else "body" %}
@@ -63,19 +64,19 @@
         <div class="fit-chart-head">
           {% if has_volume %}
             <div class="fit-chart-title" data-chart-title="volume"{% if chart_view != "volume" %} hidden{% endif %}>
-              <p class="section-label">Volume</p>
               <h2 id="fit-vol-title">每日训练量</h2>
+              <p class="eyebrow">容量 · Volume</p>
             </div>
           {% endif %}
           {% if body_chart %}
             <div class="fit-chart-title" data-chart-title="body"{% if chart_view != "body" %} hidden{% endif %}>
-              <p class="section-label">Body</p>
               <h2 id="fit-body-title">体重与腰围</h2>
+              <p class="eyebrow">身体 · Body</p>
             </div>
           {% endif %}
           {% if has_volume and body_chart %}
             {# 两张图量纲不同，不叠在一起看，用切换整块换掉。 #}
-            <div class="fit-chart-switch" role="tablist" aria-label="选择图表" data-chart-switch>
+            <div class="fit-chart-switch ink-toggle" role="tablist" aria-label="选择图表" data-chart-switch>
               <button type="button" role="tab" id="fit-tab-volume" data-chart-tab="volume"
                       aria-selected="true" aria-controls="fit-chart-volume">训练量</button>
               <button type="button" role="tab" id="fit-tab-body" data-chart-tab="body"
@@ -240,7 +241,7 @@
                 <strong id="fit-editor-title">{{ today_date[5:7] }} 月 {{ today_date[8:10] }} 日</strong>
                 <span>{{ today_weekday }} · <span data-save-state>{% if today_workout %}已保存{% else %}未保存{% endif %}</span></span>
               </div>
-              <div class="fit-type-switch" role="group" aria-label="今天练什么" data-day-type>
+              <div class="fit-type-switch ink-toggle" role="group" aria-label="今天练什么" data-day-type>
                 {% for value in day_types %}
                   {% set active = (today_workout.day_type if today_workout else '上肢') == value %}
                   <button type="button" data-value="{{ value }}" class="{{ 'is-active' if active }}" aria-pressed="{{ 'true' if active else 'false' }}">{{ value }}</button>
@@ -339,9 +340,9 @@
             <textarea class="fit-note" id="fit-note" data-field="note" rows="3" placeholder="今天的状态、卡点、下次要调整的地方…">{{ today_workout.note if today_workout else '' }}</textarea>
 
             <div class="fit-form-footer">
-              <button class="fit-ghost-button" type="button" data-repeat-last style="min-height:34px;">⟲ 套用上次训练</button>
+              <button class="fit-ghost-button is-repeat" type="button" data-repeat-last>⟲ 套用上次训练</button>
               <p class="fit-status" data-fitness-status role="status" aria-live="polite"></p>
-              <button class="fit-save-button" type="button" data-fitness-submit>{% if today_workout %}更新训练{% else %}存入训练{% endif %}</button>
+              <button class="fit-save-button seal-button" type="button" data-fitness-submit>{% if today_workout %}更新训练{% else %}存入训练{% endif %}</button>
             </div>
           </section>
         {% else %}
@@ -349,12 +350,10 @@
         {% endif %}
 
         <section class="fit-log-list" aria-labelledby="fit-log-title">
-          <div class="fit-list-heading">
-            <div>
-              <p class="section-label">Month Archive</p>
-              <h2 id="fit-log-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
-            </div>
-            <span>{{ month_stats.count }} 次 · {{ month_stats.sets }} 组</span>
+          <div class="fit-list-heading inner-heading">
+            <h2 id="fit-log-title">{{ archive_year }} 年 {{ archive_month }} 月</h2>
+            <p class="eyebrow">月录 · Month Archive</p>
+            <span class="inner-heading-aside">{{ month_stats.count }} 次 · {{ month_stats.sets }} 组</span>
           </div>
 
           {% for workout in workouts %}

@@ -21,15 +21,7 @@
     visibility: hidden;
 }
 
-.eyebrow {
-    margin: 0;
-    color: var(--ink-faint);
-    font-family: var(--font-latin);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-}
+/* .eyebrow 与其它内页共用，定义在 style.css。 */
 
 /* ---------- 小径 ---------- */
 

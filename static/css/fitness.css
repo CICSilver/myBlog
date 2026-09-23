@@ -1,92 +1,25 @@
 /* Fitness log: overview, today composer, month stream, sidebar panels.
-   Reuses the site tokens in style.css; adds only .fit-* classes. */
+   Reuses the site tokens and the inner-page pieces in style.css (卷头、章节、
+   印章按钮、墨色开关)；这里只补 .fit-* 自己的形状。和日记同一副骨架：
+   左边日子、中缝一条小径、右边内容，侧栏只靠细线分隔。 */
 
 .fit-shell {
     display: grid;
-    gap: 22px;
+    gap: 44px;
     width: min(100%, 1080px);
     margin: 0 auto;
 }
 
-/* ---------- Overview ---------- */
-
-.fit-overview {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 24px;
-    padding: 4px 0 18px;
-    border-bottom: 1px solid var(--line);
-}
-
-.fit-date-display {
-    display: grid;
-    gap: 5px;
-}
-
-.fit-date-display h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 2.6rem;
-    font-weight: 700;
-    line-height: 1.05;
-}
-
-.fit-date-note {
-    color: var(--ink-soft);
-    font-size: 0.98rem;
-    line-height: 1.6;
-}
-
-.fit-kpis {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-}
-
-.fit-kpi {
-    display: grid;
-    gap: 2px;
-    padding: 0 18px;
-    border-left: 1px solid var(--line);
-    text-align: right;
-}
-
-.fit-kpi:first-child {
-    border-left: 0;
-}
-
-.fit-kpi b {
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1.1;
-}
-
-.fit-kpi b i {
-    margin-left: 2px;
-    color: var(--ink-soft);
-    font-style: normal;
-    font-size: 0.9rem;
-}
-
-.fit-kpi span {
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-}
-
 .fit-columns {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 372px;
-    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 64px;
     align-items: start;
 }
 
 .fit-main {
     display: grid;
-    gap: 22px;
+    gap: 64px;
     min-width: 0;
 }
 
@@ -99,18 +32,14 @@
 
 .fit-side-inner {
     display: grid;
-    gap: 14px;
+    gap: 40px;
 }
 
 /* ---------- Today composer ---------- */
 
 .fit-composer {
     display: grid;
-    gap: 14px;
-    padding: 18px 22px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
+    gap: 22px;
 }
 
 .fit-composer-head {
@@ -124,50 +53,22 @@
 .fit-composer-date {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
 }
 
 .fit-composer-date strong {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-family: var(--font-serif);
+    font-size: 1.44rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
     line-height: 1.1;
 }
 
 .fit-composer-date span {
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-}
-
-.fit-type-switch {
-    display: inline-flex;
-    padding: 3px;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
-    background: var(--control-surface-soft);
-}
-
-.fit-type-switch button {
-    min-height: 28px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--ink-soft);
-    font: inherit;
-    font-size: 0.86rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.fit-type-switch button:hover {
-    color: var(--ink);
-}
-
-.fit-type-switch button.is-active {
-    background: var(--accent);
-    color: var(--button-ink);
-    font-weight: 600;
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
 }
 
 /* Body-part chips */
@@ -180,75 +81,91 @@
 }
 
 .fit-chip-label {
+    margin-right: 4px;
     color: var(--ink-faint);
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
+    font-size: 0.76rem;
+    letter-spacing: 0.22em;
 }
 
 .fit-chip {
     min-height: 28px;
-    padding: 0 12px;
+    padding: 0 12px 0 calc(12px + 0.08em);
     border: 1px solid var(--line-strong);
     border-radius: 999px;
     background: transparent;
     color: var(--ink-soft);
-    font: inherit;
-    font-size: 0.85rem;
+    font-family: var(--font-serif);
+    font-size: 0.86rem;
+    letter-spacing: 0.08em;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 
 .fit-chip:hover {
-    border-color: var(--focus-border);
+    border-color: var(--ink-soft);
     color: var(--ink);
 }
 
 .fit-chip.is-active {
-    border-color: transparent;
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-    font-weight: 600;
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
 }
 
-/* Exercise blocks */
+.fit-chip:focus-visible,
+.fit-ghost-button:focus-visible,
+.fit-icon-button:focus-visible,
+.fit-rpe-scale button:focus-visible {
+    outline: 2px solid var(--focus-border);
+    outline-offset: 2px;
+}
+
+/* Exercise blocks: 每个动作一段，段首一道细线，编号是一枚朱色斜体数字。 */
 
 .fit-exercise-stack {
     display: grid;
-    gap: 10px;
+    gap: 18px;
+}
+
+/* 今天还没加动作时不占位，免得题头和候选之间空出一截。 */
+.fit-exercise-stack:not(:has(.fit-exercise)) {
+    display: none;
 }
 
 .fit-exercise {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--control-surface-soft);
+    border-top: 1px solid var(--line-strong);
 }
 
 .fit-exercise-head {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0 6px;
 }
 
 .fit-exercise-index {
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
+    color: var(--seal);
+    font-family: var(--font-latin);
+    font-size: 1.2rem;
+    font-style: italic;
+    font-weight: 600;
+    font-variant-numeric: lining-nums;
+    line-height: 1;
 }
 
 .fit-exercise-head h3 {
     flex: 1;
     min-width: 0;
     margin: 0;
-    font-size: 1rem;
+    font-family: var(--font-serif);
+    font-size: 1.08rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
 }
 
 .fit-exercise-sides {
     color: var(--ink-faint);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -258,10 +175,10 @@
 }
 
 .fit-exercise-volume {
-    padding-left: 10px;
+    padding-left: 12px;
     border-left: 1px solid var(--line);
     color: var(--ink-faint);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -270,10 +187,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     width: 26px;
     height: 26px;
     border: 0;
-    border-radius: 6px;
+    border-radius: 50%;
     background: transparent;
     color: var(--ink-faint);
     cursor: pointer;
@@ -281,7 +199,7 @@
 }
 
 .fit-icon-button:hover {
-    background: var(--ghost-hover);
+    background: var(--danger-soft);
     color: var(--danger);
 }
 
@@ -299,7 +217,7 @@
 .fit-sets {
     display: grid;
     gap: 2px;
-    padding: 8px 12px 10px;
+    padding: 4px 0 6px;
 }
 
 /* Two row shapes, picked by the movement's own unilateral flag — never by
@@ -309,7 +227,7 @@
     display: grid;
     grid-template-columns: 30px 108px 108px 26px;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .fit-exercise.is-unilateral .fit-set-head,
@@ -321,8 +239,8 @@
    right column per set there is no width left for inline unit labels. */
 .fit-set-head span {
     color: var(--ink-faint);
-    font-size: 0.74rem;
-    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
 }
 
 .fit-set-head span i {
@@ -333,24 +251,25 @@
 
 .fit-set-head .is-side {
     color: var(--accent);
-    font-weight: 600;
 }
 
 .fit-set-index {
     color: var(--ink-faint);
-    font-size: 0.85rem;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-latin);
+    font-size: 1rem;
+    font-style: italic;
+    font-variant-numeric: lining-nums tabular-nums;
 }
 
+/* 数字落在一道底线上，和写作台的输入框同一种纸面。 */
 .fit-field {
     display: flex;
     align-items: center;
     gap: 4px;
-    min-height: 32px;
-    padding: 0 8px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--control-surface);
+    min-height: 34px;
+    padding: 0 2px;
+    border-bottom: 1px solid var(--line-strong);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .fit-field input {
@@ -360,9 +279,14 @@
     background: transparent;
     color: var(--ink);
     font: inherit;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-variant-numeric: tabular-nums;
     outline: none;
+}
+
+.fit-field input::placeholder {
+    color: var(--ink-faint);
+    opacity: 0.7;
 }
 
 .fit-field em {
@@ -374,29 +298,35 @@
 }
 
 .fit-field:focus-within {
-    border-color: var(--focus-border);
-    background: var(--control-focus-surface);
-    box-shadow: var(--focus-ring);
+    border-bottom-color: var(--accent);
+    box-shadow: 0 1px 0 var(--accent);
 }
 
 .fit-ghost-button {
     justify-self: start;
     min-height: 28px;
-    padding: 0 10px;
+    margin-top: 6px;
+    padding: 0 12px 0 calc(12px + 0.08em);
     border: 1px dashed var(--line-strong);
-    border-radius: 6px;
+    border-radius: 999px;
     background: transparent;
     color: var(--ink-soft);
-    font: inherit;
+    font-family: var(--font-serif);
     font-size: 0.84rem;
+    letter-spacing: 0.08em;
     cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .fit-ghost-button:hover {
-    border-color: var(--accent);
-    background: var(--accent-soft);
-    color: var(--accent-strong);
+    border-color: var(--ink-soft);
+    border-style: solid;
+    color: var(--ink);
+}
+
+.fit-ghost-button.is-repeat {
+    min-height: 34px;
+    margin-top: 0;
 }
 
 /* Exercise picker: the movement list is fixed, so this is a chip row rather
@@ -406,9 +336,9 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 10px 12px;
-    border: 1px dashed var(--line-strong);
-    border-radius: 8px;
+    padding: 14px 0;
+    border-top: 1px dashed var(--line-strong);
+    border-bottom: 1px dashed var(--line-strong);
 }
 
 .fit-add-divider {
@@ -427,25 +357,26 @@
 .fit-subhead {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    gap: 12px;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
 }
 
 .fit-subhead::after {
     content: "";
     flex: 1;
     height: 1px;
-    background: var(--divider-line);
-    opacity: 0.4;
+    background: var(--line);
 }
 
 .fit-inline-fields {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    gap: 18px 22px;
 }
 
 .fit-labeled {
@@ -456,15 +387,16 @@
 
 .fit-labeled > span {
     color: var(--ink-faint);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.16em;
 }
 
 .fit-select {
     min-height: 32px;
     padding: 0 8px;
     border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--control-surface);
+    border-radius: 4px;
+    background: transparent;
     color: var(--ink);
     font: inherit;
     font-size: 0.92rem;
@@ -484,6 +416,7 @@
     color: var(--ink-faint);
     font-size: 0.72rem;
     font-style: normal;
+    letter-spacing: 0.04em;
     opacity: 0.85;
     white-space: nowrap;
 }
@@ -497,67 +430,76 @@
     color: var(--ink-faint);
     font-size: 0.74rem;
     font-style: normal;
+    letter-spacing: 0.04em;
     opacity: 0.85;
     text-align: right;
 }
 
 .fit-rpe-scale {
     display: flex;
-    gap: 3px;
+    justify-content: space-between;
+    gap: 4px;
+    margin-top: 6px;
 }
 
 .fit-rpe-scale button {
-    flex: 1;
-    height: 32px;
+    flex: 0 0 34px;
+    height: 34px;
+    padding: 0;
     border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--control-surface);
+    border-radius: 50%;
+    background: transparent;
     color: var(--ink-faint);
-    font: inherit;
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-latin);
+    font-size: 1rem;
+    font-weight: 600;
+    font-variant-numeric: lining-nums tabular-nums;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .fit-rpe-scale button:hover {
-    border-color: var(--focus-border);
+    border-color: var(--ink-soft);
     color: var(--ink);
 }
 
 .fit-rpe-scale button.is-active {
-    border-color: transparent;
-    background: var(--accent);
-    color: var(--button-ink);
-    font-weight: 700;
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
 }
 
+/* 整场备注：和日记同一张横格笺，只是短一些。 */
 .fit-note {
+    --fit-note-step: 2rem;
     width: 100%;
-    min-height: 84px;
-    padding: 10px 12px;
+    min-height: calc(var(--fit-note-step) * 3 + 32px);
+    padding: 16px 18px;
     border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--control-surface);
+    border-radius: 2px;
+    background-color: var(--verse-paper);
+    background-image: linear-gradient(to bottom, transparent calc(var(--fit-note-step) - 1px), var(--letter-rule) calc(var(--fit-note-step) - 1px));
+    background-position: 0 16px;
+    background-size: 100% var(--fit-note-step);
+    background-attachment: local;
     color: var(--ink);
-    font: inherit;
+    font-family: var(--font-serif);
     font-size: 0.96rem;
-    line-height: 1.7;
+    letter-spacing: 0.03em;
+    line-height: var(--fit-note-step);
     resize: vertical;
 }
 
 .fit-note:focus {
     outline: none;
-    border-color: var(--focus-border);
-    background: var(--control-focus-surface);
-    box-shadow: var(--focus-ring);
+    border-color: var(--divider-accent);
 }
 
 .fit-form-footer {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px 14px;
+    gap: 10px 16px;
     min-height: 42px;
 }
 
@@ -566,104 +508,140 @@
     min-width: 0;
     color: var(--ink-faint);
     font-size: 0.85rem;
+    text-align: right;
 }
 
-.fit-save-button {
-    min-height: 38px;
-    padding: 0 22px;
-    border: 0;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--button-ink);
-    font: inherit;
+.fit-save-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+}
+
+.fit-status.is-error {
+    color: var(--danger);
+}
+
+.fit-status.is-ok {
+    color: var(--success);
+}
+
+.fit-readonly-note {
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-family: var(--font-serif);
     font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: var(--button-shadow);
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    letter-spacing: 0.12em;
 }
 
-.fit-save-button:hover {
-    background: var(--accent-strong);
-    transform: translateY(-1px);
-}
-
-/* ---------- Month stream ---------- */
+/* ---------- Month stream: 日子 · 小径 · 当天练了什么 ---------- */
 
 .fit-log-list {
+    --fit-date-col: 72px;
+    --fit-trail-gap: 56px;
     display: grid;
-    gap: 12px;
 }
 
 .fit-list-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 4px;
-}
-
-.fit-list-heading h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.fit-list-heading > span {
-    color: var(--ink-faint);
-    font-size: 0.86rem;
+    padding-bottom: 30px;
 }
 
 .fit-log {
+    position: relative;
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
-    gap: 16px;
-    padding: 16px 20px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-    transition: border-color 0.2s ease, transform 0.2s ease;
+    grid-template-columns: var(--fit-date-col) minmax(0, 1fr);
+    column-gap: var(--fit-trail-gap);
+    padding-bottom: 40px;
 }
 
-.fit-log:hover {
-    border-color: var(--line-strong);
-    transform: translateY(-1px);
+.fit-log::before,
+.fit-log::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+}
+
+.fit-log::before {
+    top: 0;
+    bottom: 0;
+    left: calc(var(--fit-date-col) + var(--fit-trail-gap) / 2);
+    width: 1px;
+    background: var(--line-strong);
+}
+
+.fit-log:first-of-type::before {
+    top: 24px;
+}
+
+.fit-log:last-of-type::before {
+    background: linear-gradient(var(--line-strong), transparent);
+}
+
+.fit-log::after {
+    top: 19px;
+    left: calc(var(--fit-date-col) + var(--fit-trail-gap) / 2 - 6px);
+    width: 13px;
+    height: 13px;
+    border: 1px solid var(--ink-soft);
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: 0 0 0 5px var(--bg);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.fit-log:hover::after {
+    border-color: var(--seal);
+    background: var(--seal);
 }
 
 .fit-log-date {
     display: grid;
-    gap: 1px;
-    justify-items: center;
+    justify-items: end;
     align-content: start;
-    padding-top: 2px;
+    gap: 8px;
+    padding-top: 12px;
+    text-align: right;
 }
 
 .fit-log-date strong {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
+    font-family: var(--font-latin);
+    font-size: 2.9rem;
+    font-style: italic;
+    font-weight: 500;
+    font-variant-numeric: lining-nums;
+    line-height: 0.8;
+    transition: color 0.3s ease;
+}
+
+.fit-log:hover .fit-log-date strong {
+    color: var(--accent-strong);
 }
 
 .fit-log-date span {
     color: var(--ink-faint);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
 }
 
 .fit-log-main {
     display: grid;
-    gap: 10px;
+    align-content: start;
+    gap: 12px;
     min-width: 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
 }
 
 .fit-log-meta {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px 12px;
-    color: var(--ink-soft);
-    font-size: 0.84rem;
+    gap: 6px 14px;
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
 }
 
 .fit-log-meta svg {
@@ -678,31 +656,38 @@
     stroke-linejoin: round;
 }
 
+/* 部位是一枚小方签：上肢墨色、下肢朱色、休息只剩虚线。 */
 .fit-tag {
+    display: inline-flex;
+    align-items: center;
     min-height: 22px;
-    padding: 2px 10px;
-    border-radius: 999px;
+    padding: 0 7px 0 calc(7px + 0.12em);
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: var(--font-serif);
     font-size: 0.78rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
 }
 
 .fit-tag.is-lower {
-    background: var(--accent-soft);
+    border-color: var(--divider-accent);
     color: var(--accent-strong);
 }
 
 .fit-tag.is-upper {
-    background: var(--success-soft);
-    color: var(--success);
+    border-color: var(--ink-soft);
+    color: var(--ink);
 }
 
 .fit-tag.is-full {
-    background: var(--warning-soft);
+    border-color: var(--warning-line);
     color: var(--warning);
 }
 
 .fit-tag.is-rest {
-    background: var(--ghost-hover);
+    border-style: dashed;
     color: var(--ink-faint);
 }
 
@@ -711,7 +696,6 @@
     gap: 0;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--line);
     list-style: none;
 }
 
@@ -720,14 +704,20 @@
     grid-template-columns: minmax(0, 1fr) auto auto auto 30px;
     align-items: center;
     gap: 14px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--line);
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--line-strong);
     font-size: 0.9rem;
+}
+
+.fit-log-moves li:last-child {
+    border-bottom: 0;
 }
 
 .fit-log-moves b {
     overflow: hidden;
-    font-weight: 500;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -756,7 +746,7 @@
 .fit-pr-flag {
     justify-self: end;
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: 3px;
     background: var(--danger-soft);
     color: var(--danger);
     font-size: 0.68rem;
@@ -766,22 +756,36 @@
 
 .fit-log-note {
     color: var(--ink-soft);
-    font-size: 0.9rem;
-    line-height: 1.7;
+    font-family: var(--font-serif);
+    font-size: 0.92rem;
+    letter-spacing: 0.03em;
+    line-height: 1.85;
 }
 
-.fit-log.is-rest {
+.fit-log.is-rest::after {
     border-style: dashed;
-    background: var(--bg-soft);
 }
 
-/* ---------- Sidebar panels ---------- */
+.fit-log.is-rest .fit-log-date strong {
+    color: var(--ink-faint);
+}
+
+/* A note belongs to the movement it was written about, not to the whole day. */
+.fit-move-note {
+    grid-column: 1 / -1;
+    margin: 2px 0 2px;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    font-style: normal;
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+}
+
+/* ---------- Sidebar panels: 顶上一道细线，别的都不要 ---------- */
 
 .fit-panel {
-    padding: 12px 16px 14px;
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    background: var(--control-surface);
+    padding-top: 16px;
+    border-top: 1px solid var(--line-strong);
 }
 
 .fit-panel-head {
@@ -794,13 +798,16 @@
 
 .fit-panel-head h2 {
     margin: 0;
-    font-size: 0.95rem;
+    font-family: var(--font-serif);
+    font-size: 1.04rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
 }
 
 .fit-panel-head span {
     color: var(--ink-faint);
-    font-size: 0.8rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
 }
 
 /* Left / right balance — only a unilateral log can show this, so it earns
@@ -818,9 +825,9 @@
     display: grid;
     grid-template-columns: 3.4em minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line);
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px dotted var(--line-strong);
     font-size: 0.88rem;
 }
 
@@ -829,24 +836,25 @@
 }
 
 .fit-balance-list b {
-    font-weight: 500;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.06em;
 }
 
 .fit-balance-gauge {
     position: relative;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--surface-muted);
+    height: 1px;
+    background: var(--line-strong);
 }
 
 .fit-balance-gauge::before {
     content: "";
     position: absolute;
-    top: -3px;
-    bottom: -3px;
+    top: -5px;
+    bottom: -5px;
     left: 50%;
     width: 1px;
-    background: var(--line-strong);
+    background: var(--ink-faint);
 }
 
 .fit-balance-gauge i {
@@ -854,10 +862,11 @@
     top: 50%;
     /* --bias: percentage points the right side leads by (negative = left). */
     left: calc(50% + var(--bias) * 1.6%);
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--ink);
+    box-shadow: 0 0 0 3px var(--bg);
     transform: translate(-50%, -50%);
     transition: left 0.3s ease;
 }
@@ -869,7 +878,7 @@
 .fit-balance-count {
     min-width: 92px;
     color: var(--ink-soft);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     text-align: right;
     white-space: nowrap;
@@ -880,7 +889,8 @@
     justify-content: space-between;
     margin-top: 8px;
     color: var(--ink-faint);
-    font-size: 0.76rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.2em;
 }
 
 /* PR list */
@@ -898,8 +908,8 @@
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: baseline;
     gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--line-strong);
     font-size: 0.9rem;
 }
 
@@ -908,14 +918,16 @@
 }
 
 .fit-pr-list b {
-    font-weight: 500;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.06em;
 }
 
 .fit-pr-value {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-latin);
+    font-size: 1.24rem;
+    font-weight: 600;
+    font-variant-numeric: lining-nums tabular-nums;
     white-space: nowrap;
 }
 
@@ -924,22 +936,22 @@
     color: var(--ink-faint);
     font-family: var(--font-body);
     font-style: normal;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 400;
 }
 
 .fit-pr-value s {
     color: var(--ink-faint);
     font-family: var(--font-body);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 400;
     text-decoration: none;
 }
 
 .fit-pr-delta {
-    min-width: 58px;
+    min-width: 44px;
     color: var(--success);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
@@ -948,156 +960,62 @@
     color: var(--ink-faint);
 }
 
-/* Weight trend */
-
-.fit-weight-head {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 6px;
+/* Two or three readings are a number, not a trend line. */
+.fit-metric-tiles {
+    display: grid;
+    gap: 0;
 }
 
-.fit-weight-head strong {
-    font-family: var(--font-display);
-    font-size: 1.7rem;
-    font-weight: 700;
+.fit-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px dotted var(--line-strong);
+}
+
+.fit-metric:last-child {
+    border-bottom: 0;
+}
+
+.fit-metric > span {
+    min-width: 4.6em;
+    color: var(--ink-soft);
+    font-family: var(--font-serif);
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+}
+
+.fit-metric strong {
+    font-family: var(--font-latin);
+    font-size: 1.6rem;
+    font-weight: 500;
+    font-variant-numeric: lining-nums;
     line-height: 1;
 }
 
-.fit-weight-head span {
+.fit-metric strong i {
+    margin-left: 3px;
     color: var(--ink-faint);
-    font-size: 0.8rem;
-}
-
-.fit-weight-head em {
-    margin-left: auto;
-    color: var(--success);
+    font-family: var(--font-body);
     font-style: normal;
-    font-size: 0.82rem;
-}
-
-.fit-spark {
-    display: block;
-    width: 100%;
-    height: 64px;
-}
-
-.fit-spark path.line {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.fit-spark path.area {
-    fill: var(--accent-soft);
-    stroke: none;
-}
-
-.fit-spark circle {
-    fill: var(--accent-strong);
-}
-
-.fit-spark-axis {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 4px;
-    color: var(--ink-faint);
     font-size: 0.72rem;
+    font-weight: 400;
 }
 
-/* ---------- Responsive ---------- */
-
-@media (max-width: 1080px) {
-    .fit-columns {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    /* 单栏布局下没有“侧”可言，外层退回内容高度，
-       位移逻辑会因为没有余量而自动停工。 */
-    .fit-side {
-        align-self: start;
-    }
-}
-
-@media (max-width: 720px) {
-    .fit-date-display h2 {
-        font-size: 2rem;
-    }
-
-    .fit-kpis {
-        width: 100%;
-    }
-
-    .fit-kpi {
-        flex: 1;
-        padding: 0 10px;
-        text-align: left;
-    }
-
-    .fit-composer {
-        padding: 14px 14px 16px;
-    }
-
-    /* Let the draft note take its own line instead of being squeezed into a
-       one-word-wide column beside the buttons. */
-    .fit-form-footer .fit-status {
-        flex: 1 0 100%;
-    }
-
-    .fit-inline-fields {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .fit-set-head,
-    .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 24px;
-        gap: 6px;
-    }
-
-    .fit-exercise.is-unilateral .fit-set-head,
-    .fit-exercise.is-unilateral .fit-set {
-        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 24px;
-    }
-
-
-    .fit-exercise-sides {
-        display: none;
-    }
-
-    .fit-log {
-        grid-template-columns: 44px minmax(0, 1fr);
-        gap: 12px;
-        padding: 14px;
-    }
-
-    /* Four columns do not fit a phone: split each move onto two lines. */
-    .fit-log-moves li {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 10px;
-    }
-
-    .fit-log-moves b {
-        flex: 1;
-    }
-
-    .fit-side-count {
-        min-width: 0;
-        text-align: left;
-    }
-
-    .fit-log-moves span:not(.fit-pr-flag) {
-        order: 2;
-    }
+.fit-metric em {
+    margin-left: auto;
+    color: var(--ink-faint);
+    font-style: normal;
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Daily volume chart ----------
    One series, so one hue and no legend: the columns are the sessions, the wash
-   behind them is a 7-day trailing mean. Both steps were run through the palette
+   behind them is a trailing mean. Both steps were run through the palette
    validator against this page's own surfaces (light PASS, dark re-stepped from
-   the same ramp rather than flipped). */
+   the same ramp rather than flipped). 赭石与花青是国画颜料，和墨、朱放在一起不跳。 */
 
 .fit-volume-chart {
     --chart-ink: #a25b33;
@@ -1106,10 +1024,6 @@
     /* A grid item defaults to min-width:auto, so the svg's min-width would push
        the whole page wider instead of scrolling inside its own box. */
     min-width: 0;
-    padding: 14px 20px 14px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
 }
 
 html[data-theme="dark"] .fit-volume-chart {
@@ -1120,23 +1034,48 @@ html[data-theme="dark"] .fit-volume-chart {
 
 .fit-chart-head {
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px 16px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
+}
+
+.fit-chart-title {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+}
+
+.fit-chart-title[hidden] {
+    display: none;
+}
+
+.fit-chart-title::before {
+    content: "";
+    flex: 0 0 auto;
+    align-self: center;
+    width: 8px;
+    height: 8px;
+    margin-right: 2px;
+    background: var(--ink);
+    transform: rotate(45deg);
 }
 
 .fit-chart-head h2 {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 1.62rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    line-height: 1.25;
 }
 
 .fit-chart-span {
     color: var(--ink-faint);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
 }
 
 /* The scroll box is inside the figure so the tooltip, which sits on the
@@ -1144,6 +1083,8 @@ html[data-theme="dark"] .fit-volume-chart {
 .fit-chart-figure {
     position: relative;
     margin: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
 }
 
 .fit-chart-scroll {
@@ -1196,6 +1137,12 @@ html[data-theme="dark"] .fit-volume-chart {
     opacity: 0.4;
 }
 
+/* Trained, but the log has no weight for it — a stub at the baseline, never a
+   zero-height column that would read as a rest day. */
+.fit-chart-col.is-unknown {
+    fill: var(--line-strong);
+}
+
 .fit-chart-peak {
     fill: var(--ink-soft);
     font-family: var(--font-body);
@@ -1209,10 +1156,10 @@ html[data-theme="dark"] .fit-volume-chart {
 }
 
 .fit-chart-hit:hover {
-    fill: var(--accent-soft);
+    fill: var(--ghost-hover);
 }
 
-/* A one-line pill, not a stacked card: the plot band is only ~150px tall, so a
+/* A one-line tag, not a stacked card: the plot band is only ~150px tall, so a
    tall tooltip would sit on top of the chart header instead of near the mark. */
 .fit-chart-tip {
     position: absolute;
@@ -1220,9 +1167,9 @@ html[data-theme="dark"] .fit-volume-chart {
     display: flex;
     align-items: baseline;
     gap: 8px;
-    padding: 5px 10px;
+    padding: 5px 11px;
     border: 1px solid var(--line-strong);
-    border-radius: 999px;
+    border-radius: 4px;
     background: var(--surface-strong);
     box-shadow: var(--shadow);
     opacity: 0;
@@ -1237,21 +1184,24 @@ html[data-theme="dark"] .fit-volume-chart {
 }
 
 .fit-chart-tip strong {
-    font-size: 0.92rem;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-latin);
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-variant-numeric: lining-nums tabular-nums;
 }
 
 .fit-chart-tip span {
     color: var(--ink-soft);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
 }
 
 .fit-chart-note {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 4px 14px;
-    margin-top: 8px;
+    gap: 6px 10px;
+    margin-top: 10px;
     color: var(--ink-faint);
     font-size: 0.78rem;
 }
@@ -1268,20 +1218,21 @@ html[data-theme="dark"] .fit-volume-chart {
     border: 1px solid var(--line-strong);
     border-radius: 999px;
     background: transparent;
-    color: inherit;
-    font: inherit;
+    color: var(--ink-soft);
+    font-family: var(--font-serif);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
     cursor: pointer;
-    transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
 .fit-chart-key:hover {
-    border-color: var(--focus-border);
-    background: var(--ghost-hover);
+    border-color: var(--ink-soft);
 }
 
 .fit-chart-key:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
+    outline: 2px solid var(--focus-border);
+    outline-offset: 2px;
 }
 
 .fit-chart-key[aria-pressed="false"] {
@@ -1318,43 +1269,10 @@ html[data-theme="dark"] .fit-volume-chart {
 
 /* ---------- 身体数据：体重一格、腰围一格 ---------- */
 
-/* 两条线一根纵轴是排版凑出来的相关性，所以是切换不是叠加。 */
+/* 两条线一根纵轴是排版凑出来的相关性，所以是切换不是叠加。
+   开关本身用 style.css 的 .ink-toggle。 */
 .fit-chart-switch {
-    display: inline-flex;
-    gap: 2px;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface-muted);
-}
-
-.fit-chart-switch button {
-    min-height: 26px;
-    padding: 0 12px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--ink-soft);
-    font: inherit;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.fit-chart-switch button:hover {
-    color: var(--ink);
-}
-
-.fit-chart-switch button[aria-selected="true"] {
-    background: var(--surface-strong);
-    color: var(--ink);
-    font-weight: 600;
-    box-shadow: 0 1px 2px rgba(36, 28, 24, 0.1);
-}
-
-.fit-chart-switch button:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
+    flex: 0 0 auto;
 }
 
 /* 每格的标题就是图例：颜色旁边永远有名字，不靠颜色单独认。 */
@@ -1411,12 +1329,13 @@ html[data-theme="dark"] .fit-volume-chart {
 }
 
 .fit-body-dot {
-    fill: var(--surface-strong);
+    fill: var(--bg);
 }
 
 .fit-chart-key.is-static {
     border-style: none;
     padding-left: 0;
+    cursor: default;
 }
 
 .fit-chart-key.is-weight i,
@@ -1433,29 +1352,28 @@ html[data-theme="dark"] .fit-volume-chart {
     margin-left: auto;
 }
 
-@media (max-width: 720px) {
-    .fit-chart-note .fit-chart-span {
-        margin-left: 0;
-    }
-}
-
 .fit-chart-table {
-    margin-top: 6px;
+    margin-top: 8px;
 }
 
 .fit-chart-table summary {
     display: inline-block;
-    color: var(--ink-soft);
-    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
     cursor: pointer;
+}
+
+.fit-chart-table summary:hover {
+    color: var(--ink-soft);
 }
 
 .fit-chart-table-scroll {
     max-height: 220px;
-    margin-top: 8px;
+    margin-top: 10px;
     overflow: auto;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
 }
 
 .fit-chart-table table {
@@ -1466,7 +1384,7 @@ html[data-theme="dark"] .fit-volume-chart {
 
 .fit-chart-table th,
 .fit-chart-table td {
-    padding: 5px 10px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--line);
     text-align: left;
 }
@@ -1474,10 +1392,12 @@ html[data-theme="dark"] .fit-volume-chart {
 .fit-chart-table th {
     position: sticky;
     top: 0;
-    background: var(--table-head-surface);
-    color: var(--ink-soft);
-    font-size: 0.76rem;
+    border-bottom-color: var(--line-strong);
+    background: var(--bg);
+    color: var(--ink-faint);
+    font-size: 0.74rem;
     font-weight: 600;
+    letter-spacing: 0.18em;
 }
 
 .fit-chart-table td:nth-child(3),
@@ -1489,16 +1409,6 @@ html[data-theme="dark"] .fit-volume-chart {
 .fit-chart-table th:nth-child(3),
 .fit-chart-table th:nth-child(4) {
     text-align: right;
-}
-
-@media (max-width: 720px) {
-    .fit-volume-chart {
-        padding: 12px 14px;
-    }
-
-    .fit-chart-head h2 {
-        font-size: 1.25rem;
-    }
 }
 
 /* ---------- Shapes the real log turned out to need ---------- */
@@ -1518,7 +1428,7 @@ html[data-theme="dark"] .fit-volume-chart {
 }
 
 .fit-field.is-variant {
-    padding: 0 4px 0 8px;
+    padding: 0 2px;
 }
 
 .fit-field.is-variant select {
@@ -1590,7 +1500,7 @@ html[data-theme="dark"] .fit-volume-chart {
     width: 22px;
     height: 22px;
     border: 0;
-    border-radius: 6px;
+    border-radius: 50%;
     background: transparent;
     color: var(--ink-faint);
     font: inherit;
@@ -1609,123 +1519,12 @@ html[data-theme="dark"] .fit-volume-chart {
 }
 
 .fit-exercise-notes {
-    padding: 0 12px 10px;
-}
-
-/* Trained, but the log has no weight for it — a stub at the baseline, never a
-   zero-height column that would read as a rest day. */
-.fit-chart-col.is-unknown {
-    fill: var(--line-strong);
+    padding: 0 0 10px;
 }
 
 .diary-day.is-partial {
-    border: 1px dashed var(--line-strong);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     background: transparent;
-}
-
-/* Two or three readings are a number, not a trend line. */
-.fit-metric-tiles {
-    display: grid;
-    gap: 2px;
-}
-
-.fit-metric {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
-}
-
-.fit-metric:last-child {
-    border-bottom: 0;
-}
-
-.fit-metric > span {
-    min-width: 4.6em;
-    color: var(--ink-soft);
-    font-size: 0.88rem;
-}
-
-.fit-metric strong {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.fit-metric strong i {
-    margin-left: 2px;
-    color: var(--ink-faint);
-    font-family: var(--font-body);
-    font-style: normal;
-    font-size: 0.72rem;
-    font-weight: 400;
-}
-
-.fit-metric em {
-    margin-left: auto;
-    color: var(--ink-faint);
-    font-style: normal;
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
-}
-
-/* A note belongs to the movement it was written about, not to the whole day. */
-.fit-move-note {
-    grid-column: 1 / -1;
-    margin: 2px 0 2px;
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-    font-style: normal;
-    line-height: 1.6;
-}
-
-@media (max-width: 720px) {
-    .fit-move-note {
-        flex: 1 0 100%;
-        order: 3;
-    }
-}
-
-.fit-readonly-note {
-    padding: 18px 22px;
-    border: 1px dashed var(--line-strong);
-    border-radius: 8px;
-    color: var(--ink-soft);
-    font-size: 0.95rem;
-}
-
-.fit-save-button:disabled {
-    opacity: 0.55;
-    cursor: default;
-    transform: none;
-}
-
-.fit-status.is-error {
-    color: var(--danger);
-}
-
-.fit-status.is-ok {
-    color: var(--success);
-}
-
-/* 这条要放在 .fit-set-remove 的基础规则之后才压得住它。
-   24px 是触摸目标的下限；再小就点不准，再大又容易误删。 */
-@media (max-width: 720px) {
-    .fit-set-remove {
-        width: 24px;
-        height: 24px;
-    }
-}
-
-/* 同理：自重那五列的基础规则在上面，这条得排在它后面。窄屏按比例分，
-   做法那列留得宽一点——"钻石"比"20"占地方。 */
-@media (max-width: 720px) {
-    .fit-exercise.is-bodyweight .fit-set-head,
-    .fit-exercise.is-bodyweight .fit-set {
-        grid-template-columns: 22px minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 24px;
-    }
 }
 
 /* 草稿提示条：服务端已有记录、本地又有草稿时出现，让人自己选，
@@ -1737,7 +1536,7 @@ html[data-theme="dark"] .fit-volume-chart {
     gap: 8px 12px;
     padding: 10px 14px;
     border: 1px solid var(--warning-line);
-    border-radius: 8px;
+    border-radius: 4px;
     background: var(--warning-soft);
     color: var(--ink-soft);
     font-size: 0.86rem;
@@ -1753,22 +1552,169 @@ html[data-theme="dark"] .fit-volume-chart {
     padding: 0 12px;
     border: 1px solid var(--line-strong);
     border-radius: 999px;
-    background: var(--control-surface);
+    background: transparent;
     color: var(--ink);
-    font: inherit;
+    font-family: var(--font-serif);
     font-size: 0.84rem;
+    letter-spacing: 0.06em;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .fit-draft-bar button:hover {
-    border-color: var(--accent);
-    color: var(--accent-strong);
+    border-color: var(--ink-soft);
 }
 
 .fit-draft-bar button[data-draft-restore] {
-    border-color: transparent;
-    background: var(--accent);
-    color: var(--button-ink);
-    font-weight: 600;
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1080px) {
+    .fit-columns {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 56px;
+    }
+
+    /* 单栏布局下没有“侧”可言，外层退回内容高度，
+       位移逻辑会因为没有余量而自动停工。 */
+    .fit-side {
+        align-self: start;
+    }
+}
+
+@media (max-width: 720px) {
+    .fit-shell {
+        gap: 32px;
+    }
+
+    .fit-main {
+        gap: 48px;
+    }
+
+    .fit-composer-date strong {
+        font-size: 1.28rem;
+    }
+
+    /* Let the draft note take its own line instead of being squeezed into a
+       one-word-wide column beside the buttons. */
+    .fit-form-footer .fit-status {
+        flex: 1 0 100%;
+        text-align: left;
+    }
+
+    .fit-save-button {
+        margin-left: auto;
+    }
+
+    .fit-inline-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fit-rpe-scale {
+        gap: 2px;
+    }
+
+    .fit-rpe-scale button {
+        flex-basis: 30px;
+        height: 30px;
+        font-size: 0.94rem;
+    }
+
+    .fit-set-head,
+    .fit-set {
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 24px;
+        gap: 8px;
+    }
+
+    .fit-exercise.is-unilateral .fit-set-head,
+    .fit-exercise.is-unilateral .fit-set {
+        grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 24px;
+    }
+
+    .fit-exercise-sides {
+        display: none;
+    }
+
+    .fit-chart-head h2 {
+        font-size: 1.4rem;
+        letter-spacing: 0.14em;
+    }
+
+    .fit-chart-note .fit-chart-span {
+        margin-left: 0;
+    }
+
+    .fit-log-list {
+        --fit-date-col: 40px;
+        --fit-trail-gap: 32px;
+    }
+
+    .fit-log {
+        padding-bottom: 32px;
+    }
+
+    .fit-log::after {
+        top: 15px;
+        left: calc(var(--fit-date-col) + var(--fit-trail-gap) / 2 - 5px);
+        width: 11px;
+        height: 11px;
+        box-shadow: 0 0 0 4px var(--bg);
+    }
+
+    .fit-log-date {
+        padding-top: 10px;
+    }
+
+    .fit-log-date strong {
+        font-size: 2.1rem;
+    }
+
+    .fit-log-date span {
+        letter-spacing: 0.1em;
+    }
+
+    .fit-log-main {
+        padding-top: 12px;
+    }
+
+    /* Four columns do not fit a phone: split each move onto two lines. */
+    .fit-log-moves li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+    }
+
+    .fit-log-moves b {
+        flex: 1;
+    }
+
+    .fit-side-count {
+        min-width: 0;
+        text-align: left;
+    }
+
+    .fit-log-moves span:not(.fit-pr-flag) {
+        order: 2;
+    }
+
+    .fit-move-note {
+        flex: 1 0 100%;
+        order: 3;
+    }
+
+    /* 24px 是触摸目标的下限；再小就点不准，再大又容易误删。 */
+    .fit-set-remove {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* 自重那五列：窄屏按比例分，做法那列留得宽一点——"钻石"比"20"占地方。 */
+    .fit-exercise.is-bodyweight .fit-set-head,
+    .fit-exercise.is-bodyweight .fit-set {
+        grid-template-columns: 22px minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 24px;
+    }
 }

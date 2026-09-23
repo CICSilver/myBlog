@@ -1,31 +1,29 @@
-/* Diary sidebar: collapsible month calendar, year overview and the word milestone. */
+/* Diary sidebar: collapsible month calendar, year overview and the word milestone.
+   与首页“岁时”墨点图同一种画法：写得越多，那一天的墨团越浓；不装进卡片，
+   只在顶上压一道细线。 */
 .diary-calendar,
 .diary-milestone {
-    --activity-empty: #e7e3d9;
+    --activity-empty: #e4dfd3;
     --activity-1: #d2ccbf;
     --activity-2: #a9a396;
     --activity-3: #6e6a62;
     --activity-4: #2b2926;
     --activity-ink-strong: #fbf9f4;
+    --ink-blot: 47% 53% 51% 49% / 55% 46% 54% 45%;
     box-sizing: border-box;
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    background: var(--control-surface);
+    padding-top: 16px;
+    border-top: 1px solid var(--line-strong);
     color: var(--ink);
 }
 
 html[data-theme="dark"] .diary-calendar,
 html[data-theme="dark"] .diary-milestone {
-    --activity-empty: #23272b;
+    --activity-empty: #262a2e;
     --activity-1: #3a3f44;
     --activity-2: #676c71;
     --activity-3: #a2a6a9;
     --activity-4: #e6e2d9;
     --activity-ink-strong: #151719;
-}
-
-.diary-calendar {
-    padding: 12px 16px;
 }
 
 .diary-calendar button {
@@ -39,7 +37,7 @@ html[data-theme="dark"] .diary-milestone {
 
 .diary-calendar button:focus-visible,
 .diary-calendar a:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus-border);
     outline-offset: 2px;
 }
 
@@ -55,7 +53,7 @@ html[data-theme="dark"] .diary-milestone {
 .diary-calendar-nav {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     min-width: 0;
 }
 
@@ -68,9 +66,10 @@ html[data-theme="dark"] .diary-milestone {
     margin: 0;
     min-width: 96px;
     color: var(--ink);
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 1.04rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     line-height: 1.2;
     text-align: center;
     white-space: nowrap;
@@ -84,18 +83,19 @@ html[data-theme="dark"] .diary-milestone {
     height: 28px;
     padding: 0;
     border: 0;
-    border-radius: 4px;
+    border-radius: 50%;
     background: transparent;
-    color: var(--ink-soft);
+    color: var(--ink-faint);
+    transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .diary-calendar-step svg,
 .diary-calendar-collapse svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.6;
+    stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
@@ -103,43 +103,50 @@ html[data-theme="dark"] .diary-milestone {
 a.diary-calendar-step:hover,
 .diary-calendar-step:not(:disabled):hover,
 .diary-calendar-collapse:hover {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
+    background: var(--ghost-hover);
+    color: var(--ink);
 }
 
 .diary-calendar-step.is-disabled,
 .diary-calendar-step:disabled {
-    opacity: 0.38;
+    opacity: 0.35;
 }
 
 .diary-calendar-tools {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex: 0 0 auto;
 }
 
 .diary-calendar-mode {
     display: flex;
-    overflow: hidden;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
+    gap: 4px;
 }
 
 .diary-calendar-mode button {
-    min-height: 26px;
-    padding: 0 11px;
-    border: 0;
+    min-height: 24px;
+    padding: 0 9px 0 calc(9px + 0.08em);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
     background: transparent;
     color: var(--ink-soft);
+    font-family: var(--font-serif);
     font-size: 12px;
+    letter-spacing: 0.08em;
     line-height: 1;
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.diary-calendar-mode button:hover {
+    border-color: var(--ink-soft);
+    color: var(--ink);
 }
 
 .diary-calendar-mode button[aria-pressed="true"] {
-    background: var(--accent);
-    color: var(--button-ink);
-    font-weight: 700;
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
 }
 
 .diary-calendar-collapse {
@@ -149,10 +156,10 @@ a.diary-calendar-step:hover,
     width: 28px;
     height: 28px;
     padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 4px;
+    border: 0;
+    border-radius: 50%;
     background: transparent;
-    color: var(--ink-soft);
+    color: var(--ink-faint);
 }
 
 .diary-calendar-collapse svg {
@@ -174,13 +181,13 @@ a.diary-calendar-step:hover,
 .diary-calendar-body-inner {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     min-height: 0;
     overflow: hidden;
 }
 
 .diary-calendar-body-inner > :first-child {
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .diary-calendar.is-collapsed .diary-calendar-body {
@@ -206,8 +213,11 @@ a.diary-calendar-step:hover,
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
+    padding-bottom: 4px;
     color: var(--ink-faint);
-    font-size: 12px;
+    font-family: var(--font-serif);
+    font-size: 11px;
+    letter-spacing: 0.1em;
     line-height: 1.4;
     text-align: center;
 }
@@ -228,44 +238,43 @@ a.diary-calendar-step:hover,
     overflow: hidden;
 }
 
+/* 每一天是一团墨：没写是空白里一个淡数字，写得越多墨越浓。 */
 .diary-day {
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     aspect-ratio: 1;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: var(--activity-empty);
+    border-radius: var(--ink-blot);
+    background: transparent;
     color: var(--ink-faint);
-    font-family: var(--font-display);
-    font-size: 15px;
+    font-family: var(--font-latin);
+    font-size: 16px;
+    font-weight: 500;
+    font-variant-numeric: lining-nums;
     line-height: 1;
     text-decoration: none;
-    transition: outline-color 0.15s ease;
+    transition: color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .diary-day.is-blank {
-    border: 0;
     background: transparent;
 }
 
 .diary-day.is-future {
-    border: 1px dashed var(--line);
-    background: transparent;
-    opacity: 0.7;
+    opacity: 0.4;
 }
 
 .diary-day[data-level="1"],
 .diary-day[data-level="2"] {
     color: var(--ink);
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .diary-day[data-level="3"],
 .diary-day[data-level="4"] {
     color: var(--activity-ink-strong);
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .diary-calendar [data-level="1"] { background: var(--activity-1); }
@@ -273,13 +282,28 @@ a.diary-calendar-step:hover,
 .diary-calendar [data-level="3"] { background: var(--activity-3); }
 .diary-calendar [data-level="4"] { background: var(--activity-4); }
 
+.diary-calendar .diary-day[data-level="0"] {
+    background: transparent;
+}
+
+/* 今天：朱笔圈一圈。圈画在里面——周行收起时外面那一圈会被裁掉。 */
 .diary-day.is-today {
-    box-shadow: 0 0 0 2px var(--control-surface), 0 0 0 4px var(--accent-strong);
+    box-shadow: inset 0 0 0 1.5px var(--seal);
+}
+
+.diary-day.is-today:not([data-level="0"]) {
+    box-shadow: inset 0 0 0 2px var(--seal), inset 0 0 0 3.5px var(--bg);
 }
 
 a.diary-day:hover {
-    outline: 2px solid var(--accent-strong);
-    outline-offset: 1px;
+    color: var(--accent-strong);
+    box-shadow: inset 0 0 0 1px var(--ink-soft);
+}
+
+a.diary-day[data-level="3"]:hover,
+a.diary-day[data-level="4"]:hover {
+    color: var(--activity-ink-strong);
+    box-shadow: inset 0 0 0 2px var(--seal);
 }
 
 a.diary-day.is-empty {
@@ -308,12 +332,11 @@ a.diary-day.is-empty {
 }
 
 .diary-mini-month:hover {
-    background: var(--accent-soft);
+    background: var(--ghost-hover);
 }
 
 .diary-mini-month.is-active {
-    border-color: var(--divider-accent);
-    background: var(--accent-soft);
+    border-color: var(--line-strong);
 }
 
 .diary-mini-month.is-active b {
@@ -321,7 +344,7 @@ a.diary-day.is-empty {
 }
 
 .diary-mini-month.is-future {
-    opacity: 0.55;
+    opacity: 0.5;
     pointer-events: none;
 }
 
@@ -335,8 +358,9 @@ a.diary-day.is-empty {
 }
 
 .diary-mini-month-head b {
-    font-family: var(--font-display);
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: 0.06em;
 }
 
 .diary-mini-month-head span {
@@ -355,7 +379,7 @@ a.diary-day.is-empty {
     box-sizing: border-box;
     display: block;
     aspect-ratio: 1;
-    border-radius: 2px;
+    border-radius: 50%;
     background: var(--activity-empty);
 }
 
@@ -370,7 +394,7 @@ a.diary-day.is-empty {
 }
 
 .diary-mini-month-cells i.is-today {
-    box-shadow: 0 0 0 1px var(--control-surface), 0 0 0 2px var(--accent-strong);
+    box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--seal);
 }
 
 .diary-calendar-status {
@@ -386,10 +410,11 @@ a.diary-day.is-empty {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px solid var(--line);
-    color: var(--ink-soft);
-    font-size: 12px;
+    color: var(--ink-faint);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
     line-height: 1.4;
 }
 
@@ -403,20 +428,24 @@ a.diary-day.is-empty {
 .diary-calendar-legend i {
     width: 9px;
     height: 9px;
-    border-radius: 2px;
+    border-radius: var(--ink-blot);
     background: var(--activity-empty);
+}
+
+.diary-calendar-legend i[data-level="0"] {
+    border: 1px solid var(--line-strong);
+    background: transparent;
 }
 
 .diary-calendar-note {
     text-align: right;
 }
 
-/* Word milestone. */
+/* Word milestone: 一根细线走到下一本书，朱点是写到了哪儿。 */
 .diary-milestone {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 14px 16px 12px;
+    gap: 12px;
 }
 
 .diary-milestone-head {
@@ -429,42 +458,57 @@ a.diary-day.is-empty {
 .diary-milestone-total {
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    color: var(--ink-soft);
-    font-size: 13px;
+    gap: 8px;
+    color: var(--ink-faint);
+    font-size: 12px;
+    letter-spacing: 0.1em;
     white-space: nowrap;
 }
 
 .diary-milestone-total b {
     color: var(--ink);
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
+    font-family: var(--font-latin);
+    font-size: 2rem;
+    font-weight: 500;
+    font-variant-numeric: lining-nums;
+    letter-spacing: 0;
     line-height: 1;
 }
 
 .diary-milestone-ratio {
     color: var(--accent-strong);
+    font-family: var(--font-serif);
     font-size: 13px;
-    font-weight: 700;
+    letter-spacing: 0.06em;
     text-align: right;
 }
 
 .diary-milestone-bar {
     position: relative;
-    height: 6px;
-    overflow: hidden;
-    border-radius: 3px;
-    background: var(--activity-empty);
+    height: 1px;
+    margin: 4px 0;
+    background: var(--line-strong);
 }
 
 .diary-milestone-bar span {
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: -1px;
+    bottom: -1px;
     left: 0;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--activity-2), var(--activity-4));
+    background: var(--ink);
+}
+
+.diary-milestone-bar span::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--seal);
+    box-shadow: 0 0 0 3px var(--bg);
+    transform: translateY(-50%);
 }
 
 .diary-milestone-foot {
@@ -472,9 +516,10 @@ a.diary-day.is-empty {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    color: var(--ink-soft);
-    font-size: 12px;
-    line-height: 1.4;
+    color: var(--ink-faint);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
 }
 
 .diary-milestone-foot span:last-child {
@@ -497,13 +542,9 @@ a.diary-day.is-empty {
 }
 
 @media (max-width: 767px) {
-    .diary-calendar {
-        padding: 12px 14px;
-    }
-
     .diary-calendar-title {
         min-width: 104px;
-        font-size: 18px;
+        font-size: 1.08rem;
     }
 
     .diary-calendar-step,
@@ -518,7 +559,7 @@ a.diary-day.is-empty {
     }
 
     .diary-day {
-        font-size: 16px;
+        font-size: 17px;
     }
 
     /* Collapsed on a phone keeps this week in view (current month only). */
@@ -535,9 +576,5 @@ a.diary-day.is-empty {
 
     .diary-calendar.is-collapsed:not(.is-year):not(.is-archive) .diary-calendar-foot {
         display: none;
-    }
-
-    .diary-milestone {
-        padding: 12px 14px;
     }
 }

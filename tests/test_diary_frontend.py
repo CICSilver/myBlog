@@ -88,8 +88,9 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("supportsBeforeInput", self.javascript)
 
     def test_summary_is_limited_to_sixteen_lines_and_expands_only_when_needed(self):
-        self.assertIn("--diary-summary-line-step", self.stylesheet)
-        self.assertIn("max-height: 28.48rem", self.stylesheet)
+        self.assertIn("--diary-summary-line-step: 1.95rem", self.stylesheet)
+        # 不支持 calc 变量时的兜底值也是 16 行：1.95rem × 16。
+        self.assertIn("max-height: 31.2rem", self.stylesheet)
         self.assertIn("max-height: calc(var(--diary-summary-line-step) * 16)", self.stylesheet)
         self.assertIn("white-space: pre-wrap", self.stylesheet)
         self.assertIn("inner.scrollHeight > outer.clientHeight", self.javascript)
@@ -150,7 +151,7 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("grid-template-columns: minmax(0, 1fr)", self.stylesheet)
         self.assertIn("min-height: 200px", self.stylesheet)
         self.assertIn(".diary-entry.has-image", self.stylesheet)
-        self.assertIn("grid-template-columns: 160px minmax(0, 1fr) 176px", self.stylesheet)
+        self.assertIn(".diary-entry.has-image {\n    grid-template-columns: var(--diary-date-col) minmax(0, 1fr) 168px", self.stylesheet)
         self.assertIn("@media (max-width: 767px)", self.stylesheet)
         self.assertIn(".diary-page .home-cover-kicker {\n        display: none", self.stylesheet)
         self.assertIn("--diary-line-step: 2rem", self.stylesheet)
@@ -159,9 +160,9 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("min-height: calc(var(--diary-line-step) * 7)", self.stylesheet)
         self.assertIn("background-attachment: local", self.stylesheet)
         self.assertIn("font-size: 16px", self.stylesheet)
-        self.assertIn("font-size: 2.6rem", diary_styles)
-        self.assertIn("font-size: 5.6rem", diary_styles)
-        self.assertIn("font-size: 3.2rem", diary_styles)
+        self.assertIn(".diary-detail-day {\n    color: var(--ink);\n    font-family: var(--font-latin);\n    font-size: 5.6rem", diary_styles)
+        self.assertIn(".diary-detail-day {\n        font-size: 3.2rem", diary_styles)
+        self.assertIn("var(--letter-rule) calc(var(--diary-line-step) - 1px)", diary_styles)
         self.assertNotIn("font-size: clamp(", diary_styles)
 
     def test_shared_header_title_is_optional_for_other_pages(self):
@@ -222,11 +223,13 @@ class DiaryFrontendTest(unittest.TestCase):
         self.assertIn("Daily Notes", self.diary_template)
         self.assertIn("写下此刻", self.diary_template)
         self.assertIn("{{ today_date }} · {{ today_weekday }}", self.diary_template)
-        self.assertIn(".diary-columns {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) 372px", self.stylesheet)
+        self.assertIn('<header class="page-masthead diary-overview">', self.diary_template)
+        self.assertIn('{{ page_seal("日记") }}', self.diary_template)
+        self.assertIn(".diary-columns {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) 340px", self.stylesheet)
         self.assertIn(".diary-side {\n    position: sticky", self.stylesheet)
         self.assertIn(".diary-side {\n        position: static;\n        order: -1", mobile_styles)
-        self.assertIn(".diary-overview-stats {\n        display: none", mobile_styles)
-        self.assertIn(".diary-date-display {\n        display: none", mobile_styles)
+        # 手机上整块卷头（题名和统计）都让给日历与写字那一行。
+        self.assertIn(".diary-overview {\n        display: none", mobile_styles)
         self.assertIn(".diary-composer-date {\n    display: none", self.stylesheet)
         self.assertIn(".diary-composer-date {\n        display: flex", mobile_styles)
         textarea_index = self.diary_template.index('<textarea id="diary-content"')

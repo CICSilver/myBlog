@@ -5,10 +5,11 @@
 
 {% block content %}
 <section class="error-shell">
-  <p class="section-label">Missing Archive</p>
-  <div class="error-code">404</div>
+  <div class="error-code" aria-hidden="true">404</div>
+  <p class="eyebrow">失迹 · Missing Archive</p>
   <h1>未找到相关页面</h1>
   <p>这条索引可能已经失效，或者它从一开始就没有被写进这份档案。</p>
   <a class="toolbar-button" href="{{ url_for('main.index') }}">返回首页</a>
+  <p class="error-verse">鸿飞那复计东西<small>苏轼《和子由渑池怀旧》</small></p>
 </section>
 {% endblock %}

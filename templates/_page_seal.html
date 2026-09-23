@@ -1,0 +1,4 @@
+{# 内页题名旁的小朱印：两个字竖排。纯装饰，读屏跳过。 #}
+{% macro page_seal(chars) -%}
+  <span class="page-seal" aria-hidden="true">{% for char in chars %}<i>{{ char }}</i>{% endfor %}</span>
+{%- endmacro %}
