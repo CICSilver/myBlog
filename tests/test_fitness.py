@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import unittest
 from datetime import date
 from pathlib import Path
@@ -12,6 +13,7 @@ from app.fitness_model import (
     exercise_totals,
     movement_kind,
     records,
+    set_runs,
     trend_points,
     workout_totals,
 )
@@ -90,7 +92,38 @@ class FitnessModelTest(unittest.TestCase):
         self.assertEqual(movement_kind("俯卧撑"), "bodyweight")
         self.assertEqual(totals["reps"], 38)
         self.assertIsNone(totals["volume"])
-        self.assertEqual(totals["weights"], [])
+        self.assertEqual([run["weight"] for run in totals["runs"]], [None])
+
+    def test_runs_keep_the_order_the_sets_were_done_in(self):
+        # 先 10 kg 再降到 8 kg 的递减组：按重量排序的话就看不出是先重后轻了。
+        runs = set_runs(unilateral("弯举", (10, 8, 8), (8, 8, 8), (8, 6, 10)))
+        self.assertEqual([run["weight"] for run in runs], [10, 8])
+        self.assertEqual([len(run["sets"]) for run in runs], [1, 2])
+        self.assertEqual((runs[1]["sets"][1]["left"], runs[1]["sets"][1]["right"]), (6, 10))
+
+    def test_only_adjacent_sets_share_a_run(self):
+        runs = set_runs(bilateral("深蹲", (8, 12), (10, 10), (8, 12)))
+        self.assertEqual([run["weight"] for run in runs], [8, 10, 8])
+
+    def test_a_set_without_a_weight_is_its_own_run(self):
+        runs = set_runs(unilateral("划船", (None, 8, 8), (10, 8, 8), (10, 8, 7)))
+        self.assertEqual([run["weight"] for run in runs], [None, 10])
+
+    def test_bodyweight_runs_split_on_the_variant_and_the_added_load(self):
+        runs = set_runs({"name": "俯卧撑", "sets": [
+            {"weight": None, "left": 15, "variant": "标准"},
+            {"weight": None, "left": 12},                     # 没写做法就是标准
+            {"weight": None, "left": 10, "variant": "窄距"},
+            {"weight": 5, "left": 8, "variant": "负重"},
+            {"weight": 10, "left": 5, "variant": "负重"},
+        ]})
+        self.assertEqual([(run["variant"], run["weight"], len(run["sets"])) for run in runs],
+                         [("标准", None, 2), ("窄距", None, 1), ("负重", 5, 1), ("负重", 10, 1)])
+
+    def test_static_holds_are_one_run(self):
+        runs = set_runs({"name": "平板支撑", "sets": [{"seconds": 43}, {"seconds": 57}]})
+        self.assertEqual(len(runs), 1)
+        self.assertEqual([entry["seconds"] for entry in runs[0]["sets"]], [43, 57])
 
     def test_bodyweight_does_not_drag_the_day_into_unknown(self):
         # 关键的一条：哑铃动作算得出容量的那天，不能因为顺手做了几组
@@ -271,6 +304,29 @@ class FitnessRouteTest(unittest.TestCase):
         response = self.client.get("/fitness?month=2026-09")
         self.assertEqual(response.status_code, 200)
         self.assertIn("深蹲", response.get_data(as_text=True))
+
+    def test_the_archive_shows_every_set_and_the_total(self):
+        # 只报“左 22 · 右 26”和“8.0–10.0 kg”的话，下次练之前查不到
+        # 上次 10 kg 那组到底做了几个。
+        self.database.workouts["2026-09-10"] = workout("2026-09-10", "上肢", [
+            unilateral("弯举", (10, 8, 8), (8, 8, 8), (8, 6, 10)),
+        ])
+        html = self.client.get("/fitness?month=2026-09").get_data(as_text=True)
+        card = html[html.index('datetime="2026-09-10"'):]
+        card = card[:card.index("</article>")]
+        flat = lambda text: re.sub(r"\s+", " ", text).strip()
+        loads = [flat(item) for item in re.findall(r'<span class="fit-run-load[^"]*">(.*?)</span>', card, re.S)]
+        reps = [flat(item) for item in re.findall(r'<span class="fit-rep">(.*?)</span>', card, re.S)]
+        self.assertEqual(loads, ["10 kg", "8 kg"])
+        self.assertEqual(reps, ["各 8", "各 8", "左 6 · 右 10"])
+        self.assertIn("左 22 · 右 26", flat(card))
+        self.assertIn("3 组", flat(card))
+
+        bilateral_card = html[html.index('datetime="2026-09-16"'):]
+        bilateral_card = bilateral_card[:bilateral_card.index("</article>")]
+        self.assertEqual([flat(item) for item in re.findall(r'<span class="fit-rep">(.*?)</span>', bilateral_card, re.S)],
+                         ["15 次", "12 次"])
+        self.assertIn("27 次", flat(bilateral_card))
 
     def test_movements_already_logged_today_leave_the_picker(self):
         from datetime import datetime

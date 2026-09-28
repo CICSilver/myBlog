@@ -715,12 +715,14 @@
     list-style: none;
 }
 
+/* 动作名 | 每段重量和这一段的每一组 | 合计。名字列定宽，
+   这样上下几个动作的重量能对成一列。 */
 .fit-log-moves li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto 30px;
-    align-items: center;
-    gap: 14px;
-    padding: 6px 0;
+    grid-template-columns: 5em minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 4px 14px;
+    padding: 8px 0;
     border-bottom: 1px solid var(--line);
     font-size: 0.9rem;
 }
@@ -739,9 +741,45 @@
     white-space: nowrap;
 }
 
-.fit-log-moves .fit-load {
+/* 每一段一行：左边重量，右边这个重量下做的每一组。 */
+.fit-runs {
+    display: grid;
+    grid-template-columns: minmax(4.2em, max-content) minmax(0, 1fr);
+    align-items: baseline;
+    gap: 5px 12px;
+    min-width: 0;
+}
+
+.fit-log-moves .fit-run-load {
     color: var(--ink);
     font-weight: 600;
+    text-align: right;
+}
+
+.fit-log-moves .fit-run-load.is-missing {
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+.fit-log-moves .fit-run-sets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 6px;
+    white-space: normal;
+}
+
+.fit-log-moves .fit-rep {
+    padding: 1px 8px;
+    border-radius: 4px;
+    background: var(--ghost-hover);
+    color: var(--ink);
+    font-size: 0.84rem;
+}
+
+.fit-move-total {
+    display: flex;
+    justify-content: end;
+    gap: 10px;
 }
 
 .fit-side-count {
@@ -1072,24 +1110,25 @@
         padding: 14px;
     }
 
-    /* Four columns do not fit a phone: split each move onto two lines. */
+    /* 手机上三列挤不下：名字和合计占第一行，每组的明细整行铺在下面。 */
     .fit-log-moves li {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px 10px;
     }
 
-    .fit-log-moves b {
-        flex: 1;
+    .fit-move-total {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .fit-runs {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .fit-side-count {
         min-width: 0;
         text-align: left;
-    }
-
-    .fit-log-moves span:not(.fit-pr-flag) {
-        order: 2;
     }
 }
 
@@ -1683,8 +1722,7 @@ html[data-theme="dark"] .fit-volume-chart {
 
 @media (max-width: 720px) {
     .fit-move-note {
-        flex: 1 0 100%;
-        order: 3;
+        grid-row: 3;
     }
 }
 

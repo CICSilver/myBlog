@@ -11,12 +11,25 @@
   {% endif %}
 {%- endmacro %}
 
-{% macro load_label(row) -%}
-  {% if row.kind == "static" %}自重
-  {% elif row.kind == "bodyweight" %}{{ row.variants | join(" · ") or "自重" }}{% if row.weights %} {{ row.weights[-1] }} kg{% endif %}
-  {% elif not row.weights %}未记录
-  {% elif row.weights | length == 1 %}{{ row.weights[0] | round(1) | int if row.weights[0] == row.weights[0] | int else row.weights[0] }} kg
-  {% else %}{{ row.weights[0] }}–{{ row.weights[-1] }} kg{% endif %}
+{# 8.0 写成 8，11.5 照旧。 #}
+{% macro kg(value) -%}{{ '%g' | format(value) }}{%- endmacro %}
+
+{% macro run_label(row, run) -%}
+  {% if row.kind == "static" %}
+  {% elif row.kind == "bodyweight" %}{{ run.variant }}{% if run.weight %} {{ kg(run.weight) }} kg{% endif %}
+  {% elif run.weight is none %}未记重量
+  {% else %}{{ kg(run.weight) }} kg{% endif %}
+{%- endmacro %}
+
+{# 单侧两边一样就写“各 8”，不一样才分开写——哪一组左右拉开了，一眼就跳出来。 #}
+{% macro set_reps(row, entry) -%}
+  {% set left = entry.left if entry.left is not none else "—" %}
+  {% if row.kind == "static" %}{{ entry.seconds if entry.seconds is not none else "—" }} 秒
+  {% elif row.kind == "unilateral" %}
+    {% if entry.left is not none and entry.left == entry.right %}各 {{ left }}
+    {% else %}左 {{ left }} · 右 {{ entry.right if entry.right is not none else "—" }}{% endif %}
+  {% else %}{{ left }} 次
+  {% endif %}
 {%- endmacro %}
 
 {% block title %}健身 | {{ site_name }}{% endblock %}
@@ -379,10 +392,15 @@
                     {% for row in workout.exercise_rows %}
                       <li>
                         <b>{{ row.name }}</b>
-                        <span>{{ row.sets }} 组</span>
-                        <span class="fit-load">{{ load_label(row) }}</span>
-                        {{ side_count(row) }}
-                        <span></span>
+                        <div class="fit-runs">
+                          {% for run in row.runs %}
+                            <span class="fit-run-load{% if row.kind in ('bilateral', 'unilateral') and run.weight is none %} is-missing{% endif %}">{{ run_label(row, run) }}</span>
+                            <span class="fit-run-sets">
+                              {% for entry in run.sets %}<span class="fit-rep">{{ set_reps(row, entry) }}</span>{% endfor %}
+                            </span>
+                          {% endfor %}
+                        </div>
+                        <span class="fit-move-total"><span>{{ row.sets }} 组</span>{{ side_count(row) }}</span>
                         {% if row.notes %}<em class="fit-move-note">{{ row.notes | join('；') }}</em>{% endif %}
                       </li>
                     {% endfor %}

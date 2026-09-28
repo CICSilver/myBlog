@@ -74,6 +74,27 @@ def set_volume(entry, kind):
     return entry["weight"] * left
 
 
+def set_runs(exercise, kind=None):
+    """按录入顺序，把相邻的、重量相同的组并成一段；自重动作按做法（和加重）分段。
+
+    归档里要能看出“上次 10 kg 一组做了几个”，只报总数和重量区间是看不出来的。
+    只并相邻的，不按重量重排：先 10 kg 再降到 8 kg 的递减组，排过序就看不出来了。
+    """
+    kind = kind or movement_kind(exercise.get("name"))
+    runs = []
+    for entry in exercise.get("sets") or []:
+        if kind == "static":
+            key = (None, None)
+        elif kind == "bodyweight":
+            key = (entry.get("variant") or BODYWEIGHT_VARIANTS[0], entry.get("weight"))
+        else:
+            key = (None, entry.get("weight"))
+        if not runs or (runs[-1]["variant"], runs[-1]["weight"]) != key:
+            runs.append({"variant": key[0], "weight": key[1], "sets": []})
+        runs[-1]["sets"].append(entry)
+    return runs
+
+
 def exercise_totals(exercise):
     """单个动作的小计。volume 为 None 表示这个动作里有组缺数字。"""
     kind = movement_kind(exercise.get("name"))
@@ -103,10 +124,7 @@ def exercise_totals(exercise):
         "seconds": seconds,
         "reps": left if kind == "bilateral" else total,
         "imbalance": (abs(left - right) * 200.0 / total) if (kind == "unilateral" and total) else 0.0,
-        "weights": sorted({entry["weight"] for entry in entries if entry.get("weight")}),
-        # 自重动作按做法归类，顺序跟动作库一致，不跟着录入顺序跑。
-        "variants": [name for name in BODYWEIGHT_VARIANTS
-                     if any(entry.get("variant") == name for entry in entries)],
+        "runs": set_runs(exercise, kind),
         "notes": [entry["note"] for entry in entries if entry.get("note")],
     }
 
