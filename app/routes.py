@@ -716,6 +716,9 @@ def _decorate_workout(workout):
     ]
     workout.totals = workout_totals(workout)
     workout.exercise_rows = [exercise_totals(exercise) for exercise in workout.exercises]
+    for row in workout.exercise_rows:
+        for run in row["runs"]:
+            run["summary"] = exercise_totals({"name": row["name"], "sets": run["sets"]})
     return workout
 
 

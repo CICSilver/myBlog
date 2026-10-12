@@ -37,7 +37,7 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/diary-calendar.css') }}?v=20260918">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fitness.css') }}?v=20260918">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fitness.css') }}?v=20261012-per-set">
 {% endblock %}
 
 {% block site_header %}
@@ -394,13 +394,15 @@
                         <b>{{ row.name }}</b>
                         <div class="fit-runs">
                           {% for run in row.runs %}
-                            <span class="fit-run-load{% if row.kind in ('bilateral', 'unilateral') and run.weight is none %} is-missing{% endif %}">{{ run_label(row, run) }}</span>
-                            <span class="fit-run-sets">
-                              {% for entry in run.sets %}<span class="fit-rep">{{ set_reps(row, entry) }}</span>{% endfor %}
-                            </span>
+                            <div class="fit-run">
+                              <span class="fit-run-load{% if row.kind in ('bilateral', 'unilateral') and run.weight is none %} is-missing{% endif %}">{{ run_label(row, run) }}</span>
+                              <span class="fit-run-sets">
+                                {% for entry in run.sets %}<span class="fit-rep">{{ set_reps(row, entry) }}</span>{% endfor %}
+                              </span>
+                              <span class="fit-move-total"><span>{{ run.summary.sets }} 组</span>{{ side_count(run.summary) }}</span>
+                            </div>
                           {% endfor %}
                         </div>
-                        <span class="fit-move-total"><span>{{ row.sets }} 组</span>{{ side_count(row) }}</span>
                         {% if row.notes %}<em class="fit-move-note">{{ row.notes | join('；') }}</em>{% endif %}
                       </li>
                     {% endfor %}

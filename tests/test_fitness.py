@@ -319,8 +319,10 @@ class FitnessRouteTest(unittest.TestCase):
         reps = [flat(item) for item in re.findall(r'<span class="fit-rep">(.*?)</span>', card, re.S)]
         self.assertEqual(loads, ["10 kg", "8 kg"])
         self.assertEqual(reps, ["各 8", "各 8", "左 6 · 右 10"])
-        self.assertIn("左 22 · 右 26", flat(card))
-        self.assertIn("3 组", flat(card))
+        self.assertIn("左 8 · 右 8", flat(card))
+        self.assertIn("左 14 · 右 18", flat(card))
+        self.assertIn("1 组", flat(card))
+        self.assertIn("2 组", flat(card))
 
         bilateral_card = html[html.index('datetime="2026-09-16"'):]
         bilateral_card = bilateral_card[:bilateral_card.index("</article>")]

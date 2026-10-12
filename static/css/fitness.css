@@ -95,10 +95,12 @@
    位移空间：外层撑满整行，内层才动得了。 */
 .fit-side {
     align-self: stretch;
+    min-width: 0;
 }
 
 .fit-side-inner {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
 }
 
@@ -715,11 +717,10 @@
     list-style: none;
 }
 
-/* 动作名 | 每段重量和这一段的每一组 | 合计。名字列定宽，
-   这样上下几个动作的重量能对成一列。 */
+/* 动作名列定宽，各重量段的次数与小计对齐。 */
 .fit-log-moves li {
     display: grid;
-    grid-template-columns: 5em minmax(0, 1fr) auto;
+    grid-template-columns: 5em minmax(0, 1fr);
     align-items: baseline;
     gap: 4px 14px;
     padding: 8px 0;
@@ -741,10 +742,18 @@
     white-space: nowrap;
 }
 
-/* 每一段一行：左边重量，右边这个重量下做的每一组。 */
+/* 各重量段保留训练顺序，每组次数独占一行。 */
 .fit-runs {
     display: grid;
-    grid-template-columns: minmax(4.2em, max-content) minmax(0, 1fr);
+    grid-template-columns: minmax(4.2em, max-content) minmax(0, 1fr) auto;
+    gap: 9px;
+    min-width: 0;
+}
+
+.fit-run {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
     align-items: baseline;
     gap: 5px 12px;
     min-width: 0;
@@ -763,7 +772,8 @@
 
 .fit-log-moves .fit-run-sets {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 5px 6px;
     white-space: normal;
 }
@@ -1110,15 +1120,26 @@
         padding: 14px;
     }
 
-    /* 手机上三列挤不下：名字和合计占第一行，每组的明细整行铺在下面。 */
+    /* 手机上动作名独占一行，段小计放在该段次数下方。 */
     .fit-log-moves li {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr);
         gap: 6px 10px;
     }
 
-    .fit-move-total {
+    .fit-runs {
+        grid-template-columns: minmax(4.2em, max-content) minmax(0, 1fr);
+    }
+
+    .fit-run {
+        gap: 5px 10px;
+    }
+
+    .fit-run .fit-move-total {
         grid-column: 2;
-        grid-row: 1;
+        grid-row: 2;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 3px 10px;
     }
 
     .fit-runs {
@@ -1129,6 +1150,30 @@
     .fit-side-count {
         min-width: 0;
         text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .fit-calendar .diary-calendar-head {
+        flex-wrap: wrap;
+    }
+
+    .fit-calendar .diary-calendar-tools {
+        margin-left: auto;
+    }
+
+    .fit-log {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fit-log-date {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .fit-log-date strong {
+        font-size: 1.4rem;
     }
 }
 
