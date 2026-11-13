@@ -47,6 +47,9 @@ class MobileArticleLayoutTest(unittest.TestCase):
 
     def test_mobile_cover_images_code_and_tables_fit_the_reading_width(self):
         self.assertIn(".detail-page .reading-cover {\n        margin: 0 0 20px", self.mobile_styles)
+        self.assertIn(".reading-shell {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    min-width: 0;", self.desktop_styles)
+        self.assertIn(".reading-sheet {\n    min-width: 0;", self.desktop_styles)
+        self.assertIn(".reading-article {\n    min-width: 0;\n    overflow-x: auto;", self.desktop_styles)
         self.assertIn(".markdown-body pre {", self.markdown_paper_css)
         self.assertIn("overflow-x: auto", self.markdown_paper_css)
         self.assertIn(".markdown-body table {", self.markdown_paper_css)
@@ -55,7 +58,7 @@ class MobileArticleLayoutTest(unittest.TestCase):
         self.assertIn("border-radius: var(--radius-sm)", self.markdown_paper_css)
 
     def test_desktop_cards_and_article_template_remain_intact(self):
-        self.assertIn(".reading-sheet {\n    background: var(--surface-strong);", self.desktop_styles)
+        self.assertIn(".reading-sheet {\n    min-width: 0;\n    background: var(--surface-strong);", self.desktop_styles)
         self.assertIn("padding: 42px 52px 36px;", self.desktop_styles)
         self.assertIn('class="reading-sheet', self.detail_template)
         self.assertIn('class="reading-article markdown-body', self.detail_template)
