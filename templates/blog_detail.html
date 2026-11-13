@@ -6,7 +6,7 @@
 {% block vendor_styles %}
 <link
   rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css"
+  href="{{ url_for('static', filename='css/markdown-paper.css', v='20261113') }}"
 >
 <link
   rel="stylesheet"
@@ -23,28 +23,78 @@
 
 {% block content %}
 <section class="reading-shell">
-  <header class="reading-lead">
-    <p class="section-label">Archive Entry</p>
-    <h1 class="reading-title">{{ blog.title }}</h1>
-    <div class="reading-meta">
-      <span>{{ blog.date }} {{ blog.time }}</span>
-      <span>{{ blog.category }}</span>
+  <nav class="reading-crumb" aria-label="文章导航">
+    <a class="back-link" href="{{ url_for('main.index') }}">← 返回归档首页</a>
+    <span>{{ blog.category }}</span>
+  </nav>
+
+  <article class="reading-sheet{% if blog.is_verse %} is-verse-sheet{% endif %}">
+    <header class="reading-header">
+      <span class="seal-tag">{{ blog.category }}</span>
+      <h1 class="reading-title">{{ blog.title }}</h1>
+      <div class="reading-meta">
+        <span>{{ blog.display_date | default(blog.date) }}</span>
+        {% if blog.word_count %}
+          <span>{{ blog.word_count }} 字</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="ornament-rule" aria-hidden="true"><i></i></div>
+
+    {% if blog.cover_url %}
+    <figure class="reading-cover">
+      <button class="reading-cover-button" type="button" data-article-image-trigger>
+        <img src="{{ blog.cover_url }}" alt="{{ blog.title }} 封面">
+      </button>
+    </figure>
+    {% endif %}
+
+    <div class="reading-article markdown-body{% if blog.is_verse %} is-verse{% endif %}" id="markdown-preview">
+      <div class="markdown-fallback" data-markdown-fallback>{{ blog.content }}</div>
     </div>
-    <a class="toolbar-link back-link" href="{{ url_for('main.index') }}">返回档案首页</a>
-  </header>
 
-  {% if blog.cover_url %}
-  <figure class="reading-cover">
-    <button class="reading-cover-button" type="button" data-article-image-trigger>
-      <img src="{{ blog.cover_url }}" alt="{{ blog.title }} 封面">
-    </button>
-  </figure>
-  {% endif %}
-
-  <article class="reading-article markdown-body" id="markdown-preview">
-    <div class="markdown-fallback" data-markdown-fallback>{{ blog.content }}</div>
+    <footer class="reading-colophon">
+      <span>收录于「{{ blog.category }}」</span>
+      <span>{{ blog.date }}</span>
+    </footer>
   </article>
-  <textarea id="markdown-content" hidden>{{ blog.content }}</textarea>
+
+  <nav class="reading-pagination" aria-label="相邻文章">
+    {% if previous_blog is defined and previous_blog %}
+      <a
+        class="reading-prev"
+        href="{{ url_for('main.blog_detail', year=previous_blog.year, month=previous_blog.month, html_title=previous_blog.html_title) }}"
+      >
+        <span class="reading-page-label">← 上一篇</span>
+        <strong class="reading-page-title">{{ previous_blog.title }}</strong>
+        <span class="reading-page-meta">{{ previous_blog.date }} · {{ previous_blog.category }}</span>
+      </a>
+    {% else %}
+      <div class="reading-prev is-empty" aria-disabled="true">
+        <span class="reading-page-label">← 上一篇</span>
+        <span class="reading-page-placeholder">已是最早一篇</span>
+      </div>
+    {% endif %}
+
+    {% if next_blog is defined and next_blog %}
+      <a
+        class="reading-next"
+        href="{{ url_for('main.blog_detail', year=next_blog.year, month=next_blog.month, html_title=next_blog.html_title) }}"
+      >
+        <span class="reading-page-label">下一篇 →</span>
+        <strong class="reading-page-title">{{ next_blog.title }}</strong>
+        <span class="reading-page-meta">{{ next_blog.date }} · {{ next_blog.category }}</span>
+      </a>
+    {% else %}
+      <div class="reading-next is-empty" aria-disabled="true">
+        <span class="reading-page-label">下一篇 →</span>
+        <span class="reading-page-placeholder">已至最新一篇</span>
+      </div>
+    {% endif %}
+  </nav>
+
+  <script id="markdown-source" type="application/json">{{ blog.content | tojson }}</script>
 </section>
 
 <div class="article-image-viewer" id="article-image-viewer" aria-hidden="true">
@@ -66,18 +116,31 @@
 {% endif %}
 <script>
   (function () {
-    const markdownSource = document.getElementById('markdown-content');
+    const markdownSource = document.getElementById('markdown-source');
     const markdownPreview = document.getElementById('markdown-preview');
     const imageViewer = document.getElementById('article-image-viewer');
     const imageViewerImage = document.getElementById('article-image-viewer-img');
     const imageViewerCaption = document.getElementById('article-image-viewer-caption');
+
+    function readMarkdownSource() {
+      if (!markdownSource) {
+        return '';
+      }
+
+      try {
+        const parsed = JSON.parse(markdownSource.textContent);
+        return typeof parsed === 'string' ? parsed : String(parsed || '');
+      } catch (error) {
+        return markdownSource.textContent || '';
+      }
+    }
 
     function renderArticleMarkdown() {
       if (!markdownSource || !markdownPreview) {
         return;
       }
 
-      const markdownContent = markdownSource.value;
+      const markdownContent = readMarkdownSource();
 
       if (window.marked && typeof marked.parse === 'function') {
         const markedOptions = {
