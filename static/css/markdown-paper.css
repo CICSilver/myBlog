@@ -1,6 +1,8 @@
 /* markdown-paper.css - 温润纸本风 Markdown 排版系统（100% 基于全站主题变量） */
 
 .markdown-body {
+    min-width: 0;
+    overflow-x: auto;
     color: var(--ink);
     background: transparent !important;
     font-family: var(--font-body);
@@ -239,13 +241,12 @@
 
 /* 表格 */
 .markdown-body table {
-    display: block;
+    display: table;
     width: 100%;
     max-width: 100%;
     margin: 1.4em 0;
     border-collapse: collapse;
     border-spacing: 0;
-    overflow-x: auto;
 }
 
 .markdown-body table tr {
@@ -272,6 +273,12 @@
 .markdown-body table th {
     font-weight: 600;
     color: var(--ink);
+    white-space: nowrap;
+}
+
+.markdown-body table th:first-child,
+.markdown-body table td:first-child {
+    white-space: nowrap;
 }
 
 /* 分割线 */
