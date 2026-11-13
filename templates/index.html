@@ -17,6 +17,7 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/poetry.css') }}?v=20261112v2">
 <script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
 {% endblock %}
 
@@ -65,6 +66,8 @@
     </section>
     <section class="home-body">
       <aside class="archive-sidebar">
+        {% include "_poetry_card.html" %}
+
         <section class="sidebar-block">
           <div class="sidebar-heading">
             <h2>分类索引</h2>
@@ -256,4 +259,5 @@
     renderMarkdownPreview(contentId, previewId);
   });
 </script>
+<script src="{{ url_for('static', filename='js/poetry.js') }}?v=20261112v2"></script>
 {% endblock %}
