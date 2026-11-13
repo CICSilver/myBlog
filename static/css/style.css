@@ -1715,6 +1715,8 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .reading-article {
+    min-width: 0;
+    overflow-x: auto;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -2882,9 +2884,11 @@ a.reading-next:hover,
 }
 
 .markdown-body table {
-    display: block;
+    display: table;
     width: 100%;
-    overflow-x: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 .markdown-body table tr,
@@ -2912,9 +2916,15 @@ a.reading-next:hover,
 }
 
 .markdown-body table th,
+.markdown-body table td:first-child {
+    white-space: nowrap;
+}
+
+.markdown-body table th,
 .editor-stage .editormd-preview-container table th,
 .editor-stage .editormd-html-preview table th {
     color: var(--ink);
+    white-space: nowrap;
 }
 
 @keyframes rise-in {
@@ -3606,7 +3616,7 @@ a.reading-next:hover,
 
     .home-page .entry-line,
     .home-page .entry-line.has-cover {
-        grid-template-columns: 52px minmax(0, 1fr);
+        grid-template-columns: 62px minmax(0, 1fr);
         gap: 12px;
         padding: 14px 0;
     }
@@ -3622,7 +3632,7 @@ a.reading-next:hover,
     }
 
     .home-page .entry-date strong {
-        font-size: 1.28rem;
+        font-size: 1.16rem;
         color: var(--accent-strong);
         line-height: 1;
     }
