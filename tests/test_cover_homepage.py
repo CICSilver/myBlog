@@ -70,7 +70,10 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         with self.app.test_request_context("/"):
             html = routes_module.init_index_with_blogs(blogs)
 
-        self.assertIn('class="feature-article has-cover"', html)
+        self.assertRegex(
+            html,
+            r'class="[^"]*\bfeature-article\b[^"]*\bhas-cover\b[^"]*"',
+        )
         self.assertIn('class="feature-cover"', html)
         self.assertIn('src="/static/vendor/editor.md/examples/images/8.jpg"', html)
         self.assertIn('class="entry-line"', html)
@@ -236,7 +239,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="home-cover"', html)
-        self.assertIn("Creative Writing Archive", html)
+        self.assertIn("Creative Archive", html)
         self.assertIn("Silver&#39;s Blog", html)
         self.assertIn('class="theme-toggle cover-theme-toggle"', html)
         self.assertIn('class="pull-light-cord"', html)
@@ -296,10 +299,16 @@ class HomepageCoverRenderingTest(unittest.TestCase):
             css,
             re.S,
         )
+        reading_cover = re.search(
+            r"\.reading-cover img\s*\{(?P<body>[^}]*)\}",
+            css,
+            re.S,
+        )
 
         self.assertIsNotNone(cover_images)
-        self.assertIn("object-fit: contain;", cover_images.group("body"))
-        self.assertNotIn("object-fit: cover;", cover_images.group("body"))
+        self.assertIn("object-fit: cover;", cover_images.group("body"))
+        self.assertIsNotNone(reading_cover)
+        self.assertIn("object-fit: contain;", reading_cover.group("body"))
         self.assertNotIn(".feature-cover:hover img", css)
 
     def test_cover_upload_plus_uses_centered_strokes(self):

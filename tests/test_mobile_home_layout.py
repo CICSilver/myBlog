@@ -116,7 +116,8 @@ class MobileHomeLayoutTest(unittest.TestCase):
 
     @staticmethod
     def css_rule_body(css, selector):
-        for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", css, re.S):
+        cleaned = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+        for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", cleaned, re.S):
             selectors = [part.strip() for part in match.group(1).split(",")]
             if selector in selectors:
                 return re.sub(r"\s+", " ", match.group(2)).strip()
@@ -135,19 +136,19 @@ class MobileHomeLayoutTest(unittest.TestCase):
             date_url = url_for("main.archived_blogs", year="2026", month="7")
 
         chips = self.parse_mobile_chips(html)
-        self.assertGreaterEqual(len(chips), 5)
+        self.assertEqual(len(chips), 3)
         chip_text = [chip["text"] for chip in chips]
         self.assertTrue(any(text.startswith("全部") and "4" in text for text in chip_text))
         self.assertTrue(any(text.startswith("随笔") and "3" in text for text in chip_text))
         self.assertTrue(any(text.startswith("阅读") and "1" in text for text in chip_text))
-        self.assertTrue(any(text.startswith("2026.7") and "2" in text for text in chip_text))
         self.assertIn('class="mobile-archive-controls"', html)
-        self.assertIn('class="mobile-filter-heading"', html)
+        self.assertIn('class="mobile-filter-bar"', html)
         self.assertIn('class="mobile-filter-chips"', html)
-        self.assertIn('class="mobile-archive-details"', html)
-        self.assertIn('class="mobile-archive-panel"', html)
+        self.assertIn('class="mobile-date-dropdown"', html)
+        self.assertIn('class="mobile-archive-list"', html)
         self.assertIn("分类索引", html)
-        self.assertIn("时间归档", html)
+        self.assertIn("岁月归档", html)
+        self.assertIn("2026 · 07", html)
         self.assertIn(category_url, html)
         self.assertIn(date_url, html)
         self.assertGreaterEqual(html.count('href="{0}"'.format(category_url)), 2)
@@ -185,31 +186,24 @@ class MobileHomeLayoutTest(unittest.TestCase):
         self.assertIn(".archive-sidebar", self.desktop_styles)
 
     def test_home_mobile_rules_are_scoped_and_preserve_the_b_feed_hierarchy(self):
+        controls = self.css_rule_body(self.mobile_styles, ".home-page .mobile-archive-controls")
         sidebar = self.css_rule_body(self.mobile_styles, ".home-page .archive-sidebar")
-        entry_stream = self.css_rule_body(self.mobile_styles, ".home-page .entry-stream")
-        feature = self.css_rule_body(self.mobile_styles, ".home-page .feature-article")
+        filter_bar = self.css_rule_body(self.mobile_styles, ".home-page .mobile-filter-bar")
         chips = self.css_rule_body(self.mobile_styles, ".home-page .mobile-filter-chips")
         chip = self.css_rule_body(self.mobile_styles, ".home-page .mobile-filter-chip")
-        entry_line = self.css_rule_body(self.mobile_styles, ".home-page .entry-line")
-        dark_feature = self.css_rule_body(
-            self.mobile_styles,
-            'html[data-theme="dark"] .home-page .feature-article',
-        )
+        dropdown = self.css_rule_body(self.mobile_styles, ".home-page .mobile-date-dropdown")
 
+        self.assertIn("display: block", controls)
         self.assertIn("display: none", sidebar)
-        for declaration in ("padding: 0", "border: 0", "border-radius: 0"):
-            self.assertIn(declaration, entry_stream)
-        self.assertIn("background:", feature)
-        self.assertIn("color:", feature)
+        self.assertIn("display: flex", filter_bar)
         self.assertIn("display: flex", chips)
         self.assertIn("overflow-x: auto", chips)
         self.assertIn("flex-wrap: nowrap", chips)
         self.assertIn("padding:", chip)
         self.assertIn("border-radius:", chip)
-        self.assertIn("padding:", entry_line)
-        self.assertIn("border-bottom:", entry_line)
-        self.assertIn("background:", dark_feature)
-        self.assertIn("color:", dark_feature)
+        self.assertIn("position: relative", dropdown)
+        self.assertIn(".home-page .entry-line", self.mobile_styles)
+        self.assertIn(".home-page .feature-article", self.mobile_styles)
 
 
 if __name__ == "__main__":

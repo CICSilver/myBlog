@@ -12,7 +12,7 @@ class MarkdownSoftBreakRenderingTest(unittest.TestCase):
     def test_pages_use_local_marked_renderer(self):
         local_marked_path = "vendor/editor.md/lib/marked.min.js"
 
-        self.assertIn(local_marked_path, self.index_source)
+        self.assertNotIn(local_marked_path, self.index_source)
         self.assertIn(local_marked_path, self.detail_source)
         self.assertNotIn("cdn.jsdelivr.net/npm/marked", self.index_source)
         self.assertNotIn("cdn.jsdelivr.net/npm/marked", self.detail_source)

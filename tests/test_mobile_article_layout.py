@@ -8,6 +8,9 @@ class MobileArticleLayoutTest(unittest.TestCase):
         self.stylesheet = (project_root / "static" / "css" / "style.css").read_text(
             encoding="utf-8"
         )
+        self.markdown_paper_css = (
+            project_root / "static" / "css" / "markdown-paper.css"
+        ).read_text(encoding="utf-8")
         self.detail_template = (
             project_root / "templates" / "blog_detail.html"
         ).read_text(encoding="utf-8")
@@ -23,54 +26,39 @@ class MobileArticleLayoutTest(unittest.TestCase):
             self.mobile_styles,
         )
         self.assertIn(
-            '.detail-page .home-cover-main {\n        grid-template-columns: minmax(0, 1fr) 76px',
+            '.detail-page .home-cover-main {\n        grid-template-columns: minmax(0, 1fr) 72px',
             self.mobile_styles,
         )
         self.assertNotIn("detail-page", self.index_template)
 
     def test_mobile_detail_uses_one_continuous_reading_surface(self):
-        self.assertIn(
-            ".detail-page .reading-lead,\n    .detail-page .reading-article {",
-            self.mobile_styles,
-        )
-        self.assertIn("border: 0", self.mobile_styles)
-        self.assertIn("border-radius: 0", self.mobile_styles)
-        self.assertIn("background: transparent", self.mobile_styles)
-        self.assertIn("box-shadow: none", self.mobile_styles)
-        self.assertIn("backdrop-filter: none", self.mobile_styles)
-        self.assertIn(".detail-page .reading-shell {\n        gap: 10px", self.mobile_styles)
+        self.assertIn(".detail-page .reading-sheet {", self.mobile_styles)
+        self.assertIn(".detail-page .reading-shell {\n        gap: 12px", self.mobile_styles)
+        self.assertIn('class="reading-sheet', self.detail_template)
+        self.assertIn('class="reading-header"', self.detail_template)
+        self.assertIn('class="reading-pagination"', self.detail_template)
 
     def test_mobile_reading_title_and_horizontal_padding_are_fixed_and_narrow(self):
-        self.assertIn(".detail-page .reading-title {\n        font-size: 2.1rem", self.mobile_styles)
-        self.assertIn("line-height: 1.15", self.mobile_styles)
-        self.assertIn(".detail-page .reading-lead {\n        gap: 10px;\n        padding: 18px 10px 10px", self.mobile_styles)
-        self.assertIn(".detail-page .reading-article {\n        padding: 18px 8px 32px", self.mobile_styles)
-        self.assertIn("font-size: 1rem", self.mobile_styles)
-        self.assertIn("line-height: 1.9", self.mobile_styles)
-        self.assertNotIn("font-size: clamp", self.mobile_styles)
+        self.assertIn(".detail-page .reading-title {\n        font-size: 1.72rem", self.mobile_styles)
+        self.assertIn("line-height: 1.24", self.mobile_styles)
+        self.assertIn("padding: 26px 18px 24px", self.mobile_styles)
+        self.assertIn("font-size: 0.98rem", self.markdown_paper_css)
+        self.assertIn("line-height: 1.88", self.markdown_paper_css)
 
     def test_mobile_cover_images_code_and_tables_fit_the_reading_width(self):
-        self.assertIn(".detail-page .reading-cover {\n        padding: 0 8px 4px", self.mobile_styles)
-        self.assertIn(".detail-page .reading-cover-button {\n        border-radius: 8px", self.mobile_styles)
-        self.assertIn(".detail-page .reading-article.markdown-body pre {", self.mobile_styles)
-        self.assertIn("overflow-x: auto", self.mobile_styles)
-        self.assertIn("padding: 12px", self.mobile_styles)
-        self.assertIn(".detail-page .reading-article.markdown-body table {", self.mobile_styles)
-        self.assertIn(".detail-page .reading-article.markdown-body img.article-image {", self.mobile_styles)
-        self.assertIn("margin: 1.2rem auto", self.mobile_styles)
-        self.assertIn("border-radius: 8px", self.mobile_styles)
+        self.assertIn(".detail-page .reading-cover {\n        margin: 0 0 20px", self.mobile_styles)
+        self.assertIn(".markdown-body pre {", self.markdown_paper_css)
+        self.assertIn("overflow-x: auto", self.markdown_paper_css)
+        self.assertIn(".markdown-body table {", self.markdown_paper_css)
+        self.assertIn(".markdown-body img.article-image {", self.markdown_paper_css)
+        self.assertIn("margin: 1.2rem auto", self.markdown_paper_css)
+        self.assertIn("border-radius: var(--radius-sm)", self.markdown_paper_css)
 
     def test_desktop_cards_and_article_template_remain_intact(self):
-        self.assertIn(
-            ".hero-copyblock,\n.feature-article,\n.sidebar-block,\n.reading-lead,\n.reading-article,",
-            self.desktop_styles,
-        )
-        self.assertIn(
-            ".reading-lead,\n.reading-article {\n    padding: clamp(24px, 4vw, 40px)",
-            self.desktop_styles,
-        )
-        self.assertIn('class="reading-lead"', self.detail_template)
-        self.assertIn('class="reading-article markdown-body"', self.detail_template)
+        self.assertIn(".reading-sheet {\n    background: var(--surface-strong);", self.desktop_styles)
+        self.assertIn("padding: 42px 52px 36px;", self.desktop_styles)
+        self.assertIn('class="reading-sheet', self.detail_template)
+        self.assertIn('class="reading-article markdown-body', self.detail_template)
 
 
 if __name__ == "__main__":

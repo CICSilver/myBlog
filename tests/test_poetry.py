@@ -29,7 +29,10 @@ REAL_POEMS_PATH = PROJECT_ROOT / "app" / "data" / "poems.json"
 APPROVED_DYNASTIES = {"唐代", "五代", "北宋", "南宋", "金代", "元代", "明代", "清代"}
 APPROVED_STYLES = {"清丽婉约", "澄澈疏朗", "清骨入神", "俊逸风骨", "纤巧灵动", "纯粹深情"}
 APPROVED_MOODS = {"幽微相思", "别后怀人", "独立清醒", "苍茫通达", "恬淡隐逸", "微寒羁旅", "闲愁清冷"}
-APPROVED_THEMES = {"春水飞花", "梅雪孤枝", "秋风夜雨", "风雪千山", "烟火残棋", "孤星明月", "松花烹茶", "青帘画屏"}
+APPROVED_THEMES = {
+    "春水飞花", "梅雪孤枝", "秋风夜雨", "风雪千山",
+    "烟火残棋", "孤星明月", "松花烹茶", "青帘画屏", "秋色澄明",
+}
 
 
 class TestPoetryDatasetIntegrity(unittest.TestCase):
@@ -41,17 +44,17 @@ class TestPoetryDatasetIntegrity(unittest.TestCase):
             self.data = json.load(f)
 
     def test_total_poem_count_is_exactly_32(self):
-        """严格校验数据集总量为 32 首"""
+        """严格校验数据集总量为 40 首"""
         poems = self.data.get("poems", [])
-        self.assertEqual(len(poems), 32, f"诗词数量应严格为 32 首，当前实际为 {len(poems)}")
-        self.assertEqual(self.data.get("total"), 32)
+        self.assertEqual(len(poems), 40, f"诗词数量应严格为 40 首，当前实际为 {len(poems)}")
+        self.assertEqual(self.data.get("total"), 40)
 
     def test_unique_poem_ids(self):
         """确保所有诗词 ID 唯一无重复且遵循 poem_XX 规范"""
         poems = self.data.get("poems", [])
         ids = [p["id"] for p in poems if "id" in p]
-        self.assertEqual(len(ids), 32)
-        self.assertEqual(len(set(ids)), 32, "存在重复的诗词 ID")
+        self.assertEqual(len(ids), 40)
+        self.assertEqual(len(set(ids)), 40, "存在重复的诗词 ID")
         for pid in ids:
             self.assertTrue(pid.startswith("poem_"), f"ID 命名格式异常: {pid}")
 
@@ -100,7 +103,7 @@ class TestPoetryDatasetIntegrity(unittest.TestCase):
             self.assertIn(tags["theme"], APPROVED_THEMES, f"{poem_id} 意象标签无效: {tags['theme']}")
 
     def test_handwritten_flag_integrity(self):
-        """校验亲笔手抄/黄金标杆标记：恰好 13 首国誉手抄篇目为 True，19 首为 False"""
+        """校验亲笔手抄/黄金标杆标记：13 首手抄篇目为 True，其余为 False"""
         poems = self.data["poems"]
         handwritten_count = sum(1 for p in poems if p.get("is_handwritten") is True)
         self.assertEqual(handwritten_count, 13, f"亲笔手抄应为 13 首，实际为 {handwritten_count}")
@@ -372,7 +375,7 @@ class TestTagWeightConvergenceAndRecommendation(unittest.TestCase):
     def test_softmax_probabilities_sum_to_one(self):
         """Softmax 计算得出的抽卡概率分布之和严格等于 1.0"""
         probs = self.manager.compute_recommendation_probabilities()
-        self.assertEqual(len(probs), 32)
+        self.assertEqual(len(probs), 40)
         total_prob = sum(probs.values())
         self.assertAlmostEqual(total_prob, 1.0, places=5)
 
@@ -481,6 +484,7 @@ class TestPoetryFlaskRoutes(unittest.TestCase):
         self.app.config.update(
             TESTING=True,
             POETRY_USER_DATA_PATH=str(self.test_user_data_path),
+            POETRY_ALLOW_ANONYMOUS_WRITE=True,
         )
         self.test_manager = PoetryManager(
             poems_path=str(REAL_POEMS_PATH),
@@ -503,14 +507,14 @@ class TestPoetryFlaskRoutes(unittest.TestCase):
             self.assertIn("诗斋", html)
 
     def test_get_api_poetry_dataset_returns_json(self):
-        """GET /api/poetry/dataset 返回 200 与 32 首数据"""
+        """GET /api/poetry/dataset 返回 200 与 40 首数据"""
         with self.app.test_client() as client:
             res = client.get("/api/poetry/dataset")
             self.assertEqual(res.status_code, 200)
             data = res.get_json()
             self.assertEqual(data["status"], "success")
-            self.assertEqual(data["total"], 32)
-            self.assertEqual(len(data["poems"]), 32)
+            self.assertEqual(data["total"], 40)
+            self.assertEqual(len(data["poems"]), 40)
             self.assertIn("tags", data)
 
     def test_get_api_poetry_user_preferences_returns_json(self):
@@ -948,9 +952,19 @@ class TestPoetryTemplateAndIntegration(unittest.TestCase):
 
         self.app = create_app()
         self.app.config["TESTING"] = True
+        self.app.config["POETRY_ALLOW_ANONYMOUS_WRITE"] = True
+        self.app.config["POETRY_USER_DATA_PATH"] = str(self.user_data_path)
+        self.test_manager = PoetryManager(
+            poems_path=str(REAL_POEMS_PATH),
+            user_data_path=str(self.user_data_path),
+            lock_path=str(self.lock_path),
+        )
+        self.manager_patcher = patch("app.routes.get_poetry_manager", return_value=self.test_manager)
+        self.manager_patcher.start()
         self.client = self.app.test_client()
 
     def tearDown(self):
+        self.manager_patcher.stop()
         self.env_patch.stop()
         self.temp_dir.cleanup()
 
@@ -974,33 +988,32 @@ class TestPoetryTemplateAndIntegration(unittest.TestCase):
 
         # 校验页面结构与标题
         self.assertIn("诗斋", html)
-        self.assertIn("澄澈如水洗 · 诗斋沉浸大厅", html)
+        self.assertIn("Poetry Archive", html)
         self.assertIn("poetry.css", html)
         self.assertIn("poetry.js", html)
         self.assertIn('name="csrf-token"', html)
 
-        # 校验四维正交标签
-        self.assertIn("朝代维度", html)
-        self.assertIn("风格维度", html)
-        self.assertIn("心境氛围", html)
-        self.assertIn("意象物候", html)
+        # 校验四维正交标签切换按钮
+        self.assertIn('data-dim-toggle="dynasty"', html)
+        self.assertIn('data-dim-toggle="style"', html)
+        self.assertIn('data-dim-toggle="mood"', html)
+        self.assertIn('data-dim-toggle="theme"', html)
 
         # 校验核心卡片与舞台
         self.assertIn("immersiveCardInner", html)
-        self.assertIn("知己微评", html)
-        self.assertIn("全篇精排赏析", html)
+        self.assertIn("stageQuoteLines", html)
+        self.assertIn("stageBackVerses", html)
 
         # 校验操作栏
         self.assertIn("btnSwitchPoem", html)
         self.assertIn("btnImmLike", html)
         self.assertIn("btnFlipCard", html)
-        self.assertIn("btnToggleDrawer", html)
 
-        # 校验偏好雷达与看板
-        self.assertIn("radarChartContainer", html)
-        self.assertIn("实时审美偏好沉淀看板", html)
-        self.assertIn("收敛指数", html)
-        self.assertIn("审美藏阁", html)
+        # 校验私藏册页与切换标签
+        self.assertIn("私藏册页", html)
+        self.assertIn("tabExcerpts", html)
+        self.assertIn("tabPoems", html)
+        self.assertIn("notebookExcerptsList", html)
 
         # 校验划词圈点浮标
         self.assertIn("excerptPopover", html)
@@ -1029,25 +1042,37 @@ class TestPoetryTemplateAndIntegration(unittest.TestCase):
 
         # 校验侧边栏卡片存在
         self.assertIn("sidebarPoetryCard", html)
-        self.assertIn("今日素笺 · 雅集", html)
+        self.assertIn("今日诗笺", html)
         self.assertIn("sidebarCardInner", html)
-        self.assertIn("sidebarQuote", html)
+        self.assertIn("sidebarQuoteLines", html)
         self.assertIn("sidebarAuthor", html)
         self.assertIn("sidebarLikeBtn", html)
         self.assertIn("sidebarFlipBtn", html)
         self.assertIn("poetry.css", html)
         self.assertIn("poetry.js", html)
-
-        # 校验移动端快捷入口
-        self.assertIn("诗斋", html)
+        self.assertIn("入诗斋", html)
 
     def test_site_header_contains_poetry_nav_link(self):
-        """测试全站顶栏导航具备每日诗词快速链接"""
-        response = self.client.get("/")
+        """测试首页侧栏便笺卡包含直达诗斋大厅的链接"""
+        fake_blogs = [
+            {
+                "title": "测试文章",
+                "year": "2026",
+                "month": "11",
+                "html_title": "test-blog",
+                "content": "测试正文",
+                "date": "2026-11-12",
+                "category": "随笔"
+            }
+        ]
+        with patch("app.routes.dbHelper.get_recent_blogs", return_value=fake_blogs), \
+             patch("app.routes.dbHelper.get_all_categories", return_value=[{"name": "随笔", "num": 1}]), \
+             patch("app.routes.dbHelper.get_all_date", return_value=[{"year": "2026", "month": "11", "num": 1}]):
+            response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn("/poetry", html)
-        self.assertIn("每日诗词", html)
+        self.assertIn("入诗斋", html)
 
     def test_csrf_token_propagation_in_poetry_post_requests(self):
         """测试诗词点赞与词句圈点 API 严格执行 CSRF 校验"""
@@ -1086,6 +1111,23 @@ class TestPoetryTemplateAndIntegration(unittest.TestCase):
         excerpt_data = resp_excerpt.get_json()
         self.assertEqual(excerpt_data.get("status"), "success")
         self.assertTrue(excerpt_data.get("liked"))
+
+    def test_guest_mode_does_not_persist_poetry_mutations(self):
+        """未登录且未开启匿名写入时，诗词点赞/圈点仅返回 guest_local 且不落盘"""
+        self.app.config["POETRY_ALLOW_ANONYMOUS_WRITE"] = False
+        with self.app.test_client() as client:
+            like_res = client.post(
+                "/api/poetry/like",
+                json={"poem_id": "poem_01", "action": "like"}
+            )
+            self.assertEqual(like_res.status_code, 200)
+            like_data = like_res.get_json()
+            self.assertEqual(like_data.get("status"), "guest_local")
+            self.assertFalse(like_data.get("persisted"))
+            self.assertFalse(like_data.get("authenticated"))
+
+            pref_res = client.get("/api/poetry/preferences")
+            self.assertEqual(pref_res.get_json().get("liked_poem_ids"), [])
 
 
 if __name__ == "__main__":

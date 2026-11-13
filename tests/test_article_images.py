@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -72,8 +73,15 @@ class ArticleImageRenderingTest(unittest.TestCase):
         self.assertIn('data-markdown-fallback', html)
         self.assertIn("第一段", html)
         self.assertIn("&lt;/textarea&gt;", html)
-        self.assertIn('<textarea id="markdown-content" hidden>', html)
-        self.assertNotIn('<textarea id="markdown-content" hidden></textarea>', html)
+        self.assertIn('<script id="markdown-source" type="application/json">', html)
+        self.assertNotIn('</textarea>\n\n![正文图片]', html)
+        source_match = re.search(
+            r'<script id="markdown-source" type="application/json">(.*?)</script>',
+            html,
+            re.S,
+        )
+        self.assertIsNotNone(source_match)
+        self.assertEqual(json.loads(source_match.group(1)), self.blog.content)
 
     def test_detail_page_enhances_markdown_images_after_rendering(self):
         self.assertIn("function enhanceArticleImages(container)", self.detail_template)

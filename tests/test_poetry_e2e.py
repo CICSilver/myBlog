@@ -64,7 +64,10 @@ REAL_POEMS_PATH = PROJECT_ROOT / "app" / "data" / "poems.json"
 APPROVED_DYNASTIES = {"唐代", "五代", "北宋", "南宋", "金代", "元代", "明代", "清代"}
 APPROVED_STYLES = {"清丽婉约", "澄澈疏朗", "清骨入神", "俊逸风骨", "纤巧灵动", "纯粹深情"}
 APPROVED_MOODS = {"幽微相思", "别后怀人", "独立清醒", "苍茫通达", "恬淡隐逸", "微寒羁旅", "闲愁清冷"}
-APPROVED_THEMES = {"春水飞花", "梅雪孤枝", "秋风夜雨", "风雪千山", "烟火残棋", "孤星明月", "松花烹茶", "青帘画屏"}
+APPROVED_THEMES = {
+    "春水飞花", "梅雪孤枝", "秋风夜雨", "风雪千山",
+    "烟火残棋", "孤星明月", "松花烹茶", "青帘画屏", "秋色澄明",
+}
 
 
 class BasePoetryE2ETestCase(unittest.TestCase):
@@ -80,6 +83,7 @@ class BasePoetryE2ETestCase(unittest.TestCase):
             TESTING=True,
             POETRY_USER_DATA_PATH=str(self.test_user_data_path),
             POETRY_DATASET_PATH=str(REAL_POEMS_PATH),
+            POETRY_ALLOW_ANONYMOUS_WRITE=True,
         )
 
         self.manager = PoetryManager(
@@ -139,15 +143,15 @@ class TestTier1DatasetAndTags(BasePoetryE2ETestCase):
     """Tier 1.1: 诗词数据集与四维正交标签核心功能测试 (>=5用例)"""
 
     def test_01_dataset_file_structure_and_total(self):
-        """1.1 校验数据集文件结构：顶层字段 total=32，poems 数组与 tags 索引字典均合法"""
+        """1.1 校验数据集文件结构：顶层字段 total=40，poems 数组与 tags 索引字典均合法"""
         self.assertTrue(REAL_POEMS_PATH.exists(), f"诗词数据集文件不存在: {REAL_POEMS_PATH}")
         with open(REAL_POEMS_PATH, "r", encoding="utf-8") as f:
             raw_data = json.load(f)
 
-        self.assertEqual(raw_data.get("total"), 32)
+        self.assertEqual(raw_data.get("total"), 40)
         self.assertIn("version", raw_data)
         self.assertIsInstance(raw_data.get("poems"), list)
-        self.assertEqual(len(raw_data["poems"]), 32)
+        self.assertEqual(len(raw_data["poems"]), 40)
         self.assertIsInstance(raw_data.get("tags"), dict)
 
     def test_02_all_poems_contain_mandatory_fields(self):
@@ -190,12 +194,12 @@ class TestTier1DatasetAndTags(BasePoetryE2ETestCase):
             self.assertIn(tags["theme"], APPROVED_THEMES, f"{pid} 非法意象: {tags['theme']}")
 
     def test_04_handwritten_golden_ratio_distribution(self):
-        """1.4 校验亲笔手抄典藏比例：恰有 13 首手抄篇目为 True，19 首为 False"""
+        """1.4 校验亲笔手抄典藏比例：13 首手抄篇目为 True，27 首为 False"""
         poems = self.manager.get_all_poems()
         handwritten = [p for p in poems if p.get("is_handwritten") is True]
         self.assertEqual(len(handwritten), 13, f"手抄篇目应为 13 首，实际为 {len(handwritten)}")
         non_handwritten = [p for p in poems if p.get("is_handwritten") is False]
-        self.assertEqual(len(non_handwritten), 19, f"常规篇目应为 19 首，实际为 {len(non_handwritten)}")
+        self.assertEqual(len(non_handwritten), 27, f"常规篇目应为 27 首，实际为 {len(non_handwritten)}")
 
     def test_05_api_dataset_endpoint_contract(self):
         """1.5 校验 GET /api/poetry/dataset 契约：返回 HTTP 200，格式与内容完全一致"""
@@ -204,8 +208,8 @@ class TestTier1DatasetAndTags(BasePoetryE2ETestCase):
             self.assertEqual(res.status_code, 200)
             data = res.get_json()
             self.assertEqual(data["status"], "success")
-            self.assertEqual(data["total"], 32)
-            self.assertEqual(len(data["poems"]), 32)
+            self.assertEqual(data["total"], 40)
+            self.assertEqual(len(data["poems"]), 40)
             self.assertIn("tags", data)
             self.assertEqual(data["poems"][0]["id"], "poem_01")
 
@@ -245,8 +249,8 @@ class TestTier1HomepageSidebarSSR(BasePoetryE2ETestCase):
         with self.app.test_client() as client:
             res = client.get("/")
             html = res.get_data(as_text=True)
-            self.assertIn("sidebar-face-front", html)
-            self.assertIn("sidebar-face-back", html)
+            self.assertIn("poetry-flip-face is-front", html)
+            self.assertIn("poetry-flip-face is-back", html)
             self.assertIn('id="sidebarFlipBtn"', html)
             self.assertIn('id="sidebarFlipBackBtn"', html)
 
@@ -265,7 +269,7 @@ class TestTier1HomepageSidebarSSR(BasePoetryE2ETestCase):
         with self.app.test_client() as client:
             res = client.get("/")
             html = res.get_data(as_text=True)
-            self.assertIn('class="link-to-hall poetry-link-to-hall"', html)
+            self.assertIn('poetry-enter-hall-link', html)
             self.assertIn('/poetry', html)
 
 
@@ -273,56 +277,55 @@ class TestTier1StandalonePoetryHallSSR(BasePoetryE2ETestCase):
     """Tier 1.3: 独立 /poetry 诗斋沉浸页渲染与组件完备性 (>=5用例)"""
 
     def test_01_poetry_hall_returns_200_and_shell_element(self):
-        """3.1 访问 /poetry 返回 200，渲染诗斋骨架与面包屑导航"""
+        """3.1 访问 /poetry 返回 200，渲染诗斋骨架与返回归档导航"""
         with self.app.test_client() as client:
             res = client.get("/poetry")
             self.assertEqual(res.status_code, 200)
             html = res.get_data(as_text=True)
             self.assertIn('id="poetryHall"', html)
-            self.assertIn('class="poetry-breadcrumb"', html)
+            self.assertIn('class="poetry-back-home"', html)
             self.assertIn("诗斋", html)
 
     def test_02_filter_panel_renders_four_orthogonal_dimension_chips(self):
-        """3.2 筛选面板正确呈现朝代、风格、心境、意象四维过滤标签及重置按钮"""
+        """3.2 筛选面板正确呈现朝代、风格、心境、意象四维过滤标签及清空按钮"""
         with self.app.test_client() as client:
             res = client.get("/poetry")
             html = res.get_data(as_text=True)
-            self.assertIn('id="filterDynastyChips"', html)
-            self.assertIn('id="filterStyleChips"', html)
-            self.assertIn('id="filterMoodChips"', html)
-            self.assertIn('id="filterThemeChips"', html)
-            self.assertIn('id="resetFilterBtn"', html)
+            self.assertIn('data-dim-toggle="dynasty"', html)
+            self.assertIn('data-dim-toggle="style"', html)
+            self.assertIn('data-dim-toggle="mood"', html)
+            self.assertIn('data-dim-toggle="theme"', html)
+            self.assertIn('id="btnFilterAll"', html)
+            self.assertIn('id="btnFilterClear"', html)
 
     def test_03_stage_card_renders_verse_lines_with_cinnabar_buttons(self):
-        """3.3 主舞台 3D 卡片正确输出诗句行与朱笔圈点按钮 (.line-cinnabar-btn)"""
+        """3.3 主舞台 3D 卡片正确输出诗句行与朱笔圈点圆点 (.verse-line-dot)"""
         with self.app.test_client() as client:
             res = client.get("/poetry")
             html = res.get_data(as_text=True)
             self.assertIn('id="immersiveCardInner"', html)
-            self.assertIn('class="poem-reading-line verse-line"', html)
-            self.assertIn('class="line-cinnabar-btn"', html)
+            self.assertIn('class="poem-reading-line verse-line verse-line-item"', html)
+            self.assertIn('class="verse-line-dot"', html)
 
     def test_04_stage_controls_bar_buttons_present(self):
-        """3.4 操作工具栏包含随缘换一首、雅赏喜欢、翻转卡片与审美藏阁按钮"""
+        """3.4 操作工具栏包含换一阕、喜欢整首、展卷全篇按钮"""
         with self.app.test_client() as client:
             res = client.get("/poetry")
             html = res.get_data(as_text=True)
             self.assertIn('id="btnSwitchPoem"', html)
             self.assertIn('id="btnImmLike"', html)
             self.assertIn('id="btnFlipCard"', html)
-            self.assertIn('id="btnToggleDrawer"', html)
 
     def test_05_analytics_dashboard_and_drawer_tabs_rendered(self):
-        """3.5 偏好沉淀看板与审美藏阁渲染雷达图容器、收敛指数、抽屉列表及 JSON 镜像区"""
+        """3.5 底部私藏册页渲染旁批列表、喜欢全篇列表与切换页签"""
         with self.app.test_client() as client:
             res = client.get("/poetry")
             html = res.get_data(as_text=True)
-            self.assertIn('id="radarChartContainer"', html)
-            self.assertIn('id="convergenceMetricValue"', html)
-            self.assertIn('id="ratioSongBar"', html)
-            self.assertIn('id="drawerExcerptList"', html)
-            self.assertIn('id="drawerPoemList"', html)
-            self.assertIn('id="jsonViewerOutput"', html)
+            self.assertIn('class="poetry-notebook-panel"', html)
+            self.assertIn('id="tabExcerpts"', html)
+            self.assertIn('id="tabPoems"', html)
+            self.assertIn('id="notebookExcerptsList"', html)
+            self.assertIn('id="notebookPoemsList"', html)
 
     def test_06_csrf_meta_tag_present_in_head(self):
         """3.6 页面 head 中输出合法的 CSRF Token meta 标签"""
@@ -885,7 +888,7 @@ class TestTier4RealWorldWorkloads(BasePoetryE2ETestCase):
             # 步骤 3：加载初始状态
             ds_res = client.get("/api/poetry/dataset")
             self.assertEqual(ds_res.status_code, 200)
-            self.assertEqual(ds_res.get_json()["total"], 32)
+            self.assertEqual(ds_res.get_json()["total"], 40)
 
             pref_init = client.get("/api/poetry/preferences").get_json()
             self.assertEqual(len(pref_init["liked_poem_ids"]), 0)
@@ -1012,11 +1015,11 @@ class TestTier4RealWorldWorkloads(BasePoetryE2ETestCase):
         self.manager.record_excerpt_like(daily_id, daily_poem["content"][0], "like")
 
         with self.app.test_client() as client:
-            # 1. 首页 SSR 应显示 is_today_liked 态（包含 is-liked 类与“已雅赏”文本）
+            # 1. 首页 SSR 应显示 is_today_liked 态（包含 is-liked 类与“已喜欢”文本）
             home_res = client.get("/")
             home_html = home_res.get_data(as_text=True)
             self.assertIn("is-liked", home_html)
-            self.assertIn("已雅赏", home_html)
+            self.assertIn("已喜欢", home_html)
 
             # 2. 诗斋沉浸页 SSR 应将 liked_poem_ids 与 liked_excerpts 传入上下文
             hall_res = client.get("/poetry")
