@@ -6,9 +6,13 @@ from flask import (
     redirect,
     render_template,
     request,
+    render_template_string,
     send_from_directory,
+    session,
     url_for,
 )
+import hmac
+from jinja2.exceptions import TemplateNotFound
 from app.database import BodyMetric, DatabaseHelper, Blog, Diary, Workout, normalize_cover_url
 from app.fitness_activity import (
     build_activity_calendar as build_fitness_calendar,
@@ -22,6 +26,7 @@ from app.fitness_activity import (
 from app.fitness_model import (
     BODYWEIGHT_VARIANTS,
     DAY_TYPES,
+    MOVEMENT_PART,
     MOVEMENTS,
     WEIGHTED_VARIANT,
     balance,
@@ -32,7 +37,14 @@ from app.fitness_model import (
     weight_options,
     workout_totals,
 )
-from app.auth import admin_logout, current_admin_authenticated, login_required, validate_csrf_token
+from app.auth import (
+    CSRF_SESSION_KEY,
+    admin_logout,
+    current_admin_authenticated,
+    login_required,
+    validate_csrf_token,
+)
+from app.poetry import get_poetry_manager
 from app.diary_policy import diary_date, location_needs_retry, better_location
 from app.diary_metadata import fetch_diary_metadata
 from app.diary_activity import (
@@ -82,11 +94,31 @@ def get_site_context():
 def init_index_with_blogs(_blogs):
     categories = dbHelper.get_all_categories()
     dateList = dbHelper.get_all_date()
+
+    poem_today = None
+    is_today_liked = False
+    try:
+        from app.poetry import get_poetry_manager
+        manager = get_poetry_manager()
+        poem_today = manager.get_daily_poem()
+        can_read_server_prefs = bool(
+            current_admin_authenticated()
+            or current_app.config.get("POETRY_ALLOW_ANONYMOUS_WRITE") is True
+        )
+        if can_read_server_prefs:
+            user_prefs = manager.get_user_preferences()
+            is_today_liked = bool(poem_today and poem_today.get("id") in user_prefs.get("liked_poem_ids", []))
+    except Exception:
+        poem_today = None
+        is_today_liked = False
+
     return render_template(
         'index.html',
         blogs=_blogs,
         categories=categories,
         dateList=dateList,
+        poem_today=poem_today,
+        is_today_liked=is_today_liked,
         **get_site_context(),
     )
 
@@ -618,10 +650,6 @@ def save_body_metric():
 
 
 def _parse_workout_payload(payload, today_date):
-    day_type = payload.get("day_type")
-    if day_type not in DAY_TYPES:
-        raise ValueError("请选择训练类型。")
-
     raw_exercises = payload.get("exercises") or []
     if not isinstance(raw_exercises, list) or len(raw_exercises) > _MAX_EXERCISES:
         raise ValueError("动作数量超出范围。")
@@ -639,10 +667,25 @@ def _parse_workout_payload(payload, today_date):
             raise ValueError("「%s」的组数超出范围。" % name)
         exercises.append({"name": name, "sets": [_parse_set(entry, kind, name) for entry in raw_sets]})
 
+    day_type = payload.get("day_type")
+    if not day_type:
+        if not exercises:
+            day_type = "休息"
+        else:
+            parts = {MOVEMENT_PART.get(ex["name"]) for ex in exercises}
+            if parts == {"下肢"}:
+                day_type = "下肢"
+            elif parts == {"上肢"}:
+                day_type = "上肢"
+            else:
+                day_type = "训练"
+    elif day_type not in DAY_TYPES and day_type != "训练":
+        raise ValueError("请选择训练类型。")
+
     if day_type == "休息" and exercises:
         raise ValueError("休息日不该有动作。")
     if day_type != "休息" and not exercises:
-        raise ValueError("至少记一个动作，或者把类型改成休息。")
+        raise ValueError("至少记一个动作。")
 
     return Workout(
         entry_date=today_date,
@@ -680,7 +723,9 @@ def _parse_set(entry, kind, name):
         return {"weight": added, "left": reps, "right": None,
                 "variant": variant, "note": note}
 
-    weight = _parse_number(entry.get("weight"), 0.5, 200, "「%s」的重量" % name)
+    weight = _parse_number(entry.get("weight"), 0, 200, "「%s」的重量" % name)
+    if weight == 0:
+        weight = 0
     left = _parse_number(entry.get("left"), 1, 500, "「%s」的次数" % name, integer=True)
     right = _parse_number(entry.get("right"), 1, 500, "「%s」的次数" % name, integer=True)
     if weight is None and left is None and right is None and not note:
@@ -726,7 +771,7 @@ def _previous_session_label(workouts, today):
     for workout in workouts:
         if workout.entry_date < today.isoformat():
             day = date.fromisoformat(workout.entry_date)
-            return "上次是 %d 月 %d 日 %s" % (day.month, day.day, workout.day_type)
+            return "上次是 %d 月 %d 日" % (day.month, day.day)
     return "还没有训练记录"
 
 
@@ -936,6 +981,262 @@ def track_article_view():
             "reading_time_label": view_record.get("reading_time_label", "未记录"),
         }
     )
+
+# =========================== 诗词翻卡与审美偏好沉淀 ===========================
+
+def _validate_poetry_csrf():
+    expected = session.get(CSRF_SESSION_KEY) or session.get("_csrf_token")
+    if expected:
+        supplied = (
+            request.headers.get("X-CSRF-Token")
+            or request.headers.get("X-CSRFToken")
+            or request.form.get("csrf_token")
+        )
+        if not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+            abort(403)
+    return True
+
+
+@main.route('/poetry')
+def poetry_hall():
+    """独立诗斋沉浸页"""
+    context = get_site_context()
+    context["site_cover_section_title"] = "诗斋"
+    is_admin = bool(current_admin_authenticated())
+
+    try:
+        from app.poetry import get_poetry_manager
+        manager = get_poetry_manager()
+        dataset = manager.get_dataset()
+        can_read_server_prefs = is_admin or (current_app.config.get("POETRY_ALLOW_ANONYMOUS_WRITE") is True)
+        user_prefs = manager.get_user_preferences() if can_read_server_prefs else {}
+        poem_today = manager.get_daily_poem() or (dataset.get("poems", [])[0] if dataset.get("poems") else None)
+
+        context.update({
+            "poem_today": poem_today,
+            "total_poems": dataset.get("total", len(dataset.get("poems", []))),
+            "liked_poem_ids": user_prefs.get("liked_poem_ids", []),
+            "liked_excerpts": user_prefs.get("liked_excerpts", []),
+            "tag_weights": user_prefs.get("tag_weights", {}),
+            "is_admin": is_admin,
+        })
+    except Exception:
+        context.update({
+            "poem_today": None,
+            "total_poems": 0,
+            "is_admin": is_admin,
+        })
+
+    try:
+        return render_template("poetry.html", **context)
+    except TemplateNotFound:
+        return render_template_string(
+            """{% extends "base.html" %}
+{% block title %}诗斋 - {{ site_name }}{% endblock %}
+{% block content %}
+<main class="poetry-page">
+  <div class="poetry-container">
+    <header class="poetry-header">
+      <h1 class="poetry-title">诗斋</h1>
+      <p class="poetry-subtitle">每日一诗 · 审美沉淀</p>
+    </header>
+  </div>
+</main>
+{% endblock %}""",
+            **context
+        )
+
+
+@main.route('/api/poetry/dataset', methods=['GET'])
+def get_poetry_dataset():
+    """获取精选诗词完整数据集及四维正交标签索引库（仅返回正向词池，绝不暴露 negative_anchors）"""
+    manager = get_poetry_manager()
+    dataset = manager.get_dataset()
+    if not dataset or not dataset.get("poems"):
+        return jsonify({"status": "error", "message": "未能加载诗词数据集文件"}), 500
+    return jsonify({
+        "status": "success",
+        "total": dataset.get("total", len(dataset.get("poems", []))),
+        "version": dataset.get("version", "2.0"),
+        "poems": dataset.get("poems", []),
+        "tags": dataset.get("tags", {})
+    })
+
+
+@main.route('/api/poetry/user_preferences', methods=['GET'])
+@main.route('/api/poetry/preferences', methods=['GET'])
+def get_poetry_user_preferences():
+    """读取用户审美偏好、点赞列表、圈点词句明细及标签权重聚合"""
+    manager = get_poetry_manager()
+    prefs = manager.get_user_preferences()
+    prefs["authenticated"] = bool(current_admin_authenticated())
+    return jsonify(prefs)
+
+
+@main.route('/api/poetry/like', methods=['POST'])
+def post_poetry_like():
+    """整首诗词点赞/取消点赞（双轨鉴权：访客仅本地暂存，管理员落盘）"""
+    _validate_poetry_csrf()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"status": "error", "message": "请求体必须为合法 JSON 格式"}), 400
+
+    poem_id = str(payload.get("poem_id") or "").strip()
+    if not poem_id:
+        return jsonify({"status": "error", "message": "必须提供诗词 ID (poem_id)"}), 400
+
+    action = str(payload.get("action") or "").strip()
+    if action not in ("like", "unlike"):
+        return jsonify({"status": "error", "message": "操作类型 (action) 必须为 'like' 或 'unlike'"}), 400
+
+    manager = get_poetry_manager()
+    poem = manager.get_poem_by_id(poem_id)
+    if poem is None:
+        return jsonify({"status": "error", "message": "未找到指定的诗词"}), 404
+
+    tags = payload.get("tags")
+    if tags is not None and not isinstance(tags, dict):
+        return jsonify({"status": "error", "message": "tags 字段格式不合法"}), 400
+
+    is_admin = bool(current_admin_authenticated())
+    allow_anonymous_write = current_app.config.get("POETRY_ALLOW_ANONYMOUS_WRITE") is True
+    can_persist = is_admin or allow_anonymous_write
+
+    if not can_persist:
+        return jsonify({
+            "status": "guest_local",
+            "persisted": False,
+            "authenticated": False,
+            "poem_id": poem_id,
+            "liked": (action == "like"),
+            "message": "访客模式仅在本地浏览器暂存"
+        }), 200
+
+    try:
+        result = manager.record_poem_like(poem_id=poem_id, action=action, tags=tags)
+        result["persisted"] = True
+        result["authenticated"] = is_admin
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error handling poetry like: {e}")
+        return jsonify({"status": "error", "message": "持久化存储繁忙，请稍后重试"}), 500
+
+
+@main.route('/api/poetry/excerpt_like', methods=['POST'])
+def post_poetry_excerpt_like():
+    """词句朱笔圈点（喜欢/取消喜欢，双轨鉴权：访客仅本地暂存，管理员落盘）"""
+    _validate_poetry_csrf()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"status": "error", "message": "请求体必须为合法 JSON 格式"}), 400
+
+    poem_id = str(payload.get("poem_id") or "").strip()
+    if not poem_id:
+        return jsonify({"status": "error", "message": "必须提供诗词 ID (poem_id)"}), 400
+
+    text = str(payload.get("text") or "").strip()
+    if not text:
+        return jsonify({"status": "error", "message": "圈点词句内容 (text) 不能为空"}), 400
+
+    action = str(payload.get("action") or "").strip()
+    if action not in ("like", "unlike"):
+        return jsonify({"status": "error", "message": "操作类型 (action) 必须为 'like' 或 'unlike'"}), 400
+
+    manager = get_poetry_manager()
+    poem = manager.get_poem_by_id(poem_id)
+    if poem is None:
+        return jsonify({"status": "error", "message": "未找到指定的诗词"}), 404
+
+    tags = payload.get("tags")
+    if tags is not None and not isinstance(tags, dict):
+        return jsonify({"status": "error", "message": "tags 字段格式不合法"}), 400
+
+    from app.poetry import POETRY_PUNCTUATION_PATTERN, _is_text_in_poem
+    norm_text = POETRY_PUNCTUATION_PATTERN.sub("", text)
+    if not norm_text:
+        return jsonify({"status": "error", "message": "圈点词句不能仅包含标点符号或空白"}), 400
+
+    if not _is_text_in_poem(text, poem):
+        return jsonify({"status": "error", "message": f"圈点词句与所属诗词内容不匹配: '{text}'"}), 400
+
+    is_admin = bool(current_admin_authenticated())
+    allow_anonymous_write = current_app.config.get("POETRY_ALLOW_ANONYMOUS_WRITE") is True
+    can_persist = is_admin or allow_anonymous_write
+
+    if not can_persist:
+        return jsonify({
+            "status": "guest_local",
+            "persisted": False,
+            "authenticated": False,
+            "poem_id": poem_id,
+            "liked": (action == "like"),
+            "excerpt": {
+                "poem_id": poem_id,
+                "poem_title": poem.get("title", ""),
+                "poem_author": poem.get("author", ""),
+                "text": text.strip(),
+                "tags": tags or poem.get("tags", {})
+            },
+            "message": "访客模式仅在本地浏览器暂存"
+        }), 200
+
+    try:
+        result = manager.record_excerpt_like(poem_id=poem_id, text=text, action=action, tags=tags)
+        result["persisted"] = True
+        result["authenticated"] = True
+        return jsonify(result), 200
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        print(f"Error handling excerpt like: {e}")
+        return jsonify({"status": "error", "message": "持久化存储繁忙，请稍后重试"}), 500
+
+
+@main.route('/api/poetry/interaction', methods=['POST'])
+def post_poetry_interaction():
+    """记录用户翻卡、换一首及浏览行为流水（双轨鉴权：访客不落盘）"""
+    _validate_poetry_csrf()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"status": "error", "message": "请求体必须为合法 JSON 格式"}), 400
+
+    poem_id = str(payload.get("poem_id") or "").strip()
+    if not poem_id:
+        return jsonify({"status": "error", "message": "必须提供诗词 ID (poem_id)"}), 400
+
+    action = str(payload.get("action") or "").strip()
+    valid_actions = {
+        "view", "flip", "switch", "filter_tag",
+        "like", "unlike", "excerpt_like", "excerpt_unlike"
+    }
+    if action not in valid_actions:
+        return jsonify({"status": "error", "message": "不支持的交互动作类型"}), 400
+
+    is_admin = bool(current_admin_authenticated())
+    allow_anonymous_write = current_app.config.get("POETRY_ALLOW_ANONYMOUS_WRITE") is True
+    can_persist = is_admin or allow_anonymous_write
+
+    if not can_persist:
+        return jsonify({
+            "status": "guest_local",
+            "recorded": False,
+            "persisted": False
+        }), 200
+
+    manager = get_poetry_manager()
+    tags = payload.get("tags")
+    details = payload.get("details")
+
+    try:
+        result = manager.record_interaction(poem_id=poem_id, action=action, tags=tags, details=details)
+        result["persisted"] = True
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error handling poetry interaction: {e}")
+        return jsonify({"status": "error", "message": "持久化存储繁忙，请稍后重试"}), 500
+
+
+
 
 @main.route('/manage')
 @login_required

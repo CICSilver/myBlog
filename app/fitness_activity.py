@@ -13,8 +13,10 @@ VOLUME_LEVELS = (400, 800, 1500)
 
 
 def activity_level(volume):
-    if not volume:
+    if volume is None or volume < 0:
         return 0
+    if volume == 0:
+        return 1
     return 1 + sum(volume >= edge for edge in VOLUME_LEVELS)
 
 
@@ -59,6 +61,8 @@ def _day_entry(day, volumes, today):
         state = "没有训练"
     elif volume is None:
         state = "训练了，但当时没记重量"
+    elif volume == 0:
+        state = "自重训练"
     else:
         state = "容量 %s kg" % format_volume(volume)
     return {
@@ -215,7 +219,7 @@ def _with_geometry(chart):
         bar["width"] = band
         bar["centre"] = round(centre, 1)
         bar["is_peak"] = bar is peak and bool(bar["volume"])
-        if bar["partial"]:
+        if bar["partial"] or (bar["recorded"] and bar["volume"] == 0):
             bar["path"] = _bar_path(centre - BAR_WIDTH / 2.0, CHART_BASE - STUB_HEIGHT,
                                     BAR_WIDTH, STUB_HEIGHT, 2.0)
         elif bar["volume"]:

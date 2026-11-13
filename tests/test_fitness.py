@@ -83,6 +83,8 @@ class FitnessModelTest(unittest.TestCase):
         totals = exercise_totals(unilateral("飞鸟", (5.5, 12, 12)))
         self.assertEqual(movement_kind("飞鸟"), "unilateral")
         self.assertEqual(movement_kind("反向飞鸟"), "unilateral")
+        self.assertEqual(movement_kind("侧平举"), "unilateral")
+        self.assertEqual(movement_kind("肩外旋"), "unilateral")
         self.assertEqual(totals["reps"], 24)          # 左右各 12
         self.assertEqual(totals["volume"], 5.5 * 24)
 
@@ -383,6 +385,7 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertEqual(javascript.count('form.querySelector("#fit-note")'), 2)
 
     def test_the_body_chart_only_appears_once_something_was_measured(self):
+        self.database.workouts[self.today()] = workout(self.today(), "下肢", [bilateral("深蹲", (10, 15))])
         self.database.metrics = []
         html = self.client.get("/fitness").get_data(as_text=True)
         self.assertNotIn('data-chart-view="body"', html)
@@ -397,6 +400,7 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertIn("体重与腰围", html)
 
     def test_the_volume_chart_is_the_one_showing_first(self):
+        self.database.workouts[self.today()] = workout(self.today(), "下肢", [bilateral("深蹲", (10, 15))])
         self.database.metrics = [BodyMetric(measured_date="2026-09-16", weight_kg=63.4)]
         html = self.client.get("/fitness").get_data(as_text=True)
         volume = html.index('data-chart-view="volume"')
@@ -405,6 +409,7 @@ class FitnessRouteTest(unittest.TestCase):
         self.assertIn("hidden", html[body:body + 120])
 
     def test_the_chart_is_called_the_training_volume_not_the_capacity(self):
+        self.database.workouts[self.today()] = workout(self.today(), "下肢", [bilateral("深蹲", (10, 15))])
         html = self.client.get("/fitness").get_data(as_text=True)
         self.assertIn("每日训练量", html)
         self.assertNotIn("每日训练容量", html)

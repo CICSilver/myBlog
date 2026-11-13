@@ -3,8 +3,8 @@
 动作库是封闭的：录入时从这里选，不自由输入。每个动作的 kind 决定它的记法，
 录入界面据此长出对应形态的表格，而不是让记录的人每次去选：
 
-    bilateral   双侧同时完成，reps 是这一组的总次数（深蹲、臀桥、提踵、侧平举）
-    unilateral  单侧轮流完成，左右各记一个次数（弯举、划船、卧推、抬腕、飞鸟、反向飞鸟）
+    bilateral   双侧同时完成，reps 是这一组的总次数（深蹲、臀桥、提踵）
+    unilateral  单侧轮流完成，左右各记一个次数（弯举、划船、卧推、抬腕、飞鸟、反向飞鸟、侧平举、肩外旋）
     bodyweight  自重，只有次数，没有重量可填（俯卧撑）
     static      静力保持，只有秒数，没有重量和次数（平板支撑）
 """
@@ -15,15 +15,19 @@ from datetime import date
 # (名称, 记法, 部位)
 MOVEMENTS = (
     ("深蹲", "bilateral", "下肢"),
+    ("分腿蹲", "unilateral", "下肢"),
+    ("单腿深蹲", "unilateral", "下肢"),
     ("臀桥", "bilateral", "下肢"),
     ("提踵", "bilateral", "下肢"),
+    ("哑铃摇摆", "bilateral", "下肢"),
     ("弯举", "unilateral", "上肢"),
     ("划船", "unilateral", "上肢"),
     ("卧推", "unilateral", "上肢"),
     ("抬腕", "unilateral", "上肢"),
     ("飞鸟", "unilateral", "上肢"),
     ("反向飞鸟", "unilateral", "上肢"),
-    ("侧平举", "bilateral", "上肢"),
+    ("侧平举", "unilateral", "上肢"),
+    ("肩外旋", "unilateral", "上肢"),
     ("俯卧撑", "bodyweight", "上肢"),
     ("平板支撑", "static", "核心"),
 )
