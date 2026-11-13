@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/poetry.css') }}?v=20261112v2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/poetry.css') }}?v=20261113-desk">
 {% endblock %}
 
 {% macro render_timeline_entry(blog) %}
@@ -101,11 +101,9 @@
 
     <section class="home-body">
       <aside class="archive-sidebar">
-        {% include "_poetry_card.html" ignore missing %}
-
         <section class="sidebar-block">
           <div class="sidebar-heading">
-            <h2>分类索引</h2>
+            <h2>分类</h2>
             <span>{{ categories | length }} 类</span>
           </div>
           <ul class="archive-list">
@@ -114,7 +112,7 @@
                 href="{{ url_for('main.index') }}"
                 {% if all_active %}class="is-active" aria-current="page"{% endif %}
               >
-                <span>全部文章</span>
+                <span>全部</span>
                 <em>{{ total_count }}</em>
               </a>
             </li>
@@ -135,7 +133,7 @@
 
         <section class="sidebar-block">
           <div class="sidebar-heading">
-            <h2>岁月归档</h2>
+            <h2>年月</h2>
             <span>{{ dateList | length }} 个月</span>
           </div>
           <ul class="archive-list">
@@ -160,10 +158,10 @@
         {% if active_filter %}
           <div class="archive-filter-banner">
             <div class="archive-filter-meta">
-              <h2>{{ '分类：' if active_filter.kind == 'category' else '归档：' }}{{ active_filter.label }}</h2>
-              <span>共 {{ active_filter.count }} 篇文章</span>
+              <h2>{{ '分类：' if active_filter.kind == 'category' else '年月：' }}{{ active_filter.label }}</h2>
+              <span>共 {{ active_filter.count }} 篇</span>
             </div>
-            <a class="clear-filter-link" href="{{ url_for('main.index') }}">× 返回全部归档</a>
+            <a class="clear-filter-link" href="{{ url_for('main.index') }}">× 查看全部</a>
           </div>
 
           {% if blogs %}
@@ -177,52 +175,26 @@
           {% else %}
             <section class="empty-stage compact">
               <h2>暂无匹配文章</h2>
-              <p>当前筛选条件下暂未收录文章，可点击上方返回全部归档。</p>
+              <p>当前筛选条件下暂无文章，可点击上方查看全部。</p>
             </section>
           {% endif %}
         {% else %}
-          {% set featured = blogs[0] %}
-          {% set featured_url = url_for('main.blog_detail', year=featured.year, month=featured.month, html_title=featured.html_title) %}
-          {% set featured_excerpt = featured.excerpt if (featured.excerpt is defined and featured.excerpt is not none) else (featured.content[:160] if featured.content else '') %}
-          <article class="feature-article{% if featured.cover_url %} has-cover{% endif %}{% if featured.is_verse %} is-verse{% endif %}">
-            {% if featured.cover_url %}
-              <a class="feature-cover" href="{{ featured_url }}">
-                <img
-                  src="{{ featured.cover_url }}"
-                  alt="{{ featured.title or '文章封面' }}"
-                  loading="eager"
-                >
-              </a>
-            {% endif %}
-            <div class="feature-top">
-              <span class="seal-tag">新篇 · {{ featured.category }}</span>
-              <div class="feature-meta">
-                <span>{{ featured.display_date | default(featured.date) }}</span>
-              </div>
-            </div>
-            <h2 class="feature-title">
-              <a href="{{ featured_url }}">{{ featured.title }}</a>
-            </h2>
-            <div class="feature-excerpt{% if featured.is_verse %} is-verse{% endif %}">{{ featured_excerpt }}</div>
-            <a class="entry-link" href="{{ featured_url }}">展读全文 →</a>
-          </article>
+          {% include "_poetry_card.html" ignore missing %}
 
           <section class="timeline-section">
             <div class="section-bar">
-              <h2>近期归档</h2>
-              <span>{% if blogs | length > 1 %}按时间倒序 · 共 {{ (blogs | length) - 1 }} 篇旧文{% else %}已入档 1 篇{% endif %}</span>
+              <h2>随笔</h2>
+              <span>共 {{ blogs | length }} 篇</span>
             </div>
-            {% if blogs | length > 1 %}
+            {% if blogs %}
               <div class="timeline-list">
                 {% for blog in blogs %}
-                  {% if not loop.first %}
-                    {{ render_timeline_entry(blog) }}
-                  {% endif %}
+                  {{ render_timeline_entry(blog) }}
                 {% endfor %}
               </div>
             {% else %}
               <div class="empty-stage compact">
-                <p>第一篇文章已经入档，接下来继续写，首页会逐渐长成完整的归档流。</p>
+                <p>第一篇写下去之后，这里会开始长出属于你的时间线。</p>
               </div>
             {% endif %}
           </section>
@@ -231,8 +203,8 @@
     </section>
   {% else %}
     <section class="empty-stage">
-      <h1>归档还是空的</h1>
-      <p>第一篇文章写下去之后，这里会开始长出属于你的时间线。</p>
+      <h1>还没有写下随笔</h1>
+      <p>第一篇写下去之后，这里会开始长出属于你的时间线。</p>
     </section>
   {% endif %}
 {% endblock %}

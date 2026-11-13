@@ -70,15 +70,12 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         with self.app.test_request_context("/"):
             html = routes_module.init_index_with_blogs(blogs)
 
-        self.assertRegex(
-            html,
-            r'class="[^"]*\bfeature-article\b[^"]*\bhas-cover\b[^"]*"',
-        )
-        self.assertIn('class="feature-cover"', html)
+        self.assertEqual(html.count('class="entry-cover"'), 2)
         self.assertIn('src="/static/vendor/editor.md/examples/images/8.jpg"', html)
+        self.assertIn('src="/static/vendor/editor.md/examples/images/4.jpg"', html)
         self.assertIn('class="entry-line"', html)
-        self.assertIn('class="entry-line has-cover"', html)
-        self.assertIn('class="entry-cover"', html)
+        self.assertEqual(html.count('class="entry-line has-cover"'), 2)
+        self.assertIn("最新文章", html)
         self.assertIn("没有封面的文章", html)
 
     def test_invalid_cover_url_is_rejected_before_insert(self):
@@ -239,7 +236,7 @@ class HomepageCoverRenderingTest(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="home-cover"', html)
-        self.assertIn("Creative Archive", html)
+        self.assertIn("Personal Notes", html)
         self.assertIn("Silver&#39;s Blog", html)
         self.assertIn('class="theme-toggle cover-theme-toggle"', html)
         self.assertIn('class="pull-light-cord"', html)

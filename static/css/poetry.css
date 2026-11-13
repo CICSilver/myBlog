@@ -332,14 +332,156 @@ html[data-theme="dark"] .poetry-selection-popover {
   overflow-wrap: break-word;
 }
 
-/* 移动端侧边栏响应式保障 */
+/* 首页主栏顶部宽幅：案头横披素笺 (.poetry-desk-card) */
+.poetry-desk-card {
+  position: relative;
+  background: var(--surface-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: 18px 26px 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  gap: 12px;
+}
+
+.poetry-desk-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cinnabar), var(--cinnabar-line) 55%, transparent);
+  pointer-events: none;
+}
+
+.poetry-desk-card .poetry-side-head {
+  align-items: center;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.poetry-desk-card .poetry-side-head-copy {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.poetry-desk-card .poetry-side-title {
+  font-size: 1.04rem;
+}
+
+.poetry-desk-card .is-front .poetry-side-paper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2.5px solid var(--cinnabar-line);
+  border-radius: var(--radius-sm);
+  padding: 18px 24px 16px;
+  gap: 10px;
+}
+
+.poetry-desk-card .poetry-side-quote {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.65;
+  letter-spacing: 0.04em;
+}
+
+.poetry-desk-card .poetry-clause {
+  display: inline;
+}
+
+.poetry-desk-card .poetry-side-attr {
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.poetry-desk-card .poetry-side-author {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.poetry-desk-card .poetry-side-author::before {
+  content: "—— ";
+}
+
+.poetry-desk-card .is-back .poetry-side-paper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--cinnabar-line);
+  border-radius: var(--radius-sm);
+  padding: 22px 28px;
+  text-align: center;
+  gap: 16px;
+}
+
+.poetry-desk-card .poetry-side-back-head {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+.poetry-desk-card .poetry-side-back-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.poetry-desk-card .poetry-side-back-author {
+  font-size: 0.84rem;
+}
+
+.poetry-desk-card .poetry-side-verses {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.poetry-desk-card .poetry-side-line {
+  font-size: 1.08rem;
+  line-height: 1.95;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.poetry-desk-card .poetry-side-foot {
+  padding: 2px 2px 0;
+}
+
+.poetry-desk-card .poetry-side-foot-left {
+  gap: 14px;
+}
+
+/* 移动端案头诗笺适配 */
 @media (max-width: 760px) {
-  .home-page .archive-sidebar {
-    display: grid !important;
-    margin-bottom: 16px;
+  .poetry-desk-card {
+    padding: 15px 16px 14px;
+    border-radius: var(--radius-md);
   }
-  .home-page .archive-sidebar > .sidebar-block:not(.poetry-sidebar-card) {
-    display: none !important;
+
+  .poetry-desk-card .is-front .poetry-side-paper,
+  .poetry-desk-card .is-back .poetry-side-paper {
+    padding: 14px 16px;
+  }
+
+  .poetry-desk-card .poetry-side-quote {
+    font-size: 1.12rem;
+    line-height: 1.65;
+  }
+
+  .poetry-desk-card .poetry-side-line {
+    font-size: 0.98rem;
+    line-height: 1.85;
+    text-align: center;
   }
 }
 

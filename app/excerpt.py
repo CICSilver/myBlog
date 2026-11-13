@@ -47,6 +47,7 @@ def _strip_punctuation_and_whitespace(text):
 def _clean_markdown_lines(content):
     text = (content or "").replace("\r\n", "\n").replace("\r", "\n").replace("\x00", "")
     has_code_block = bool(_FENCED_CODE_BLOCK_RE.search(text))
+    has_structured_blocks = False
 
     protected_tokens = []
 
@@ -81,7 +82,10 @@ def _clean_markdown_lines(content):
         if _HORIZONTAL_RULE_RE.match(raw_line):
             continue
         if _TABLE_SEPARATOR_RE.match(raw_line):
+            has_structured_blocks = True
             continue
+        if _UNORDERED_LIST_PREFIX_RE.match(raw_line) or _ORDERED_LIST_PREFIX_RE.match(raw_line):
+            has_structured_blocks = True
 
         line = raw_line
         line = _BLOCKQUOTE_PREFIX_RE.sub("", line)
@@ -102,11 +106,11 @@ def _clean_markdown_lines(content):
         if line:
             clean_lines.append(line)
 
-    return clean_lines, has_code_block
+    return clean_lines, (has_code_block or has_structured_blocks)
 
 
 def is_verse_lines(clean_lines, has_code_block=False):
-    if has_code_block or not (1 <= len(clean_lines) <= 12):
+    if has_code_block or not (2 <= len(clean_lines) <= 12):
         return False
     return all(len(_strip_punctuation_and_whitespace(line)) <= 28 for line in clean_lines)
 

@@ -167,7 +167,12 @@ class ExcerptAndFormattingTest(unittest.TestCase):
         with_code = "```python\nx = 1\n```\n短句。"
         self.assertFalse(analyze_blog_content(with_code)["is_verse"])
 
-        # 4. 空内容或只有图片
+        # 4. 单行短句按普通散文处理，避免误伤一句短随感
+        self.assertFalse(
+            analyze_blog_content("今天下了一整天的雨，出门买了一罐热咖啡。")["is_verse"]
+        )
+
+        # 5. 空内容或只有图片
         self.assertFalse(analyze_blog_content("![only](/img.png)")["is_verse"])
         self.assertEqual(analyze_blog_content("![only](/img.png)")["word_count"], 0)
 

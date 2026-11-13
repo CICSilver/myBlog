@@ -1729,20 +1729,24 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .reading-article.markdown-body.is-verse {
-    max-width: 480px;
+    width: fit-content;
+    max-width: min(100%, 660px);
     margin: 0 auto;
-    padding: 6px 0 20px;
+    padding: 6px 0 22px;
+    text-align: left;
+    text-indent: 0;
     font-family: var(--font-display);
-    font-size: 1.18rem;
-    line-height: 2.3;
+    font-size: 1.2rem;
+    line-height: 2.35;
     letter-spacing: 0.05em;
     color: var(--ink);
 }
 
 .reading-article.markdown-body.is-verse p {
     font-family: var(--font-display);
-    font-size: 1.18rem;
-    line-height: 2.3;
+    font-size: 1.2rem;
+    line-height: 2.35;
+    text-indent: 0;
     margin-bottom: 0.9em;
 }
 

@@ -33,9 +33,9 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
                 "time": "21:30:00",
                 "cover_url": "/static/vendor/editor.md/examples/images/8.jpg",
                 "content": (
-                    "## 为什么把摘要提取移回服务端\n\n"
-                    "过去首页将全部 Markdown 原文塞入隐藏文本域再交给浏览器截断，"
+                    "\u3000\u3000过去首页将全部 Markdown 原文塞入隐藏文本域再交给浏览器截断，"
                     "遇到普通竖线 | 或表格就会误截断，且存在闭合标签注入风险。\n\n"
+                    "## 为什么把摘要提取移回服务端\n\n"
                     "```python\n"
                     "def render_sheet(title: str) -> str:\n"
                     "    return f'<article class=\"reading-sheet\">{title}</article>'\n"
@@ -57,12 +57,12 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
                 "time": "20:00:00",
                 "cover_url": "",
                 "content": (
-                    "正秋风落叶长安，\n"
-                    "几处寒砧，几度凭栏。\n"
-                    "黄菊初开，青尊未老，红叶如丹。\n"
-                    "莫辜负篱边酒暖，\n"
-                    "且相随江上鸥闲。\n"
-                    "尘世悲欢，一曲清歌，半枕南山。"
+                    "\u3000\u3000正秋风落叶长安，\n"
+                    "\u3000\u3000几处寒砧，几度凭栏。\n"
+                    "\u3000\u3000黄菊初开，青尊未老，红叶如丹。\n"
+                    "\u3000\u3000莫辜负篱边酒暖，\n"
+                    "\u3000\u3000且相随江上鸥闲。\n"
+                    "\u3000\u3000尘世悲欢，一曲清歌，半枕南山。"
                 ),
             },
             {
@@ -148,13 +148,22 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
         with self.app.test_client() as client:
             html = client.get("/").get_data(as_text=True)
 
-        # 侧栏含 _poetry_card 且「全部文章」选中
+        # 主栏顶部含案头诗笺且左栏「全部」选中、底部「随笔」收纳全部 3 篇
         self.assertIn('id="sidebarPoetryCard"', html)
+        self.assertIn("poetry-desk-card", html)
         self.assertIn("今日诗笺", html)
+        self.assertIn("<h2>分类</h2>", html)
+        self.assertIn("<h2>年月</h2>", html)
+        self.assertIn("<h2>随笔</h2>", html)
+        self.assertIn("<span>共 3 篇</span>", html)
+        self.assertNotIn("feature-article", html)
+        self.assertNotIn("近期归档", html)
         self.assertRegex(
             html,
-            r'<a[^>]*href="/"[^>]*class="is-active"[^>]*aria-current="page"[^>]*>\s*<span>全部文章</span>\s*<em>3</em>',
+            r'<a[^>]*href="/"[^>]*class="is-active"[^>]*aria-current="page"[^>]*>\s*<span>全部</span>\s*<em>3</em>',
         )
+        for title in ("重构手记：纸墨排版与服务端摘要安全", "折桂令·秋怀", "雨夜孤灯读书记"):
+            self.assertIn(title, html)
         # 空归档月 2025 · 04 被彻底过滤
         self.assertNotIn("2025 · 04", html)
         self.assertNotIn("/date_blogs/2025/4", html)
@@ -168,10 +177,13 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
 
         self.assertIn('class="archive-filter-banner"', html)
         self.assertIn("分类：孤本札记", html)
-        self.assertIn("共 1 篇文章", html)
+        self.assertIn("共 1 篇", html)
+        self.assertIn("× 查看全部", html)
         self.assertIn('class="timeline-section is-filtered"', html)
         self.assertIn("雨夜孤灯读书记", html)
-        # 对应分类在侧栏和移动端均呈 is-active，且全部文章不再激活
+        # 筛选态自动收起今日诗笺让位给列表
+        self.assertNotIn('id="sidebarPoetryCard"', html)
+        # 对应分类在侧栏和移动端均呈 is-active，且全部不再激活
         self.assertIn('href="/categorized_blogs/%E5%AD%A4%E6%9C%AC%E6%9C%AD%E8%AE%B0"\n                  class="is-active"', html)
         # 不应出现穿帮文案
         self.assertNotIn("新篇 ·", html)
@@ -185,8 +197,11 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
             verse_html = client.get("/2026/10/zheguiling_autumn").get_data(as_text=True)
             oldest_html = client.get("/2026/9/single_cat_only_one").get_data(as_text=True)
 
-        # 详情页含 .reading-sheet 与安全 JSON 数据源
+        # 详情页含 .reading-sheet 与安全 JSON 数据源及「← 返回首页」
+        self.assertIn("← 返回首页", prose_html)
+        self.assertNotIn("← 返回归档首页", prose_html)
         self.assertIn('class="reading-sheet"', prose_html)
+        self.assertNotIn("is-verse", re.search(r'<div class="reading-article[^"]*"', prose_html).group(0))
         self.assertIn('class="reading-pagination"', prose_html)
         self.assertIn("折桂令·秋怀", prose_html)
         self.assertIn("已至最新一篇", prose_html)
@@ -197,11 +212,14 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
             re.S,
         )
         self.assertIsNotNone(match)
-        self.assertIn("window.__xss=1", json.loads(match.group(1)))
+        parsed_prose = json.loads(match.group(1))
+        self.assertIn("window.__xss=1", parsed_prose)
+        self.assertTrue(parsed_prose.startswith("\u3000\u3000过去首页"))
 
-        # 古诗词详情页含 is-verse-sheet 与上下篇双向导航
+        # 古诗词详情页含 is-verse-sheet、行首缩进仅在 is-verse 清理逻辑与上下篇双向导航
         self.assertIn('class="reading-sheet is-verse-sheet"', verse_html)
         self.assertIn('class="reading-article markdown-body is-verse"', verse_html)
+        self.assertIn("markdownPreview.classList.contains('is-verse')", verse_html)
         self.assertIn("← 上一篇", verse_html)
         self.assertIn("雨夜孤灯读书记", verse_html)
         self.assertIn("下一篇 →", verse_html)
