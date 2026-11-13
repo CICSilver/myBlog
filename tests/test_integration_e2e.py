@@ -106,6 +106,9 @@ class RedesignIntegrationE2ETest(unittest.TestCase):
 
         self.app = create_app()
         self.app.config["TESTING"] = True
+        self.app.config["POETRY_USER_DATA_PATH"] = str(
+            Path(self.temp_dir.name) / "poetry_user_data.json"
+        )
         self.original_db_helper = routes_module.dbHelper
         routes_module.dbHelper = self.db_helper
 

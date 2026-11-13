@@ -21,6 +21,8 @@ instance/maintenance.lock
 instance/uploads/
 db/
 output/
+app/data/poetry_user_data.json
+app/data/poetry_user_data.json.lock
 
 # Editor and diagnostic noise
 .vscode/
