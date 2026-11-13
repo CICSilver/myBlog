@@ -3,6 +3,9 @@ import unicodedata
 
 
 _FENCED_CODE_BLOCK_RE = re.compile(r"(?m)^[ \t]*(?:```|~~~)")
+_FENCED_CODE_BLOCK_FULL_RE = re.compile(
+    r"(?m)^[ \t]*(```+|~~~+)[^\n]*\n([\s\S]*?)(?:^[ \t]*\1[ \t]*$|\Z)"
+)
 _FENCED_CODE_LINE_RE = re.compile(r"(?m)^[ \t]*(?:```|~~~).*$")
 _HTML_COMMENT_RE = re.compile(r"<!--[\s\S]*?-->")
 _HTML_SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b[^>]*>[\s\S]*?</\1>", re.IGNORECASE)
@@ -18,7 +21,7 @@ _HORIZONTAL_RULE_RE = re.compile(r"^\s*([-*_])(?:\s*\1){2,}\s*$")
 _TABLE_SEPARATOR_RE = re.compile(
     r"^\s*(?:\|\s*:?-{2,}:?\s*\|\s*|\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?\s*)$"
 )
-_INLINE_CODE_RE = re.compile(r"`([^`]*)`")
+_INLINE_CODE_SPAN_RE = re.compile(r"(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)")
 _BOLD_ASTERISK_RE = re.compile(r"\*\*(.+?)\*\*")
 _BOLD_UNDERSCORE_RE = re.compile(r"__(.+?)__")
 _STRIKE_RE = re.compile(r"~~(.+?)~~")
@@ -42,10 +45,30 @@ def _strip_punctuation_and_whitespace(text):
 
 
 def _clean_markdown_lines(content):
-    text = (content or "").replace("\r\n", "\n").replace("\r", "\n")
+    text = (content or "").replace("\r\n", "\n").replace("\r", "\n").replace("\x00", "")
     has_code_block = bool(_FENCED_CODE_BLOCK_RE.search(text))
 
+    protected_tokens = []
+
+    def _stash_literal(literal):
+        token = f"\x00EXCERPT_{len(protected_tokens)}\x00"
+        protected_tokens.append((token, literal))
+        return token
+
+    def _protect_fenced_block(match):
+        body = match.group(2)
+        if not body:
+            return ""
+        return "\n".join(_stash_literal(line) for line in body.split("\n") if line.strip())
+
+    def _protect_inline_code(match):
+        return _stash_literal(match.group(2))
+
+    # 先保护围栏代码块和行内代码内部字面量，避免 HTML 标签清洗误删 <textarea> / QList<QString> 等内容
+    text = _FENCED_CODE_BLOCK_FULL_RE.sub(_protect_fenced_block, text)
     text = _FENCED_CODE_LINE_RE.sub("", text)
+    text = _INLINE_CODE_SPAN_RE.sub(_protect_inline_code, text)
+
     text = _HTML_COMMENT_RE.sub("", text)
     text = _HTML_SCRIPT_STYLE_RE.sub("", text)
     text = _HTML_TAG_RE.sub("", text)
@@ -66,11 +89,15 @@ def _clean_markdown_lines(content):
         line = _UNORDERED_LIST_PREFIX_RE.sub("", line)
         line = _ORDERED_LIST_PREFIX_RE.sub("", line)
         line = _INLINE_LINK_RE.sub(r"\1", line)
-        line = _INLINE_CODE_RE.sub(r"\1", line)
         line = _BOLD_ASTERISK_RE.sub(r"\1", line)
         line = _BOLD_UNDERSCORE_RE.sub(r"\1", line)
         line = _STRIKE_RE.sub(r"\1", line)
         line = _ITALIC_ASTERISK_RE.sub(r"\1", line)
+
+        for token, literal in protected_tokens:
+            if token in line:
+                line = line.replace(token, literal)
+
         line = line.strip()
         if line:
             clean_lines.append(line)

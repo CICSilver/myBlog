@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -103,6 +105,25 @@ class ExcerptAndFormattingTest(unittest.TestCase):
         self.assertIn("保留正文", result["excerpt"])
         self.assertGreater(result["word_count"], 20)
 
+    def test_inline_code_angle_brackets_preserved_while_raw_xss_stripped(self):
+        content = (
+            "把整篇 Markdown 原文塞入隐藏 `<textarea>`，再由 JS 解析，同时还存在 `</textarea>` 闭合注入隐患。"
+            "另外支持 `QList<QString>` 与 `std::vector<int>` 泛型。"
+            "而裸写的 </textarea><script>alert('xss')</script> 必须被清除。\n\n"
+            "```html\n<textarea>code-block</textarea>\n```"
+        )
+        result = analyze_blog_content(content)
+
+        self.assertFalse(result["is_verse"])
+        self.assertIn("隐藏 <textarea>，", result["excerpt"])
+        self.assertIn("存在 </textarea> 闭合注入隐患", result["excerpt"])
+        self.assertIn("QList<QString>", result["excerpt"])
+        self.assertIn("std::vector<int>", result["excerpt"])
+        self.assertNotIn("<script>", result["excerpt"])
+        self.assertNotIn("alert('xss')", result["excerpt"])
+        self.assertNotIn("而裸写的 </textarea>", result["excerpt"])
+        self.assertIn("<textarea>code-block</textarea>", result["excerpt"])
+
     def test_prose_truncation_adds_ellipsis_around_160_to_180_chars(self):
         long_prose = "雪泥鸿爪岁月留痕，灯下微光记事。" * 18  # 288 字
         result = analyze_blog_content(long_prose)
@@ -170,8 +191,12 @@ class ExcerptAndFormattingTest(unittest.TestCase):
 
 class RedesignRoutesContractTest(unittest.TestCase):
     def setUp(self):
+        self._temp_dir = tempfile.TemporaryDirectory()
         self.app = create_app()
         self.app.config["TESTING"] = True
+        self.app.config["POETRY_USER_DATA_PATH"] = os.path.join(
+            self._temp_dir.name, "poetry_user_data.json"
+        )
         self.original_db_helper = routes_module.dbHelper
 
         self.oldest = _make_blog_dict(
@@ -206,6 +231,7 @@ class RedesignRoutesContractTest(unittest.TestCase):
 
     def tearDown(self):
         routes_module.dbHelper = self.original_db_helper
+        self._temp_dir.cleanup()
 
     def test_index_filters_empty_dates_and_exposes_total_count_and_enriched_blogs(self):
         captured = {}
