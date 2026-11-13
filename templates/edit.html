@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block extra_head %}
-<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/editor.md/examples/js/jquery.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/editor.md/lib/marked.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/editor.md/lib/prettify.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/editor.md/lib/codemirror/codemirror.min.js') }}"></script>

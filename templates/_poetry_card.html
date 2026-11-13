@@ -1,0 +1,112 @@
+{# templates/_poetry_card.html #}
+<section
+  class="sidebar-block poetry-sidebar-card"
+  id="sidebarPoetryCard"
+  data-poetry-sidebar
+  data-authenticated="{{ 'true' if current_admin_authenticated() else 'false' }}"
+  aria-labelledby="sidebar-poetry-title"
+>
+  <div class="poetry-side-head">
+    <div class="poetry-side-head-copy">
+      <p class="section-label">Daily Verse</p>
+      <h2 class="poetry-side-title" id="sidebar-poetry-title">今日诗笺</h2>
+    </div>
+    <button class="poetry-text-btn" id="sidebarSwitchBtn" type="button">换一阕</button>
+  </div>
+
+  <div class="poetry-flip-stage">
+    <div class="poetry-flip-grid" id="sidebarCardInner">
+
+      <!-- 正面：词眼素笺（初始状态，绝不放直接入诗斋按钮） -->
+      <div class="poetry-flip-face is-front">
+        <div class="poetry-side-paper" data-side-flip-trigger title="点击翻阅全篇">
+          <blockquote class="poetry-side-quote" id="sidebarQuoteLines">
+            {% if poem_today and poem_today.highlight %}
+              <span class="poetry-clause">{{ poem_today.highlight }}</span>
+            {% else %}
+              <span class="poetry-clause">浅酒欲邀谁劝，</span>
+              <span class="poetry-clause">深情惟有君知。</span>
+            {% endif %}
+          </blockquote>
+
+          <div class="poetry-side-attr">
+            <span class="poetry-side-author" id="sidebarAuthor">
+              {%- if poem_today -%}
+                {{ poem_today.dynasty }} · {{ poem_today.author }}〈{{ poem_today.cipai or poem_today.title }}〉
+              {%- else -%}
+                北宋 · 晏几道〈小山词〉
+              {%- endif -%}
+            </span>
+            <span class="poetry-handwritten-tag" id="sidebarBadge"{% if not poem_today or not poem_today.is_handwritten %} hidden{% endif %}>手抄本</span>
+          </div>
+        </div>
+
+        <div class="poetry-side-foot">
+          <div class="poetry-side-foot-left">
+            <button
+              class="poetry-like-inline{% if is_today_liked %} is-liked{% endif %}"
+              id="sidebarLikeBtn"
+              type="button"
+              data-poem-id="{{ poem_today.id if poem_today else 'poem_01' }}"
+              aria-label="喜欢此诗"
+            >
+              <span class="cinnabar-dot" aria-hidden="true"></span>
+              <span class="like-label">{% if is_today_liked %}已喜欢{% else %}喜欢{% endif %}</span>
+            </button>
+          </div>
+          <div class="poetry-side-foot-right">
+            <button class="poetry-text-btn" id="sidebarFlipBtn" type="button">展卷</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 背面：全篇精排（无赏析，翻开后才提供「入诗斋 →」按钮） -->
+      <div class="poetry-flip-face is-back">
+        <div class="poetry-side-paper" data-side-flip-trigger title="点击收起">
+          <div class="poetry-side-back-head">
+            <strong class="poetry-side-back-title" id="sidebarBackTitle">《{{ (poem_today.title if poem_today else '临江仙·浅酒欲邀谁劝') }}》</strong>
+            <span class="poetry-side-back-author" id="sidebarBackAuthor">
+              {%- if poem_today -%}
+                {{ poem_today.dynasty }} · {{ poem_today.author }}
+              {%- else -%}
+                北宋 · 晏几道
+              {%- endif -%}
+            </span>
+          </div>
+
+          <div class="poetry-side-verses" id="sidebarPoemFull">
+            {% if poem_today and poem_today.content %}
+              {% for line in poem_today.content %}
+                <p class="poetry-side-line">{{ line }}</p>
+              {% endfor %}
+            {% else %}
+              <p class="poetry-side-line">浅酒欲邀谁劝，深情惟有君知。</p>
+              <p class="poetry-side-line">东溪春近好同归。</p>
+              <p class="poetry-side-line">柳垂江上影，梅谢雪中枝。</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="poetry-side-foot">
+          <div class="poetry-side-foot-left">
+            <button
+              class="poetry-like-inline{% if is_today_liked %} is-liked{% endif %}"
+              id="sidebarBackLikeBtn"
+              type="button"
+              data-poem-id="{{ poem_today.id if poem_today else 'poem_01' }}"
+              aria-label="喜欢此诗"
+            >
+              <span class="cinnabar-dot" aria-hidden="true"></span>
+              <span class="like-label">{% if is_today_liked %}已喜欢{% else %}喜欢{% endif %}</span>
+            </button>
+            <button class="poetry-text-btn" id="sidebarFlipBackBtn" type="button">收起</button>
+          </div>
+          <div class="poetry-side-foot-right">
+            <a class="entry-link poetry-enter-hall-link" id="sidebarEnterHallLink" href="{{ url_for('main.poetry_hall', poem=(poem_today.id if poem_today else 'poem_01')) }}">入诗斋 →</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

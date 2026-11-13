@@ -31,7 +31,16 @@
       })();
     </script>
     {% block vendor_styles %}{% endblock %}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css', v='20260911-diary-calendar') }}">
+    <link
+      rel="stylesheet"
+      href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600&display=swap"
+      media="print"
+      onload="this.media='all'"
+    >
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600&display=swap">
+    </noscript>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css', v='20261113-paper') }}">
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site-footer.css') }}">
   </head>

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}诗斋 | {{ site_name }}{% endblock %}
+{% block body_class %}poetry-page{% endblock %}
+
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/poetry.css') }}?v=20261112v2">
+{% endblock %}
+
+{% block site_header %}
+  {% set site_cover_title_id = "poetry-cover-title" %}
+  {% set site_cover_title_tag = "h1" %}
+  {% set site_cover_section_title = "诗斋" %}
+  {% set site_cover_note = "山中何事？松花酿酒，春水煎茶。" %}
+  {% include "_site_header.html" %}
+{% endblock %}
+
+{% block content %}
+<main
+  class="poetry-shell"
+  id="poetryHall"
+  data-poetry-app
+  data-authenticated="{{ 'true' if current_admin_authenticated() else 'false' }}"
+  aria-labelledby="poetry-page-title"
+>
+  <!-- 1. 顶部总览：对齐文人档案馆风格 -->
+  <section class="poetry-overview" aria-labelledby="poetry-page-title">
+    <div class="poetry-overview-copy">
+      <p class="section-label">Poetry Archive</p>
+      <div class="poetry-title-row">
+        <h2 id="poetry-page-title">诗斋</h2>
+        <a class="poetry-back-home" href="{{ url_for('main.index') }}">← 返回归档</a>
+      </div>
+      <p class="poetry-taste-note" id="poetryTasteNote">字面澄澈如水洗，意象清丽如画。</p>
+    </div>
+
+    <div class="poetry-kpis" aria-label="诗斋收录与私藏统计">
+      <div class="poetry-kpi">
+        <b id="kpiTotalPoems">{{ total_poems | default(40) }}</b>
+        <span>入席词曲</span>
+      </div>
+      <div class="poetry-kpi">
+        <b id="kpiLikedPoems">{{ liked_poem_ids | length if liked_poem_ids else 0 }}</b>
+        <span>喜欢全篇</span>
+      </div>
+      <div class="poetry-kpi">
+        <b id="kpiLikedExcerpts">{{ liked_excerpts | length if liked_excerpts else 0 }}</b>
+        <span>朱砂旁批</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 渐进式单行意境筛选栏 -->
+  <nav class="poetry-filter-bar" aria-label="意境维度筛选">
+    <div class="poetry-filter-top">
+      <div class="poetry-filter-groups" role="toolbar" aria-label="筛选维度切换">
+        <button class="poetry-filter-chip is-active" id="btnFilterAll" type="button" data-filter-all>全部佳作</button>
+        <button class="poetry-filter-chip" type="button" data-dim-toggle="dynasty">朝代</button>
+        <button class="poetry-filter-chip" type="button" data-dim-toggle="style">审美风格</button>
+        <button class="poetry-filter-chip" type="button" data-dim-toggle="mood">心境</button>
+        <button class="poetry-filter-chip" type="button" data-dim-toggle="theme">意象物候</button>
+        <button class="poetry-filter-chip" id="btnFilterHandwritten" type="button" data-filter-handwritten>手抄典藏</button>
+      </div>
+
+      <div class="poetry-filter-summary" id="filterSummary">
+        <span class="poetry-filter-count-text" id="filterSummaryText"></span>
+        <button class="poetry-text-btn is-faint" id="btnFilterClear" type="button" hidden>清空</button>
+      </div>
+    </div>
+
+    <!-- 动态标签托盘（点击某维度时展开对应标签胶囊） -->
+    <div class="poetry-filter-tray" id="filterTray" hidden aria-label="可选标签项"></div>
+  </nav>
+
+  <!-- 3. 核心 3D 翻牌主舞台 -->
+  <section class="poetry-stage-shell" aria-label="沉浸诗词鉴赏区">
+    <div class="poetry-flip-stage">
+      <div class="poetry-flip-grid poetry-stage-card" id="immersiveCardInner">
+
+        <!-- 卡片正面：词眼精读（初始） -->
+        <div class="poetry-flip-face is-front">
+          <article class="poetry-stage-paper" data-hall-flip-trigger title="点击翻阅全篇精排">
+            <header class="stage-meta-top">
+              <span class="stage-genre-label" id="stageGenreLabel">
+                {%- if poem_today -%}
+                  {{ poem_today.dynasty }} · {{ poem_today.cipai or poem_today.title }}
+                {%- else -%}
+                  北宋 · 临江仙
+                {%- endif -%}
+              </span>
+              <span class="poetry-handwritten-tag" id="stageHandwrittenTag"{% if not poem_today or not poem_today.is_handwritten %} hidden{% endif %}>手抄典藏</span>
+            </header>
+
+            <div class="stage-front-body">
+              <blockquote class="stage-quote-lines" id="stageQuoteLines">
+                {% if poem_today and poem_today.highlight %}
+                  <span class="poetry-clause">{{ poem_today.highlight }}</span>
+                {% else %}
+                  <span class="poetry-clause">浅酒欲邀谁劝，</span>
+                  <span class="poetry-clause">深情惟有君知。</span>
+                {% endif %}
+              </blockquote>
+
+              <p class="stage-front-author" id="stageFrontAuthor">
+                {%- if poem_today -%}
+                  {{ poem_today.dynasty }} · {{ poem_today.author }}《{{ poem_today.title }}》
+                {%- else -%}
+                  北宋 · 晏几道《临江仙·浅酒欲邀谁劝》
+                {%- endif -%}
+              </p>
+            </div>
+
+            <footer class="stage-front-foot">
+              <div class="stage-front-tags" id="stageFrontTags" aria-label="此诗意境标签">
+                {% if poem_today and poem_today.tags %}
+                  {% for dim_key, tag_val in poem_today.tags.items() %}
+                    <button class="poetry-mini-tag" type="button" data-tag-dim="{{ dim_key }}" data-tag-val="{{ tag_val }}"># {{ tag_val }}</button>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <button class="poetry-text-btn" type="button" data-hall-flip-trigger>展卷全篇 →</button>
+            </footer>
+          </article>
+        </div>
+
+        <!-- 卡片背面：全篇精排与朱砂旁批（无赏析） -->
+        <div class="poetry-flip-face is-back">
+          <article class="poetry-stage-paper">
+            <header class="stage-back-head">
+              <div class="stage-back-head-left">
+                <h3 class="stage-back-title" id="stageBackTitle">《{{ (poem_today.title if poem_today else '临江仙·浅酒欲邀谁劝') }}》</h3>
+                <span class="stage-back-author" id="stageBackAuthor">
+                  {%- if poem_today -%}
+                    {{ poem_today.dynasty }} · {{ poem_today.author }}
+                  {%- else -%}
+                    北宋 · 晏几道
+                  {%- endif -%}
+                </span>
+              </div>
+              <button class="back-flip-return-hint" type="button" data-hall-flip-trigger>← 回到词眼</button>
+            </header>
+
+            <!-- 全篇诗行展示区：支持单句点击圈点与局部拖选词句 -->
+            <div class="stage-back-verses" id="stageBackVerses" role="region" aria-label="全诗正文，轻点诗句或拖选可入旁批">
+              {% if poem_today and poem_today.content %}
+                {% for line in poem_today.content %}
+                  <div class="poem-reading-line verse-line verse-line-item" data-line-index="{{ loop.index0 }}" data-line-text="{{ line }}">
+                    <span class="verse-line-dot" aria-hidden="true"></span>
+                    <span class="verse-line-text">{{ line }}</span>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="poem-reading-line verse-line verse-line-item" data-line-index="0" data-line-text="浅酒欲邀谁劝，深情惟有君知。">
+                  <span class="verse-line-dot" aria-hidden="true"></span>
+                  <span class="verse-line-text">浅酒欲邀谁劝，深情惟有君知。</span>
+                </div>
+                <div class="poem-reading-line verse-line verse-line-item" data-line-index="1" data-line-text="东溪春近好同归。">
+                  <span class="verse-line-dot" aria-hidden="true"></span>
+                  <span class="verse-line-text">东溪春近好同归。</span>
+                </div>
+                <div class="poem-reading-line verse-line verse-line-item" data-line-index="2" data-line-text="柳垂江上影，梅谢雪中枝。">
+                  <span class="verse-line-dot" aria-hidden="true"></span>
+                  <span class="verse-line-text">柳垂江上影，梅谢雪中枝。</span>
+                </div>
+              {% endif %}
+            </div>
+
+            <footer class="stage-back-foot">
+              <span class="stage-back-hint">轻点诗句或拖选片语可标为喜欢，沉淀于下方私藏册页</span>
+            </footer>
+          </article>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 舞台控制栏：三键规范 -->
+    <div class="poetry-stage-controls" role="toolbar" aria-label="诗斋鉴赏控制">
+      <button class="poetry-ctrl-btn is-primary" id="btnSwitchPoem" type="button">换一阕</button>
+      <button class="poetry-ctrl-btn" id="btnFlipCard" type="button">展卷全篇</button>
+      <button
+        class="poetry-ctrl-btn{% if poem_today and liked_poem_ids and (poem_today.id in liked_poem_ids) %} is-liked{% endif %}"
+        id="btnImmLike"
+        type="button"
+        data-poem-id="{{ (poem_today.id if poem_today else 'poem_01') }}"
+      >
+        <span class="cinnabar-dot" aria-hidden="true"></span>
+        <span id="immLikeBtnText">{% if poem_today and liked_poem_ids and (poem_today.id in liked_poem_ids) %}已喜欢整首{% else %}喜欢整首{% endif %}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 4. 底部手抄本式「私藏册页」 -->
+  <section class="poetry-notebook-panel" aria-labelledby="notebook-title">
+    <div class="notebook-head">
+      <div class="notebook-head-copy">
+        <p class="section-label">Private Marginalia</p>
+        <h3 class="notebook-title" id="notebook-title">私藏册页</h3>
+      </div>
+      <div class="poetry-seg-switch" role="tablist" aria-label="私藏分类切换">
+        <button class="poetry-seg-btn is-active" id="tabExcerpts" type="button" role="tab" aria-selected="true" aria-controls="notebookExcerptsList">
+          朱砂旁批 (<span id="countExcerpts">{{ liked_excerpts | length if liked_excerpts else 0 }}</span>)
+        </button>
+        <button class="poetry-seg-btn" id="tabPoems" type="button" role="tab" aria-selected="false" aria-controls="notebookPoemsList">
+          喜欢全篇 (<span id="countPoems">{{ liked_poem_ids | length if liked_poem_ids else 0 }}</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- 旁批列表（手抄横线本风） -->
+    <div class="notebook-pane is-active" id="notebookExcerptsList" role="tabpanel" aria-labelledby="tabExcerpts">
+      <p class="notebook-empty-tip" id="excerptsEmptyTip"{% if liked_excerpts %} hidden{% endif %}>
+        尚未留下朱砂旁批。在上方诗篇背面轻点任意诗行或拖选片语，即可摘录于此。
+      </p>
+      <div class="notebook-list-body" id="excerptsListBody">
+        {% if liked_excerpts %}
+          {% for exc in liked_excerpts %}
+            <article class="notebook-item" data-poem-id="{{ exc.poem_id }}" data-excerpt-text="{{ exc.text }}">
+              <div class="notebook-item-main" role="button" tabindex="0" title="在上方卡片中查看此诗">
+                <span class="cinnabar-dot" aria-hidden="true"></span>
+                <p class="notebook-item-quote">{{ exc.text }}</p>
+                <span class="notebook-item-source">〈{{ exc.poem_title or exc.title or '诗篇' }}〉{{ exc.poem_author or exc.author or '' }}</span>
+              </div>
+              <button class="poetry-text-btn is-faint btn-remove-excerpt" type="button" data-poem-id="{{ exc.poem_id }}" data-text="{{ exc.text }}">移出</button>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 喜欢全篇列表 -->
+    <div class="notebook-pane" id="notebookPoemsList" role="tabpanel" aria-labelledby="tabPoems" hidden>
+      <p class="notebook-empty-tip" id="poemsEmptyTip"{% if liked_poem_ids %} hidden{% endif %}>
+        尚未收藏全篇。点击「喜欢整首」即可入册。
+      </p>
+      <div class="notebook-list-body" id="poemsListBody"></div>
+    </div>
+  </section>
+
+  <!-- 划词选中微型浮标（墨签） -->
+  <div class="poetry-selection-popover excerpt-selection-popover" id="excerptPopover" hidden aria-hidden="true">
+    <button class="poetry-popover-btn popover-cinnabar-btn" id="btnPopoverExcerptLike" type="button">
+      <span class="cinnabar-dot" aria-hidden="true"></span>
+      <span id="popoverBtnText">摘入旁批</span>
+    </button>
+  </div>
+
+  <!-- 轻量淡入淡出提示条 -->
+  <div class="poetry-toast" id="toastNotice" role="status" aria-live="polite">
+    <span id="toastMessage">已记录您的审美雅赏</span>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/poetry.js') }}?v=20261112v2"></script>
+{% endblock %}

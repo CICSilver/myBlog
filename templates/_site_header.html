@@ -7,7 +7,7 @@
   <span class="home-cover-plum" aria-hidden="true"></span>
   <div class="home-cover-main">
     <a class="home-cover-brand" href="{{ url_for('main.index') }}">
-      <span class="home-cover-kicker">Creative Writing Archive</span>
+      <span class="home-cover-kicker">{{ site_cover_kicker | default("Creative Archive") }}</span>
       {% if cover_title_tag == "h1" %}
         <h1 class="home-cover-title" id="{{ cover_title_id }}">{{ site_name | default("Silver's Blog") }}</h1>
       {% else %}

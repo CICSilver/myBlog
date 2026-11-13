@@ -3,9 +3,9 @@
 
     // 动作的记法决定表格形态。录入时不选，跟着动作走。
     const KINDS = {
-        深蹲: "bilateral", 臀桥: "bilateral", 提踵: "bilateral", 侧平举: "bilateral",
+        深蹲: "bilateral", 分腿蹲: "unilateral", 单腿深蹲: "unilateral", 臀桥: "bilateral", 提踵: "bilateral", 哑铃摇摆: "bilateral",
         弯举: "unilateral", 划船: "unilateral", 卧推: "unilateral", 抬腕: "unilateral",
-        飞鸟: "unilateral", 反向飞鸟: "unilateral",
+        飞鸟: "unilateral", 反向飞鸟: "unilateral", 侧平举: "unilateral", 肩外旋: "unilateral",
         俯卧撑: "bodyweight",
         平板支撑: "static",
     };
@@ -72,7 +72,7 @@
                     // 身体那张图一个读数就是一条说明，服务端已经拼好了。
                     meta.textContent = hit.dataset.meta || (empty
                         ? hit.dataset.date
-                        : hit.dataset.date + " · " + hit.dataset.part + " · " + hit.dataset.sets + " 组");
+                        : hit.dataset.date + " · " + hit.dataset.sets + " 组");
                     const box = figure.getBoundingClientRect();
                     const half = tip.offsetWidth / 2 + 4;
                     tip.style.left = Math.min(Math.max(event.clientX - box.left, half), box.width - half) + "px";
@@ -278,7 +278,7 @@
         const volumeCell = card.querySelector("[data-exercise-volume]");
         if (volumeCell) {
             const noLoad = kind === "static" || kind === "bodyweight";
-            volumeCell.textContent = (noLoad || !complete) ? "—" : format(volume) + " kg";
+            volumeCell.textContent = (noLoad || !complete) ? "—" : (volume === 0 ? "自重" : format(volume) + " kg");
         }
     }
 
@@ -732,8 +732,8 @@
 
     submit.addEventListener("click", async function () {
         const payload = collect();
-        if (payload.day_type !== "休息" && !payload.exercises.length) {
-            say("至少记一个动作，或者把类型改成休息。", "error");
+        if (!payload.exercises.length) {
+            say("至少记一个动作。", "error");
             return;
         }
         submit.disabled = true;

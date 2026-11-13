@@ -18,6 +18,7 @@
   {% if row.kind == "static" %}
   {% elif row.kind == "bodyweight" %}{{ run.variant }}{% if run.weight %} {{ kg(run.weight) }} kg{% endif %}
   {% elif run.weight is none %}未记重量
+  {% elif run.weight == 0 %}自重
   {% else %}{{ kg(run.weight) }} kg{% endif %}
 {%- endmacro %}
 
@@ -126,7 +127,7 @@
                         width="{{ bar.width | round(1) }}" height="{{ chart.hit_height }}"
                         data-date="{{ bar.label }}"
                         data-part="{{ bar.day_type or '未训练' }}"
-                        data-vol="{% if not bar.recorded %}—{% elif bar.partial %}未记录重量{% else %}{{ bar.volume | round | int }} kg{% endif %}"
+                        data-vol="{% if not bar.recorded %}—{% elif bar.partial %}未记录重量{% elif bar.volume == 0 %}自重{% else %}{{ bar.volume | round | int }} kg{% endif %}"
                         data-sets="{{ bar.sets or '—' }}"></rect>
                 {% endfor %}
               </svg>
@@ -147,14 +148,13 @@
             <summary>查看数据</summary>
             <div class="fit-chart-table-scroll">
               <table>
-                <thead><tr><th>日期</th><th>部位</th><th>组数</th><th>容量 kg</th></tr></thead>
+                <thead><tr><th>日期</th><th>组数</th><th>容量 kg</th></tr></thead>
                 <tbody>
                   {% for bar in chart.bars | selectattr("recorded") | reverse %}
                     <tr>
                       <td>{{ bar.label }}</td>
-                      <td>{{ bar.day_type }}</td>
                       <td>{{ bar.sets }}</td>
-                      <td>{% if bar.partial %}未记录{% else %}{{ bar.volume | round | int }}{% endif %}</td>
+                      <td>{% if bar.partial %}未记录{% elif bar.volume == 0 %}自重{% else %}{{ bar.volume | round | int }}{% endif %}</td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -253,12 +253,6 @@
                 <strong id="fit-editor-title">{{ today_date[5:7] }} 月 {{ today_date[8:10] }} 日</strong>
                 <span>{{ today_weekday }} · <span data-save-state>{% if today_workout %}已保存{% else %}未保存{% endif %}</span></span>
               </div>
-              <div class="fit-type-switch" role="group" aria-label="今天练什么" data-day-type>
-                {% for value in day_types %}
-                  {% set active = (today_workout.day_type if today_workout else '上肢') == value %}
-                  <button type="button" data-value="{{ value }}" class="{{ 'is-active' if active }}" aria-pressed="{{ 'true' if active else 'false' }}">{{ value }}</button>
-                {% endfor %}
-              </div>
             </div>
 
             <div class="fit-exercise-stack" data-exercise-stack>
@@ -269,7 +263,7 @@
                     <span class="fit-exercise-index">{{ '%02d' % loop.index }}</span>
                     <h3>{{ row.name }}</h3>
                     {{ side_count(row) }}
-                    <span class="fit-exercise-volume" data-exercise-volume>{% if row.volume is none %}—{% else %}{{ row.volume | round | int }} kg{% endif %}</span>
+                    <span class="fit-exercise-volume" data-exercise-volume>{% if row.volume is none %}—{% elif row.volume == 0 %}自重{% else %}{{ row.volume | round | int }} kg{% endif %}</span>
                     <button class="fit-icon-button" type="button" data-remove-exercise aria-label="删除{{ row.name }}">
                       {{ diary_icon("trash") }}
                     </button>
@@ -378,10 +372,11 @@
               </time>
               <div class="fit-log-main">
                 <div class="fit-log-meta">
-                  <span class="fit-tag {{ 'is-lower' if workout.day_type == '下肢' else 'is-rest' if workout.day_type == '休息' else 'is-upper' }}">{{ workout.day_type }}</span>
                   {% if workout.totals.sets %}<span>{{ workout.totals.sets }} 组</span>{% endif %}
                   {% if workout.totals.volume is not none and workout.totals.volume %}
                     <span>{{ workout.totals.volume | round | int }} kg</span>
+                  {% elif workout.totals.volume == 0 and not workout.totals.partial %}
+                    <span>自重</span>
                   {% elif workout.totals.partial %}
                     <span>容量未记录</span>
                   {% endif %}
@@ -505,5 +500,5 @@
 {% block extra_scripts %}
 <script>window.__fitnessLastSession = {{ repeat_template | tojson }};</script>
 <script src="{{ url_for('static', filename='js/diary-calendar.js') }}?v=20260918"></script>
-<script src="{{ url_for('static', filename='js/fitness.js') }}?v=20260918"></script>
+<script src="{{ url_for('static', filename='js/fitness.js') }}?v=20261104"></script>
 {% endblock %}
