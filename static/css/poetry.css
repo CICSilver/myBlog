@@ -1,0 +1,958 @@
+/* poetry.css - Warm Editorial Archive 纯粹文人雅集风格样式表 */
+
+/* 1. 朱砂着重色作用域变量 */
+.poetry-sidebar-card,
+.poetry-shell,
+.poetry-selection-popover {
+  --cinnabar: #a6402c;
+  --cinnabar-soft: rgba(162, 64, 44, 0.12);
+  --cinnabar-line: rgba(166, 64, 44, 0.58);
+}
+
+html[data-theme="dark"] .poetry-sidebar-card,
+html[data-theme="dark"] .poetry-shell,
+html[data-theme="dark"] .poetry-selection-popover {
+  --cinnabar: #df7f69;
+  --cinnabar-soft: rgba(223, 127, 105, 0.16);
+  --cinnabar-line: rgba(223, 127, 105, 0.65);
+}
+
+/* 2. 基础原子组件与按钮 */
+.poetry-sidebar-card [hidden],
+.poetry-shell [hidden],
+.poetry-selection-popover[hidden] {
+  display: none !important;
+}
+
+.cinnabar-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--cinnabar);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.poetry-handwritten-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: var(--font-body);
+}
+
+.poetry-text-btn,
+.back-flip-return-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.18s ease;
+  font-family: inherit;
+}
+.poetry-text-btn:hover,
+.back-flip-return-hint:hover { color: var(--accent); }
+.poetry-text-btn.is-faint { color: var(--ink-faint); }
+.poetry-text-btn.is-faint:hover { color: var(--cinnabar); }
+
+.poetry-like-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.poetry-like-inline .cinnabar-dot {
+  opacity: 0.35;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.poetry-like-inline:hover { color: var(--ink); }
+.poetry-like-inline:hover .cinnabar-dot { opacity: 0.75; }
+.poetry-like-inline.is-liked {
+  color: var(--cinnabar);
+  font-weight: 500;
+}
+.poetry-like-inline.is-liked .cinnabar-dot {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* 3. 首页侧边栏：今日诗笺 (.poetry-sidebar-card) */
+.poetry-sidebar-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.poetry-side-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.poetry-side-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.poetry-side-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+/* 3D 翻牌舞台（CSS Grid 方案，绝对无定位塌陷、无溢出截断） */
+.poetry-flip-stage {
+  perspective: 1200px;
+  width: 100%;
+}
+
+.poetry-flip-grid {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 100%;
+}
+
+.poetry-flip-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.poetry-flip-face.is-front {
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.poetry-flip-face.is-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.poetry-flip-grid.is-flipped,
+.poetry-stage-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.poetry-flip-grid.is-flipped .poetry-flip-face.is-front {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.poetry-flip-grid.is-flipped .poetry-flip-face.is-back {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* 高度折叠控制：翻转静止后非激活面收缩，防止背面长诗把正面撑出空白 */
+.poetry-flip-grid:not(.is-flipped) .poetry-flip-face.is-back {
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s linear 0.5s, opacity 0.2s linear, max-height 0s linear 0.5s;
+}
+
+.poetry-flip-grid.is-flipped .poetry-flip-face.is-front {
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s linear 0.5s, opacity 0.2s linear, max-height 0s linear 0.5s;
+}
+
+.poetry-flip-grid.is-flipped .poetry-flip-face.is-back {
+  max-height: none;
+  overflow: visible;
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.25s ease 0.15s;
+}
+
+.poetry-flip-grid:not(.is-flipped) .poetry-flip-face.is-front {
+  max-height: none;
+  overflow: visible;
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.25s ease 0.15s;
+}
+
+.poetry-side-paper {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  user-select: text;
+}
+
+.poetry-side-paper:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 4px 12px rgba(35, 27, 22, 0.04);
+}
+
+.poetry-side-quote {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.poetry-clause {
+  display: block;
+  line-break: strict;
+  overflow-wrap: break-word;
+}
+
+.poetry-side-attr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.poetry-side-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poetry-side-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 2px 0;
+}
+
+.poetry-side-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poetry-side-foot-right {
+  display: flex;
+  align-items: center;
+}
+
+.poetry-enter-hall-link {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.18s ease;
+}
+.poetry-enter-hall-link:hover { color: var(--accent-strong); }
+
+.poetry-side-back-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.poetry-side-back-title {
+  font-size: 0.96rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.poetry-side-back-author {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.poetry-side-verses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.poetry-side-verses::-webkit-scrollbar { width: 4px; }
+.poetry-side-verses::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.poetry-side-line {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink);
+  line-break: strict;
+  overflow-wrap: break-word;
+}
+
+/* 移动端侧边栏响应式保障 */
+@media (max-width: 760px) {
+  .home-page .archive-sidebar {
+    display: grid !important;
+    margin-bottom: 16px;
+  }
+  .home-page .archive-sidebar > .sidebar-block:not(.poetry-sidebar-card) {
+    display: none !important;
+  }
+}
+
+/* 4. 独立诗斋页：(.poetry-shell) */
+.poetry-shell {
+  display: grid;
+  gap: 24px;
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 0 0 60px;
+}
+
+.poetry-overview {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 4px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.poetry-overview-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.poetry-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.poetry-title-row h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 600;
+  line-height: 1.08;
+  color: var(--ink);
+}
+
+.poetry-back-home {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.poetry-back-home:hover { color: var(--accent); }
+
+.poetry-taste-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.poetry-kpis {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.poetry-kpi {
+  display: grid;
+  gap: 2px;
+  padding: 0 18px;
+  border-left: 1px solid var(--line);
+  text-align: right;
+}
+.poetry-kpi:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.poetry-kpi b {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.poetry-kpi span {
+  color: var(--ink-faint);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+/* 单行意境筛选栏 */
+.poetry-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.poetry-filter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.poetry-filter-groups {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.poetry-filter-chip {
+  background: var(--control-surface-soft);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.poetry-filter-chip:hover {
+  background: var(--ghost-hover);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.poetry-filter-chip.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+.poetry-filter-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.poetry-filter-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.poetry-filter-tag-pill {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  padding: 4px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.poetry-filter-tag-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.poetry-filter-tag-pill.is-selected {
+  background: var(--cinnabar-soft);
+  border-color: var(--cinnabar-line);
+  color: var(--cinnabar);
+  font-weight: 500;
+}
+
+/* 核心舞台 */
+.poetry-stage-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.poetry-stage-paper {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 280px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.poetry-stage-paper:hover {
+  border-color: var(--line-strong);
+}
+
+.stage-meta-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+.stage-front-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 12px;
+  gap: 16px;
+}
+
+.stage-quote-lines {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  line-height: 1.55;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.stage-front-author {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.stage-front-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.stage-front-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.poetry-mini-tag {
+  background: var(--control-surface-soft);
+  border: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 0.76rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.poetry-mini-tag:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* 舞台背面 */
+.stage-back-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.stage-back-head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-back-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.stage-back-author {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+}
+
+.stage-back-verses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  user-select: text;
+}
+
+.verse-line-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  border-bottom: 1.5px solid transparent;
+}
+
+.verse-line-item:hover {
+  background: var(--ghost-hover);
+}
+
+.verse-line-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--cinnabar);
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+.verse-line-text {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  line-height: 1.6;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.verse-line-item.is-marked,
+.verse-line.is-excerpt-liked {
+  background: var(--cinnabar-soft);
+  border-bottom-color: var(--cinnabar-line);
+}
+.verse-line-item.is-marked .verse-line-dot,
+.verse-line.is-excerpt-liked .verse-line-dot {
+  opacity: 1;
+}
+
+.verse-inline-mark {
+  background: transparent;
+  color: inherit;
+  border-bottom: 1.5px solid var(--cinnabar-line);
+  padding-bottom: 1px;
+}
+
+.stage-back-foot {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.stage-back-hint {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+/* 控制栏 */
+.poetry-stage-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.poetry-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 0.92rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-family: inherit;
+}
+
+.poetry-ctrl-btn:hover {
+  border-color: var(--line-strong);
+  background: var(--control-surface-soft);
+  transform: translateY(-1px);
+}
+
+.poetry-ctrl-btn.is-primary {
+  background: var(--accent);
+  color: var(--button-ink);
+  border-color: var(--accent);
+}
+.poetry-ctrl-btn.is-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.poetry-ctrl-btn.is-liked {
+  color: var(--cinnabar);
+  border-color: var(--cinnabar-line);
+  background: var(--cinnabar-soft);
+}
+
+/* 5. 底部私藏册页 (.poetry-notebook-panel) */
+.poetry-notebook-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.notebook-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notebook-head-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.notebook-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.38rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.poetry-seg-switch {
+  display: inline-flex;
+  background: var(--control-surface-soft);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+.poetry-seg-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  padding: 4px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.poetry-seg-btn.is-active {
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.notebook-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notebook-empty-tip {
+  margin: 0;
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--ink-faint);
+}
+
+.notebook-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.notebook-item:last-child {
+  border-bottom: none;
+}
+
+.notebook-item-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.notebook-item-main:hover .notebook-item-quote {
+  color: var(--cinnabar);
+}
+
+.notebook-item-quote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  color: var(--ink);
+  line-height: 1.5;
+  transition: color 0.18s ease;
+}
+
+.notebook-item-source {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+/* 6. 划词微型墨签 (.poetry-selection-popover) */
+.poetry-selection-popover {
+  position: fixed;
+  z-index: 1200;
+  background: var(--surface-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 2px 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+}
+
+.poetry-popover-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+}
+.poetry-popover-btn:hover {
+  color: var(--cinnabar);
+}
+
+/* 7. 轻量提示条 (.poetry-toast) */
+.poetry-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface-strong);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  z-index: 9999;
+}
+
+.poetry-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 8. 响应式布局 */
+@media (max-width: 640px) {
+  .poetry-shell {
+    padding: 0 0 40px;
+    gap: 18px;
+  }
+  .poetry-overview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .poetry-kpis {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .poetry-stage-paper {
+    padding: 22px 18px;
+  }
+  .stage-quote-lines {
+    font-size: 1.45rem;
+  }
+  .stage-front-body {
+    padding: 24px 0;
+  }
+  .poetry-notebook-panel {
+    padding: 18px 16px;
+  }
+}
