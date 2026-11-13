@@ -1581,6 +1581,8 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 /* 文章详情页一体化书页 */
 .reading-shell {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
     gap: 16px;
     max-width: 800px;
     margin: 0 auto;
@@ -1607,6 +1609,7 @@ html[data-theme="light"] .admin-bookmark-menu button:focus-visible {
 }
 
 .reading-sheet {
+    min-width: 0;
     background: var(--surface-strong);
     border: 1px solid var(--line-strong);
     border-top: 2.5px solid var(--accent);
