@@ -45,6 +45,7 @@ from app.auth import (
     validate_csrf_token,
 )
 from app.poetry import get_poetry_manager
+from app.excerpt import blog_sort_key, enrich_blog_entry, enrich_blog_list, format_blog_dates
 from app.diary_policy import diary_date, location_needs_retry, better_location
 from app.diary_metadata import fetch_diary_metadata
 from app.diary_activity import (
@@ -91,9 +92,16 @@ def get_site_context():
         "personal_intro": PERSONAL_INTRO,
     }
 
-def init_index_with_blogs(_blogs):
-    categories = dbHelper.get_all_categories()
-    dateList = dbHelper.get_all_date()
+def init_index_with_blogs(_blogs, archive_filter=None):
+    categories = dbHelper.get_all_categories() or []
+    raw_dates = dbHelper.get_all_date() or []
+    dateList = [item for item in raw_dates if (item.get("num") or 0) > 0]
+
+    category_total = sum(int(category.get("num") or 0) for category in categories)
+    all_blogs = dbHelper.get_all_blogs() if hasattr(dbHelper, "get_all_blogs") else []
+    total_blog_count = len(all_blogs) if all_blogs else category_total
+
+    enriched_blogs = enrich_blog_list(_blogs)
 
     poem_today = None
     is_today_liked = False
@@ -114,9 +122,11 @@ def init_index_with_blogs(_blogs):
 
     return render_template(
         'index.html',
-        blogs=_blogs,
+        blogs=enriched_blogs,
         categories=categories,
         dateList=dateList,
+        total_blog_count=total_blog_count,
+        archive_filter=archive_filter,
         poem_today=poem_today,
         is_today_liked=is_today_liked,
         **get_site_context(),
@@ -910,11 +920,15 @@ def blog_detail(year, month, html_title):
     if not blog:
         return render_template('404.html', **get_site_context()), 404
 
+    blog = enrich_blog_entry(blog)
+    previous_blog, next_blog = _get_adjacent_blogs(str(year), str(month), html_title)
     article_view_tracking = _article_view_tracking_config(blog)
     return render_template(
         'blog_detail.html',
         blog=blog,
         article_view_tracking=article_view_tracking,
+        previous_blog=previous_blog,
+        next_blog=next_blog,
         **get_site_context(),
     )
 
@@ -1346,14 +1360,84 @@ def logout():
 def categorized_blogs(categoryName):
     blogs = dbHelper.get_blogs_by_category(categoryName)
     # 按最新时间排序blogs
-    blogs.reverse()    
-    return init_index_with_blogs(blogs)
+    blogs.reverse()
+    archive_filter = {
+        "kind": "category",
+        "label": categoryName,
+        "count": len(blogs),
+    }
+    return init_index_with_blogs(blogs, archive_filter=archive_filter)
 
 @main.route('/date_blogs/<string:year>/<string:month>')
 def archived_blogs(year, month):
     blogs = dbHelper.get_blogs_by_date(year, month)
     blogs.reverse()  # 按最新时间排序blogs
-    return init_index_with_blogs(blogs)
+    try:
+        month_int = int(month)
+        month_str = str(month_int)
+        label = f"{year} · {month_int:02d}"
+    except (TypeError, ValueError):
+        month_str = str(month)
+        label = f"{year} · {month_str}"
+    archive_filter = {
+        "kind": "date",
+        "label": label,
+        "year": str(year),
+        "month": month_str,
+        "count": len(blogs),
+    }
+    return init_index_with_blogs(blogs, archive_filter=archive_filter)
+
+
+def _neighbor_blog_summary(blog_item):
+    if blog_item is None:
+        return None
+    getter = blog_item.get if isinstance(blog_item, dict) else (lambda k, d=None: getattr(blog_item, k, d))
+    dates = format_blog_dates(blog_item)
+    return {
+        "title": getter("title", "") or "",
+        "date": getter("date", "") or "",
+        "display_date": dates["display_date"],
+        "category": getter("category", "") or "",
+        "year": str(getter("year", "") or ""),
+        "month": str(getter("month", "") or ""),
+        "html_title": getter("html_title", "") or "",
+    }
+
+
+def _get_adjacent_blogs(year, month, html_title):
+    if not hasattr(dbHelper, "get_all_blogs"):
+        return None, None
+
+    all_blogs = dbHelper.get_all_blogs() or []
+    if not all_blogs:
+        return None, None
+
+    indexed = list(enumerate(all_blogs))
+    indexed.sort(key=lambda pair: blog_sort_key(pair[1], fallback_index=pair[0]))
+    ordered = [pair[1] for pair in indexed]
+
+    target_key = (str(year), str(month), html_title)
+    current_idx = None
+    for idx, item in enumerate(ordered):
+        if isinstance(item, dict):
+            item_key = (str(item.get("year") or ""), str(item.get("month") or ""), item.get("html_title"))
+        else:
+            item_key = (
+                str(getattr(item, "year", "") or ""),
+                str(getattr(item, "month", "") or ""),
+                getattr(item, "html_title", None),
+            )
+        if item_key == target_key:
+            current_idx = idx
+            break
+
+    if current_idx is None:
+        return None, None
+
+    previous_blog = _neighbor_blog_summary(ordered[current_idx - 1]) if current_idx > 0 else None
+    next_blog = _neighbor_blog_summary(ordered[current_idx + 1]) if current_idx < len(ordered) - 1 else None
+    return previous_blog, next_blog
 
 # 添加评论
 def add_comment(blog_id, comment):
@@ -1375,11 +1459,14 @@ def _article_view_tracking_config(blog):
     ):
         return None
 
+    year = blog.get("year") if isinstance(blog, dict) else blog.year
+    month = blog.get("month") if isinstance(blog, dict) else blog.month
+    html_title = blog.get("html_title") if isinstance(blog, dict) else blog.html_title
     return {
         "endpoint": url_for("main.track_article_view"),
-        "year": blog.year,
-        "month": blog.month,
-        "html_title": blog.html_title,
+        "year": year,
+        "month": month,
+        "html_title": html_title,
         "minimum_seconds": EFFECTIVE_VIEW_SECONDS,
         "heartbeat_seconds": READING_HEARTBEAT_SECONDS,
     }

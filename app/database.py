@@ -393,6 +393,14 @@ class Blog:
         self.date = data.get('date')
         self.time = data.get('time')
 
+    def __getitem__(self, key):
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
 
 class Workout:
     """一天的训练。动作与组直接存成文档，不拆关系表——一天的记录总是整存整取。
